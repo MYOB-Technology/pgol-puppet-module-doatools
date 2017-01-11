@@ -1,0 +1,14 @@
+{
+  "name": "intechwifi-doatools",
+  "version": "0.1.0",
+  "author": "Intechnology Wifi",
+  "summary": "Spin up, modify and destroy whole environments inside AWS.",
+  "license": "AGPL-3.0",
+  "source": "https://github.com/intechWiFi/doatools.git",
+  "project_page": "https://github.com/intechWiFi/doatools",
+  "issues_url": null,
+  "dependencies": [
+  ],
+  "data_provider": null
+}
+
