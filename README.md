@@ -1,2 +1,2 @@
-# friendly-sniffle
+# doatools 
 A devops AWS / Puppet toolkit
