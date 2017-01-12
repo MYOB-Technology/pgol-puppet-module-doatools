@@ -19,6 +19,10 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:subnet) do
   ensurable
 
+  autorequire(:vpc) do
+    self[:vpc]
+  end
+
   newparam(:name, :namevar => true) do
   end
 

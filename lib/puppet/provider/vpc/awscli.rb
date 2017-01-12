@@ -41,6 +41,11 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:vpcid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
     if resource[:dns_hostnames] then @property_flush[:dns_hostnames] = resource[:dns_hostnames] end
     if resource[:dns_resolution] then @property_flush[:dns_resolution] = resource[:dns_resolution] end
+
+    route_id = JSON.parse(awscli('ec2', 'describe-route-tables', '--region', resource[:region], '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}"))["RouteTables"][0]["RouteTableId"]
+    info("vpc #{resource[:name]} has a default route table #{route_id}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', route_id, '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+
     @property_hash[:ensure] = :present
 
   end
