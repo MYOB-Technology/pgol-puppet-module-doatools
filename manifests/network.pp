@@ -1,28 +1,20 @@
 define doatools::network (
-  $vpc_cidr="192.168.128.0/24",
+  $ensure=present,
+  $vpc_cidr="192.168.0.0/24",
   $region="us-east-1",
-  $environment="demonstration",
+  $environment=$name,
   $availability = [ 'a', 'b', 'c'],
-  $zones = [
-  {
-   label => "p",
-    cidr => "192.168.128.0/25",
-    public_ip => true,
-    availability => [ 'a', 'b', 'c' ],
-  },
-  {
+  $zones = [{
     label => "",
-    cidr => "192.168.128.128/25",
-    public_ip => false,
-    availability => [ 'a', 'c' ],
+    cidr => $vpc_cidr,
+    public_ip => true
   }]
-)
-
-{
-  vpc { "${name}" :
+){
+  vpc { $name :
+    ensure => $ensure,
     region => $region,
     cidr => $vpc_cidr,
-    environment => "demonstration",    
+    environment => $environment,
   }
 
   $zones.each |$i, $z | {
@@ -34,11 +26,19 @@ define doatools::network (
   
     $azs.each |$azi, $az | {
       $actual_cidr = make_cidr($z["cidr"], $azi, $azs.size)
-      subnet { "${name}_${z["label"]}${az}":
+      $subnet_name = "${name}_${z["label"]}${az}"
+
+      subnet { $subnet_name:
+        ensure => $ensure,
         region => $region,
         vpc => $name,
         availability_zone => $az,
         cidr => $actual_cidr,
+        environment => $environment,
+      }
+
+      if $ensure == absent {
+        Subnet[$subnet_name] -> Vpc[$name]
       }
     }   
   }

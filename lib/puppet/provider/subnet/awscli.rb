@@ -50,6 +50,7 @@ Puppet::Type.type(:subnet).provide(:awscli) do
   end
 
   def destroy
+    response = awscli('ec2', 'delete-subnet', '--region', @property_hash[:region], '--subnet-id', @property_hash[:subnetid])
 
     @property_hash.clear
   end
