@@ -16,6 +16,8 @@
 require 'json'
 require 'puppet_x/intechwifi/constants'
 require 'puppet_x/intechwifi/logical'
+require 'puppet_x/intechwifi/awscmds'
+require 'puppet_x/intechwifi/exceptions'
 
 #
 #  The awscli provider for VPC's
@@ -36,7 +38,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     @property_hash[:region] = resource[:region]
     @property_hash[:cidr] = resource[:cidr]
 
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:vpcid], '--tags', "Key=Name,Value=#{resource[:name]}_vpc", "Key=Environment,Value=#{resource[:name]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:vpcid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
     if resource[:dns_hostnames] then @property_flush[:dns_hostnames] = resource[:dns_hostnames] end
     if resource[:dns_resolution] then @property_flush[:dns_resolution] = resource[:dns_resolution] end
     @property_hash[:ensure] = :present
@@ -45,6 +47,8 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def destroy
     response = awscli('ec2', 'delete-vpc', '--region', @property_hash[:region], '--vpc-id', @property_hash[:vpcid])
+    debug("Clearing vpc-id cache for #{name}\n")
+    PuppetX::IntechWIFI::AwsCmds.clear_vpc_tag_cache @property_hash[:name]
     @property_hash.clear
   end
 
@@ -63,19 +67,26 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
     debug("searching regions=#{regions} for vpc=#{resource[:name]}\n")
 
-    tags = []
-    region = nil
-
-    regions.each{|r| JSON.parse(awscli('ec2', 'describe-tags', '--filters', 'Name=resource-type,Values=vpc', 'Name=key,Values=Environment', "Name=value,Values=#{resource[:name]}", '--region', r))["Tags"].each{|t| tags << t; region = r } }
-    if tags.length == 1
-      @property_hash[:ensure] = :present
-      @property_hash[:vpcid] = tags[0]["ResourceId"]
-      @property_hash[:region] = region
-      JSON.parse(awscli('ec2', 'describe-vpcs', '--region', @property_hash[:region], '--vpc-id', @property_hash[:vpcid]))["Vpcs"].map{|v| extract_values(@property_hash[:region], v) }
-
-      result = true
+    search_result = PuppetX::IntechWIFI::AwsCmds.find_vpc_tag(regions, resource[:name]) do | *arg |
+      awscli(*arg)
     end
-    result
+
+    @property_hash[:ensure] = :present
+    @property_hash[:vpcid] = search_result[:tag]["ResourceId"]
+    @property_hash[:region] = search_result[:region]
+    @property_hash[:name] = resource[:name]
+
+    JSON.parse(awscli('ec2', 'describe-vpcs', '--region', @property_hash[:region], '--vpc-id', @property_hash[:vpcid]))["Vpcs"].map{|v| extract_values(@property_hash[:region], v) }
+
+    true
+
+  rescue PuppetX::IntechWIFI::Exceptions::VpcNotFoundError => e
+    debug(e)
+    false
+
+  rescue PuppetX::IntechWIFI::Exceptions::MultipleMatchesError => e
+    fail(e)
+    false
   end
 
   def extract_values(region, vpc)
@@ -87,7 +98,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
           fail("VPC name tag value=#{tag["Value"]} does not match name=#{resource[:name]}.") unless tag['Value'] == "#{resource[:name]}_vpc"
         end
         if tag["Key"] == "Environment"
-          fail("** This should never happen. **  VPC environment tag value=#{tag["Value"]} does not match name=#{resource[:name]}.") unless resource[:name] == tag["Value"]
+          @property_hash[:environment] = tag["Value"]
         end
       end
     end

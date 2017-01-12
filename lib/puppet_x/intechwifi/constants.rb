@@ -35,9 +35,32 @@ module PuppetX
         "sa-east-1"
       ]
 
+      @@zone_map = [
+          {:az => 'a', :zone => "a" },
+          {:az => 'b', :zone => "b" },
+          {:az => 'c', :zone => "c" },
+      ]
+
       def self.Regions
         @@regions
       end
+
+      def self.AvailabilityZones
+        @@zone_map.collect{|zm| zm[:zone] }
+      end
+
+      def self.ZoneName aws_az
+        if aws_az.length > 1
+          region = aws_az.chop
+          fail("Unsupported region (#{region} detected.") if !self.Regions.include? region
+        end
+        @@zone_map.select{|zm| zm[:az] == aws_az[-1]}.collect{|zm| zm[:zone]}[0]
+      end
+
+      def self.AvailabilityZone region, zone
+        "#{region}#{@@zone_map.select{|zm| zm[:zone] == zone}.collect{|zm| zm[:az]}[0]}"
+      end
+
     end
   end
 end
