@@ -26,15 +26,9 @@ module PuppetX
         end
       end
 
-      class MultipleMatchesError < NotFoundError
+      class MultipleMatchesError < StandardError
         def initialize(vpc)
           super("Multiple possible Vpc #{vpc} were found.  Not safe to continue")
-        end
-      end
-
-      class VpcNotFoundError  <  StandardError
-        def initialize(vpc_name)
-          super("Vpc #{vpc_name} was not found.")
         end
       end
 

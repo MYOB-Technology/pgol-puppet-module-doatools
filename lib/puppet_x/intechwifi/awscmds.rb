@@ -30,23 +30,12 @@ module PuppetX
         #  will need to obtain the vpcid from vpc name.  As an optimisation, we cache the last answer.
         #
 
-        tags = []
-        region = nil
         result = nil
-
 
         result = @vpc_tag_cache[:value] unless @vpc_tag_cache[:key] != name
 
         if result == nil
-          regions.each{ |r|
-            output = aws_command.call('ec2', 'describe-tags', '--filters', 'Name=resource-type,Values=vpc', 'Name=key,Values=Environment', "Name=value,Values=#{name}", '--region', r)
-            JSON.parse(output)["Tags"].each{|t| tags << t; region = r }
-          }
-
-          raise PuppetX::IntechWIFI::Exceptions::VpcNotFoundError, name if tags.length == 0
-          raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if tags.length > 1
-
-          result =  {:tag => tags[0], :region => region }
+          result = AwsCmds.find_tag(regions, "vpc", "Name", "value", name, &aws_command)
           @vpc_tag_cache = { :key => name, :value => result}
         end
         result

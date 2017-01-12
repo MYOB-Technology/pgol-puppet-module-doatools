@@ -73,7 +73,6 @@ Puppet::Type.newtype(:vpc) do
   end
 
   newproperty(:is_default) do
-    defaultto :false
   end
 
 end

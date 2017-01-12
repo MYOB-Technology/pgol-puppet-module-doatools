@@ -80,7 +80,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
     true
 
-  rescue PuppetX::IntechWIFI::Exceptions::VpcNotFoundError => e
+  rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     debug(e)
     false
 
@@ -95,7 +95,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     if tags
       tags.each do |tag|
         if tag["Key"] == "Name"
-          fail("VPC name tag value=#{tag["Value"]} does not match name=#{resource[:name]}.") unless tag['Value'] == "#{resource[:name]}_vpc"
+          fail("VPC name tag value=#{tag["Value"]} does not match name=#{resource[:name]}.") unless tag['Value'] == "#{resource[:name]}"
         end
         if tag["Key"] == "Environment"
           @property_hash[:environment] = tag["Value"]
