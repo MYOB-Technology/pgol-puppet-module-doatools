@@ -8,13 +8,32 @@ define doatools::network (
     label => "",
     cidr => $vpc_cidr,
     public_ip => true
-  }]
+  }],
+  $internet_access=true
 ){
   vpc { $name :
-    ensure => $ensure,
-    region => $region,
-    cidr => $vpc_cidr,
+    ensure      => $ensure,
+    region      => $region,
+    cidr        => $vpc_cidr,
     environment => $environment,
+  }
+
+  if $internet_access == true {
+    internet_gateway { $name:
+      ensure => $ensure,
+      region => $region,
+      vpc    => $name,
+    }
+
+    if $ensure == absent {
+      Internet_gateway[$name] -> Vpc[$name]
+    }
+
+  }else {
+    internet_gateway { $name:
+      ensure => absent,
+      region => $region,
+    }
   }
 
   $zones.each |$i, $z | {

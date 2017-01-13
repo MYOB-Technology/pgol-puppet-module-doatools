@@ -56,8 +56,6 @@ Puppet::Type.type(:subnet).provide(:awscli) do
   end
 
   def exists?
-    result = false
-
     #
     #  If the puppet manifest is delcaring the existance of a subnet then we know its region.
     #
@@ -108,7 +106,6 @@ Puppet::Type.type(:subnet).provide(:awscli) do
     @property_hash[:region] = region
     @property_hash[:cidr] = subnet["CidrBlock"]
     @property_hash[:vpcid] = subnet["VpcId"]
-    @property_hash[:environment] = resource[:environment]
     @property_hash[:availability_zone] = PuppetX::IntechWIFI::Constants.ZoneName subnet["AvailabilityZone"]
     @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(subnet["MapPublicIpOnLaunch"])
 
