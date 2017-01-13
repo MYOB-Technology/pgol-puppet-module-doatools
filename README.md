@@ -8,10 +8,10 @@ and down AWS application stacks.
 
 * vpc
 * subnet
-* _internet gateway_
+* internet gateway
 * _network access control list_
 * _security group_
-
+* _route_table_
 
 
 ###  Supported AWS EC2 Components
