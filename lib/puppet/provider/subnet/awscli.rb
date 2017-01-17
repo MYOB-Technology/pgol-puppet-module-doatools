@@ -90,8 +90,8 @@ Puppet::Type.type(:subnet).provide(:awscli) do
     false
   end
 
-  def extract_values(region, subnet)
-    tags = subnet["Tags"]
+  def extract_values(region, data)
+    tags = data["Tags"]
 
     if tags
       tags.each do |tag|
@@ -104,10 +104,10 @@ Puppet::Type.type(:subnet).provide(:awscli) do
       end
     end
     @property_hash[:region] = region
-    @property_hash[:cidr] = subnet["CidrBlock"]
-    @property_hash[:vpcid] = subnet["VpcId"]
-    @property_hash[:availability_zone] = PuppetX::IntechWIFI::Constants.ZoneName subnet["AvailabilityZone"]
-    @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(subnet["MapPublicIpOnLaunch"])
+    @property_hash[:cidr] = data["CidrBlock"]
+    @property_hash[:vpcid] = data["VpcId"]
+    @property_hash[:availability_zone] = PuppetX::IntechWIFI::Constants.ZoneName data["AvailabilityZone"]
+    @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(data["MapPublicIpOnLaunch"])
 
     @property_hash[:vpc] = PuppetX::IntechWIFI::AwsCmds.find_name_by_id(region, "vpc", @property_hash[:vpcid]) do | *arg |
       awscli(*arg)
