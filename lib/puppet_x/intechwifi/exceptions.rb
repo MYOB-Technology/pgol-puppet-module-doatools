@@ -38,6 +38,12 @@ module PuppetX
         end
       end
 
+      class ProtocolFormatError < StandardError
+        def initialize(data)
+          super("Failed to obtain Network protocol number from '#{data}'.")
+        end
+      end
+
     end
   end
 end

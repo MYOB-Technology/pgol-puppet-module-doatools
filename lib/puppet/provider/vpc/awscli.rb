@@ -46,6 +46,10 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     info("vpc #{resource[:name]} has a default route table #{route_id}")
     awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', route_id, '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
 
+    sg_id = JSON.parse(awscli('ec2', 'describe-security-groups', '--region', resource[:region], '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}", "Name=group-name,Values=default"))["SecurityGroups"][0]["GroupId"]
+    info("vpc #{resource[:name]} has a default security group #{sg_id}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', sg_id, '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+
     @property_hash[:ensure] = :present
 
   end

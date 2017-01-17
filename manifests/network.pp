@@ -36,6 +36,23 @@ define doatools::network (
     }
   }
 
+  # Models the default security group.
+  if $ensure == present {
+    security_group { "${name}":
+      ensure      => $ensure,
+      region      => $region,
+      vpc         => $name,
+      environment => $environment,
+      in          => [
+        'all||cidr|0.0.0.0/0',
+      ],
+      out         => [
+        'all||cidr|0.0.0.0/0'
+      ],
+    }
+  }
+
+
   $zones.each |$i, $z | {
     if $z["availability"] != undef {
       $azs = $z["availability"] 
