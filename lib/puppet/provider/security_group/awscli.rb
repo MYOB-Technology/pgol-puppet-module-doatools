@@ -103,8 +103,12 @@ Puppet::Type.type(:security_group).provide(:awscli) do
       end
     end
     @property_hash[:vpcid] = data["VpcId"]
-    @property_hash[:in] = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(data["IpPermissions"])
-    @property_hash[:out] = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(data["IpPermissionsEgress"])
+    @property_hash[:in] = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(data["IpPermissions"], region) do | *arg |
+      awscli(*arg)
+    end
+    @property_hash[:out] = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(data["IpPermissionsEgress"], region) do | *arg |
+      awscli(*arg)
+    end
     @property_hash[:description] = data["Description"]
     begin
       @property_hash[:vpc] = PuppetX::IntechWIFI::AwsCmds.find_name_by_id(region, "vpc", @property_hash[:vpcid]) do | *arg |
@@ -134,6 +138,14 @@ Puppet::Type.type(:security_group).provide(:awscli) do
       args << ["--port", data[1]] if data[1] and data[1].length > 0
       args << ["--cidr", data[3]] if data[2] == "cidr"
 
+      if data[2] == "sg"
+        name = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(region, 'security-group', data[3]) do | *arg |
+          awscli(*arg)
+        end
+
+        args << ["--source-group", name]
+      end
+
       awscli(args.flatten)
 
     }
@@ -143,7 +155,13 @@ Puppet::Type.type(:security_group).provide(:awscli) do
       args = [ "ec2", remove, "--region", region, "--group-id", @property_hash[:sgid], "--protocol", data[0] ]
       args << ["--port", data[1]] if data[1] and data[1].length > 0
       args << ["--cidr", data[3]] if data[2] == "cidr"
+      if data[2] == "sg"
+        name = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(region, 'security-group', data[3]) do | *arg |
+          awscli(*arg)
+        end
 
+        args << ["--source-group", name]
+      end
       awscli(args.flatten)
     }
   end

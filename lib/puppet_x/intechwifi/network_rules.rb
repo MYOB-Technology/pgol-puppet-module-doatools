@@ -15,21 +15,22 @@
 
 require 'json'
 require 'puppet_x/intechwifi/exceptions'
+require 'puppet_x/intechwifi/awscmds'
 
 module PuppetX
   module IntechWIFI
     module Network_Rules
 
-      def self.AwsToPuppetString(data)
-        result = data.map{|egress|
+      def self.AwsToPuppetString(data, region, &awscmd)
+        result = data.map{|gress|
             # Convert the protocol.
-            protocol = self.IpProtocolToString(egress["IpProtocol"])
+            protocol = self.IpProtocolToString(gress["IpProtocol"])
 
             #  Convert the location.
-            locations = self.FormatLocation egress
+            locations = self.FormatLocation gress, region, &awscmd
 
             #  Convert the ports.
-            ports = self.FormatPorts egress
+            ports = self.FormatPorts gress
 
             locations.map{|location| "#{protocol}|#{ports}|#{location}"}
         }.flatten().sort()
@@ -47,14 +48,11 @@ module PuppetX
 
 
 
-      def self.FormatLocation data
-        if data["IpRanges"].length > 0
-          self.FormatLocationFromIpRanges data["IpRanges"]
-        # elsif data["UserIdGroupPairs"].length > 0
-        #  self.FormatLocationFromGroupPairs data["UserIdGroupPairs"]
-        else
-          []
-        end
+      def self.FormatLocation data, region, &awscmd
+        result = []
+        result << self.FormatLocationFromIpRanges(data["IpRanges"]) if data["IpRanges"].length > 0
+        result << self.FormatLocationFromGroupPairs(data["UserIdGroupPairs"], region, &awscmd)  if data["UserIdGroupPairs"].length > 0
+        result.flatten
       end
 
       def self.FormatPorts data
@@ -75,11 +73,14 @@ module PuppetX
         source.map{|cidr| "cidr|#{cidr['CidrIp']}"}
       end
 
-      #def self.FormatLocationUserGroupPairs source, region, &aws_command
+      def self.FormatLocationFromGroupPairs source, region, &awscmd
         #  Yeah, nice weather isnt it?  Lets solve this problem later.
-        # sg_name = PuppetX::IntechWIFI::AwsCmds.find_name_by_id region, 'security-group', source, &aws_command
-      #  "sg{}"
-      #end
+        source.map{|location|
+          location_sgid = location['GroupId']
+          sg_name =  PuppetX::IntechWIFI::AwsCmds.find_name_by_id(region, 'security-group', location_sgid, &awscmd)
+          "sg|#{sg_name}"
+        }
+      end
 
     end
 
