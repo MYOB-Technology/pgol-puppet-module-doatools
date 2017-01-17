@@ -9,7 +9,11 @@ define doatools::network (
     cidr => $vpc_cidr,
     public_ip => true
   }],
-  $internet_access=true
+  $internet_access=true,
+  $default_access = {
+    ingress => [ "all||sg|${name}" ],
+    egress  => [ "all||sg|${name}" ],
+  },
 ){
   vpc { $name :
     ensure      => $ensure,
@@ -43,12 +47,8 @@ define doatools::network (
       region      => $region,
       vpc         => $name,
       environment => $environment,
-      in          => [
-        'all||cidr|0.0.0.0/0',
-      ],
-      out         => [
-        'all||cidr|0.0.0.0/0'
-      ],
+      in          => $default_access['ingress'],
+      out         => $default_access['egress'],
     }
   }
 
