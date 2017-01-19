@@ -15,6 +15,7 @@
 
 require 'json'
 require 'puppet_x/intechwifi/exceptions'
+require 'puppet_x/intechwifi/autoscaling_rules'
 
 module PuppetX
   module IntechWIFI
@@ -64,6 +65,19 @@ module PuppetX
         {:tag => tags[0], :region => region }
       end
 
+      def AwsCmds.find_launch_configuration_by_name( regions, name, &aws_command)
+        lcs = []
+        region = nil
+        regions.each{ |r|
+          output = JSON.parse(aws_command.call('autoscaling', 'describe-launch-configurations', '--region', r))
+          lcs << output["LaunchConfigurations"].select{|l| PuppetX::IntechWIFI::Autoscaling_Rules.is_valid_lc_name?(name, l['LaunchConfigurationName'] )}.reduce([]){|memo, lc| memo << lc }
+        }
+        result = lcs.flatten
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if lcs.length > 1  #  matches in more than one region.
+
+        result.max { |a, b| a["LaunchConfigurationName"]  <=> b["LaunchConfigurationName"]}
+      end
 
 
     end

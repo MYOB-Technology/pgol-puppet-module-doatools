@@ -61,6 +61,13 @@ module PuppetX
         "#{region}#{@@zone_map.select{|zm| zm[:zone] == zone}.collect{|zm| zm[:az]}[0]}"
       end
 
+      @@OS_Description_Map = [
+          { :label => 'windows2012r2', :description => 'Microsoft Windows Server 2012 R2 RTM 64-bit Locale English AMI provided by Amazon'},
+          { :label => 'windows2016', :description => ''},
+          { :label => 'centos7', :description => ''},
+          { :label => 'amzn-linux', :description => ''},
+      ]
+
     end
   end
 end
