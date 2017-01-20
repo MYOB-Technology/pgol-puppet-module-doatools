@@ -79,7 +79,20 @@ module PuppetX
         result.max { |a, b| a["LaunchConfigurationName"]  <=> b["LaunchConfigurationName"]}
       end
 
+      def AwsCmds.find_autoscaling_by_name( regions, name, &aws_command)
+        result = regions.map{ |r|
+          { :region => r, :data => JSON.parse(aws_command.call('autoscaling', 'describe-auto-scaling-groups', '--region', r, "--auto-scaling-group-names", name))["AutoScalingGroups"]}
+        }.select{ |a| a[:data].length != 0 }.flatten
 
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  matches in more than one region.
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
+
+        {
+            :region => result[0][:region],
+            :data   => result[0][:data][0],
+        }
+      end
     end
   end
 end

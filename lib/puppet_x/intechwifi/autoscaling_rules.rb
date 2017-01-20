@@ -27,6 +27,11 @@ module PuppetX
         !(/^#{basename}_=[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]=$/ =~ potential_match).nil?
       end
 
+      def self.base_lc_name(name)
+        result = name
+        result = name.slice(0, name.length - 6) if (/_=[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]=$/ =~ name)
+      end
+
       def self.index(name)
         name[-4..-2].split("").map{|c| extract_code_value(c)}.reduce(0){ |memo, v| memo * 62 + v }
       end
