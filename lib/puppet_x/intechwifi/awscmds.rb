@@ -93,6 +93,36 @@ module PuppetX
             :data   => result[0][:data][0],
         }
       end
+
+      def AwsCmds.find_iam_profile_by_name(name, scope, &aws_command)
+        result = JSON.parse(aws_command.call('iam', 'list-policies', "--scope", scope))["Policies"].select{|p| p["PolicyName"] == name}
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+
+        result[0]
+      end
+
+      def AwsCmds.find_iam_profile_policy(arn, &aws_command)
+        version_id = JSON.parse(aws_command.call('iam', 'list-policy-versions', "--policy-arn", arn))["Versions"].select{|p|
+          p["IsDefaultVersion"]
+        }.map{|p| p["VersionId"] }
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, arn if version_id.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, arn if version_id.length > 1  #  Multiple matches
+
+        JSON.parse(aws_command.call('iam', 'get-policy-version', "--policy-arn", arn, "--version-id", version_id[0]))["PolicyVersion"]
+      end
+
+      def AwsCmds.find_iam_role_by_name(name, &aws_command)
+        result = JSON.parse(aws_command.call('iam', 'list-roles'))["Roles"].select{|p| p["RoleName"] == name}
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+
+        result[0]
+      end
+
     end
   end
 end

@@ -68,6 +68,20 @@ module PuppetX
           { :label => 'amzn-linux', :description => ''},
       ]
 
+      @@principal_map = [
+          {:key => 'ec2', :value => "ec2.amazonaws.com" },
+      ]
+
+      def self.PrincipalKey value
+        @@principal_map.select{|p| p[:value] == value}[0][:key]
+      end
+
+      def self.PrincipalValue key
+        @@principal_map.select{|p| p[:key] == key}[0][:value]
+      end
+
+
+
     end
   end
 end
