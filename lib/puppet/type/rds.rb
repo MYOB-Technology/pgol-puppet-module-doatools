@@ -34,5 +34,12 @@ Puppet::Type.newtype(:rds) do
     end
   end
 
+  newproperty(:engine) do
+    validate do |value|
+      engines = PuppetX::IntechWIFI::Constants.RDS_Engines
+      fail("Unsupported AWS RDS Engine #{value} we support the following engines #{engines}") unless engines.include? value
+    end
+  end
+
 end
 
