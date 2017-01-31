@@ -25,6 +25,18 @@ Puppet::Type.newtype(:rds) do
     end
   end
 
+  newparam(:master_username) do
+
+  end
+
+  newparam(:master_password) do
+
+  end
+
+  newparam(:database) do
+
+  end
+
   #  read only properties...
   newproperty(:region) do
     defaultto 'us-east-1'
@@ -34,11 +46,76 @@ Puppet::Type.newtype(:rds) do
     end
   end
 
-  newproperty(:engine) do
+  newparam(:engine) do
     validate do |value|
       engines = PuppetX::IntechWIFI::Constants.RDS_Engines
       fail("Unsupported AWS RDS Engine #{value} we support the following engines #{engines}") unless engines.include? value
     end
+  end
+
+  newproperty(:engine_version) do
+
+  end
+
+  newproperty(:db_subnet_group) do
+
+  end
+
+  newproperty(:maintenance_window) do
+
+  end
+
+  newproperty(:backup_window) do
+
+  end
+
+  newproperty(:backup_retention_count) do
+
+  end
+
+  newproperty(:instance_type) do
+
+  end
+
+  newproperty(:security_groups, :array_matching => :all) do
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
+
+
+  newproperty(:multi_az) do
+
+  end
+
+  newproperty(:storage_type) do
+
+  end
+
+  newproperty(:storage_size) do
+    munge {|value| Integer(value)}
+  end
+
+  newproperty(:license_model) do
+    validate do |value|
+      licenses = PuppetX::IntechWIFI::Constants.License_Models
+      fail("Unsupported AWS RDS Licence model #{value} we support the following models #{licenses}") unless licenses.include? value
+    end
+  end
+
+  newproperty(:public_access) do
+    defaultto :disabled
+    validate do |value|
+      fail("publicly_available valid options are [enabled|disabled] and not '#{value}'") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
+    end
+    munge do |value|
+      PuppetX::IntechWIFI::Logical.logical(value)
+    end
+  end
+
+  newproperty(:iops) do
+    munge {|value| Integer(value)}
+
   end
 
 end

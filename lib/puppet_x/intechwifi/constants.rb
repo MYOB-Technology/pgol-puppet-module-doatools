@@ -99,6 +99,16 @@ module PuppetX
         @@rds_engines
       end
 
+      @@license_models = [
+          "license-included",
+          "bring-your-own-license",
+          "general-public-license"
+      ]
+
+      def self.License_Models
+        @@license_models
+      end
+
     end
   end
 end
