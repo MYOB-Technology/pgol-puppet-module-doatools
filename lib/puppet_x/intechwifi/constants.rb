@@ -80,7 +80,34 @@ module PuppetX
         @@principal_map.select{|p| p[:key] == key}[0][:value]
       end
 
+      @@rds_engines = [
+          "mysql",
+          "mariadb",
+          "oracle-se1",
+          "oracle-se2",
+          "oracle-se",
+          "oracle-ee",
+          "sqlserver-ee",
+          "sqlserver-se",
+          "sqlserver-ex",
+          "sqlserver-web",
+          "postgres",
+          "aurora"
+      ]
 
+      def self.RDS_Engines
+        @@rds_engines
+      end
+
+      @@license_models = [
+          "license-included",
+          "bring-your-own-license",
+          "general-public-license"
+      ]
+
+      def self.License_Models
+        @@license_models
+      end
 
     end
   end

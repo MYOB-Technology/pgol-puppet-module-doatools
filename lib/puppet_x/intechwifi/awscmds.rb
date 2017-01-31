@@ -123,6 +123,26 @@ module PuppetX
         result[0]
       end
 
+      def AwsCmds.find_rds_by_name(regions, name, &aws_command)
+        result = regions.map{ |r|
+          {
+              :region => r,
+              :data => JSON.parse(aws_command.call('rds', 'describe-db-instances', '--region', r))["DBInstances"].select{ |db|
+                db["DBInstanceIdentifier"] == name
+              }
+          }
+        }.select{ |a| a[:data].length != 0}.flatten
+
+
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
+
+        result[0]
+      end
+
+
     end
   end
 end
