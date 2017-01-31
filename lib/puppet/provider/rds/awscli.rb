@@ -20,6 +20,7 @@ require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/awscmds'
 require 'puppet_x/intechwifi/exceptions'
 require 'puppet_x/intechwifi/network_rules'
+require 'puppet_x/intechwifi/rds'
 
 Puppet::Type.type(:rds).provide(:awscli) do
   desc "Using the aws command line python application to implement changes"
@@ -42,25 +43,31 @@ Puppet::Type.type(:rds).provide(:awscli) do
     # Add in any extra args as needed....
     args << @property_values.map{ |x| args_value(@resource, x[0], x[1]) }.select{|x| !x.nil?}
     args << @property_flags.map{|x| args_flag(@resource, x[0], x[1], x[2])}.select{|x| !x.nil?}
-    args << @property_true_flags.map{|x| args_flag_true(@resource, x[0], x[1])}.select{|x| !x.nil?}
-
 
     properties = JSON.parse(awscli(args.flatten))["DBInstance"]
-    last_status = nil
-    while properties["DBInstanceStatus"] != "available"
-      if properties["DBInstanceStatus"] != last_status
-        notice(properties["DBInstanceStatus"])
-        last_status=properties["DBInstanceStatus"]
-      end
-      sleep(5)
-      result = JSON.parse(awscli('rds', 'describe-db-instances', '--region', resource[:region],  '--db-instance-identifier', resource[:name]))["DBInstances"]
-      fail("database creation does not appear to have started.") unless result.length == 1
-      properties = result[0]
-    end
+
+    monitor resource[:region], resource[:name]
+
+    notice("database endpoint is #{PuppetX::IntechWIFI::RDS.find_endpoint(resource[:region], resource[:name]) { |*arg| awscli(*arg)}[:address]}")
+
   end
 
   def destroy
+    args = [
+        'rds', 'delete-db-instance',
+        '--region', @property_hash[:region],
+        '--db-instance-identifier', @property_hash[:name],
+        '--skip-final-snapshot'
+    ]
+    awscli(args)
 
+    #  Wait for RDS to be deleted.
+    monitor @property_hash[:region], @property_hash[:name]
+
+  rescue Exception => e
+    #  This is hopefully becuase the RDS instance is deleted.
+    debug("We have probably deleted the RDS database.  The following error message should hopefully confirm it.")
+    debug(e)
   end
 
   def exists?
@@ -82,6 +89,8 @@ Puppet::Type.type(:rds).provide(:awscli) do
 
     @property_hash[:region] = data[:region]
     data = data[:data][0]
+
+    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if data ["DBInstanceStatus"] == "deleting"
     @property_hash[:public_access] = PuppetX::IntechWIFI::Logical.logical(data["PubliclyAccessible"])
     @property_hash[:name] = data["DBInstanceIdentifier"]
     @property_hash[:engine] = data["Engine"]
@@ -113,12 +122,13 @@ Puppet::Type.type(:rds).provide(:awscli) do
   end
 
   def flush
-    if @property_flush
+    if @property_flush and @property_flush.length > 0
       args = [
           'rds', 'modify-db-instance',
           '--region', @property_hash[:region],
           '--db-instance-identifier', @property_hash[:name],
-          '--apply-immediately'
+          '--apply-immediately',
+          '--allow-major-version-upgrade'
       ]
 
       # Security groups need translating
@@ -129,32 +139,11 @@ Puppet::Type.type(:rds).provide(:awscli) do
       # Add in any extra args as needed....
       args << @property_values.map{ |x| args_value(@property_flush, x[0], x[1]) }.select{|x| !x.nil?}
       args << @property_flags.map{|x| args_flag(@property_flush, x[0], x[1], x[2])}.select{|x| !x.nil?}
-      args << @property_true_flags.map{|x| args_flag_true(@property_flush, x[0], x[1])}.select{|x| !x.nil?}
 
       awscli(args.flatten)
 
-      #  First we wait up to 45 seconds for the modifications to start...
-      properties = nil
-      time = 0
-      while time < 45
-        sleep(2)
-        properties = JSON.parse(awscli('rds', 'describe-db-instances', '--region', resource[:region],  '--db-instance-identifier', resource[:name]))["DBInstances"][0]
-        break if properties["DBInstanceStatus"] != "available"
-        time += 2
-      end
+      monitor resource[:region], resource[:name]
 
-      #  Then we report on statuses until the status is available.
-      last_status = nil
-      properties = nil
-      while true
-        sleep(2)
-        properties = JSON.parse(awscli('rds', 'describe-db-instances', '--region', resource[:region],  '--db-instance-identifier', resource[:name]))["DBInstances"][0]
-        if properties["DBInstanceStatus"] != last_status
-          notice(properties["DBInstanceStatus"])
-          last_status=properties["DBInstanceStatus"]
-        end
-        break if properties["DBInstanceStatus"] == "available"
-      end
     end
   end
 
@@ -163,11 +152,37 @@ Puppet::Type.type(:rds).provide(:awscli) do
   end
 
   def args_flag(hash, flag_true, flag_false, key)
-    hash[key].nil? ? [] : hash[key] ? flag_true : flag_false
+    hash[key].nil? ? [] : (PuppetX::IntechWIFI::Logical.logical_true(hash[key]) ? flag_true : flag_false)
   end
 
   def args_flag_true(hash, flag_true, key)
     hash[key].nil? ? [] : hash[key] ? flag_true : nil
+  end
+
+  def monitor(region, name, end_status="available", timeout=2700)
+    #  First we wait up to 45 seconds for the modifications to start...
+    properties = nil
+    time = 0
+    while time < 45
+      sleep(2)
+      properties = JSON.parse(awscli('rds', 'describe-db-instances', '--region', region,  '--db-instance-identifier', name))["DBInstances"][0]
+      break if properties["DBInstanceStatus"] != "available"
+      time += 2
+    end
+
+    #  Then we report on statuses until the status is available.
+    last_status = nil
+    properties = nil
+    time = 0
+    while time < timeout
+      sleep(2)
+      properties = JSON.parse(awscli('rds', 'describe-db-instances', '--region', region,  '--db-instance-identifier', name))["DBInstances"][0]
+      if properties["DBInstanceStatus"] != last_status
+        notice("Status is '#{properties['DBInstanceStatus']}'")
+        last_status=properties["DBInstanceStatus"]
+      end
+      break if properties["DBInstanceStatus"] == end_status
+    end
   end
 
 
@@ -192,10 +207,6 @@ Puppet::Type.type(:rds).provide(:awscli) do
     @property_flags = [
         ['--publicly-accessible', '--no-publicly-accessible', :public_access],
         ['--multi-az', '--no-multi-az', :multi_az]
-    ]
-
-    @property_true_flags = [
-        ['--allow-major-version-upgrade',                  :engine_version]
     ]
 
   end
