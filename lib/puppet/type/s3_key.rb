@@ -15,8 +15,10 @@
 
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
+require 'puppet_x/intechwifi/s3'
 
 Puppet::Type.newtype(:s3_key) do
+
   ensurable
 
   newparam(:name, :namevar => true) do
@@ -30,6 +32,22 @@ Puppet::Type.newtype(:s3_key) do
 
   newproperty(:content) do
 
+  end
+
+  newproperty(:grants, :array_matching => :all) do
+    validate do |value|
+      #  validate value matches rules.
+    end
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
+
+  newproperty(:owner) do
+    validate do |value|
+      fail("the owner property should be 'acc|<name>|<id>'") unless value.split('|').length == 3
+      fail("the owner property should be 'acc|<name>|<id>'") unless value.split('|')[0] == 'acc'
+    end
   end
 
 end
