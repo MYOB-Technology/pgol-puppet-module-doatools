@@ -20,4 +20,47 @@ require 'puppet_x/intechwifi/s3'
 Puppet::Type.newtype(:s3_bucket) do
   ensurable
 
+  newparam(:name, :namevar => true) do
+    validate do |value|
+      fail("AWS recomend bucket names do not have upper case letters.") unless value.downcase == value
+      fail("AWS recomend bucket names do not contain periods.") unless value.index('.').nil?
+      fail("Bucket names must be between 3 and 63 characters long.") unless value.length >= 3 and value.length <= 63
+      fail("Bucket names must not be a valid IP address.") unless !(/^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}/ =~ value)
+    end
+  end
+
+  #  read only properties...
+  newproperty(:region) do
+    defaultto 'us-east-1'
+    validate do |value|
+      regions = PuppetX::IntechWIFI::Constants.Regions
+      fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
+    end
+  end
+
+
+  newproperty(:policy, :array_matching => :all) do
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
+
+  newproperty(:grants, :array_matching => :all) do
+    validate do |value|
+      #  validate value matches rules.
+    end
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
+
+  newproperty(:cors, :array_matching => :all) do
+    validate do |value|
+      #  validate value matches rules.
+    end
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
+
 end
