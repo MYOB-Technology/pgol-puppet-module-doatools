@@ -50,5 +50,9 @@ Puppet::Type.newtype(:s3_key) do
     end
   end
 
+  newproperty(:metadata) do
+
+  end
+
 end
 

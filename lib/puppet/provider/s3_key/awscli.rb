@@ -24,7 +24,7 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
   def create
     pair = PuppetX::IntechWIFI::S3.name_to_bucket_key_pair(@resource[:name])
 
-    set_s3_content(pair[:bucket], pair[:key], @resource[:content])
+    set_s3_content(pair[:bucket], pair[:key], @resource[:content], @resource[:metadata])
 
     @property_hash[:name] = resource[:name]
     @property_hash[:content] = resource[:content]
@@ -33,6 +33,8 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
 
     set_s3_grants(pair[:bucket], pair[:key], @property_hash[:owner], @property_hash[:grants]) if !@property_hash[:grants].nil?
     debug("created object for AWS owner=#{@property_hash[:owner]}")
+
+    print "#{resource[:metadata]}\n"
   end
 
   def destroy
@@ -46,6 +48,7 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
     data = JSON.parse(awscli('s3api', 'head-object', '--bucket', pair[:bucket], '--key', pair[:key]))
     @property_hash[:name] = @resource[:name]
     @property_hash[:content] = get_s3_content(pair[:bucket], pair[:key]) if !@resource[:content].nil? and @resource[:content].length == Integer(data["ContentLength"])
+    @property_hash[:metadata] = data["Metadata"]
 
     acl = JSON.parse(awscli('s3api', 'get-object-acl', '--bucket', pair[:bucket], '--key', pair[:key]))
 
@@ -62,7 +65,10 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
     if @property_flush and @property_flush.length > 0
       pair = PuppetX::IntechWIFI::S3.name_to_bucket_key_pair(@property_hash[:name])
 
-      set_s3_content(pair[:bucket], pair[:key], @property_flush[:content]) if !@property_flush[:content].nil?
+      metadata = @property_flush[:metadata].nil? ? @property_hash[:metadata] : @property_flush[:metadata]
+      content = @property_flush[:content].nil? ? @property_hash[:content] : @property_flush[:content]
+
+      set_s3_content(pair[:bucket], pair[:key], content, metadata) if !@property_flush[:content].nil? or !@property_flush[:metadata].nil?
       if !@property_flush[:grants].nil? or !@property_flush[:owner].nil?
         #  We need to set the new owner / grants...
         owner = @property_flush[:owner].nil? ? @property_hash[:owner] : @property_flush[:owner]
@@ -81,11 +87,13 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
     ""
   end
 
-  def set_s3_content(bucket, key, content)
+  def set_s3_content(bucket, key, content, metadata)
     file = Tempfile.open(['s3api', '.s3api'])
     file << content
     file.close
-    awscli('s3api', 'put-object', '--bucket', bucket, '--key',  key, '--body', file.path)
+    args = ['s3api', 'put-object', '--bucket', bucket, '--key',  key, '--body', file.path]
+    args << ['--metadata', metadata.to_json] if !metadata.nil?
+    awscli(args.flatten)
   end
 
   def set_s3_grants(bucket, key, owner, grants)
@@ -116,5 +124,8 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
     @property_flush[:owner] = value
   end
 
+  def metadata=(value)
+    @property_flush[:metadata] = value
+  end
 
 end
