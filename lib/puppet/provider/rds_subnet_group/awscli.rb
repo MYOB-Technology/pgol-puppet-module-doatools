@@ -17,4 +17,41 @@ Puppet::Type.type(:rds_subnet_group).provide(:awscli) do
   desc "Using the aws command line python application to implement changes"
   commands :awscli => "aws"
 
+  def create
+
+  end
+
+  def destroy
+
+  end
+
+  def exists?
+
+  end
+
+  def flush
+
+  end
+
+  def initialize(value={})
+    super(value)
+    @property_flush = {}
+  end
+
+  mk_resource_methods
+
+  def vpc=(value)
+    @property_flush[:vpc] = value
+  end
+
+  def region=(value)
+    @property_flush[:region] = value
+  end
+
+  def subnets=(value)
+    @property_flush[:subnets] = value
+  end
+
+
+
 end
