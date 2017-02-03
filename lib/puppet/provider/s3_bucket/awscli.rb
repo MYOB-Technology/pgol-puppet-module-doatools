@@ -31,9 +31,23 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
 
     @property_hash[:name] = @resource[:name]
     @property_hash[:region] = @resource[:region]
+    @property_hash[:grants] = resource[:grants] if !resource[:grants].nil?
 
     #  Do we need to set a policy?
     awscli('s3api', 'put-bucket-policy','--bucket', @resource[:name], '--policy', {'Statement' => @resource[:policy]}.to_json) if !@resource[:policy].nil? and @resource[:policy].length > 0
+
+    if !@property_hash[:grants].nil? and @property_hash[:grants].length > 0
+      print "owner=#{@account}\n"
+      set_policy_args = [
+          's3api',
+          'put-bucket-acl',
+          '--bucket', @property_hash[:name],
+          '--access-control-policy', policy_json(@account, @property_hash[:grants])
+      ]
+      print "set_policy_args=#{set_policy_args}\n"
+      awscli(set_policy_args)
+    end
+
 
 
   end
@@ -55,13 +69,19 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
     ]
 
     data = JSON.parse(awscli(args.flatten))
-    @account = data["Owner"]
+    @account = PuppetX::IntechWIFI::S3.owner_to_property(data["Owner"])
+    owner_grant = PuppetX::IntechWIFI::S3.owner_as_grant_property(data["Owner"])
 
     raise PuppetX::IntechWIFI::Exceptions::NotFoundError, @resource[:name] if data["Buckets"].select{|x| x["Name"] == @resource[:name]}.length != 1
 
     @property_hash[:name] = @resource[:name]
     @property_hash[:region] = @resource[:region]
     @property_hash[:policy] = get_policy(@resource[:name], @resource[:region])
+
+    acl = JSON.parse(awscli('s3api', 'get-bucket-acl', '--bucket', @property_hash[:name]))
+
+    @property_hash[:grants] = acl["Grants"].map{|g| PuppetX::IntechWIFI::S3.grant_json_to_property(g)}.select{|x| x != owner_grant}
+    @property_hash[:owner] = PuppetX::IntechWIFI::S3.owner_to_property(@account)
 
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError
@@ -72,6 +92,16 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
     if @property_flush and @property_flush.length > 0
       awscli('s3api', 'put-bucket-policy','--bucket', @property_hash[:name], '--policy', {'Statement' => @property_flush[:policy]}.to_json) if !@property_flush[:policy].nil? and @property_flush[:policy].length > 0
       awscli('s3api', 'delete-bucket-policy','--bucket', @property_hash[:name]) if !@property_flush[:policy].nil? and @property_flush[:policy].length == 0
+
+      if !@property_flush[:grants].nil?
+        set_policy_args = [
+            's3api',
+            'put-bucket-acl',
+            '--bucket', @property_hash[:name],
+            '--access-control-policy', policy_json(@account, @property_flush[:grants])
+        ]
+        awscli(set_policy_args)
+      end
 
     end
   end
@@ -116,6 +146,19 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
     []
   end
 
-
+  def policy_json(owner, grants)
+    owner_hash = PuppetX::IntechWIFI::S3.owner_to_hash(owner)
+    grants.length > 0 ? PuppetX::IntechWIFI::S3.set_s3_grants_policy(owner, grants) : {
+        :Grants => [{
+            :Grantee => {
+                :Type => "CanonicalUser",
+                :DisplayName => owner_hash[:DisplayName],
+                :ID => owner_hash[:ID]
+            },
+            :Permission => "FULL_CONTROL"
+        }],
+        :Owner => owner_hash
+    }.to_json
+  end
 end
 

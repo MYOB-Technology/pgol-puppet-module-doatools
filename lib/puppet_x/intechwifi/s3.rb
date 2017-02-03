@@ -53,6 +53,10 @@ module PuppetX
         end
       end
 
+      def S3.owner_as_grant_property(owner)
+        "acc|#{owner['DisplayName']}|#{owner['ID']}|FULL_CONTROL"
+      end
+
       def S3.grant_property_to_hash(source)
         s = source.split('|')
         {
