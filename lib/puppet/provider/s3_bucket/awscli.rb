@@ -32,23 +32,30 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
     @property_hash[:name] = @resource[:name]
     @property_hash[:region] = @resource[:region]
     @property_hash[:grants] = resource[:grants] if !resource[:grants].nil?
+    @property_hash[:cors] = resource[:cors] if !resource[:cors].nil?
 
     #  Do we need to set a policy?
     awscli('s3api', 'put-bucket-policy','--bucket', @resource[:name], '--policy', {'Statement' => @resource[:policy]}.to_json) if !@resource[:policy].nil? and @resource[:policy].length > 0
 
     if !@property_hash[:grants].nil? and @property_hash[:grants].length > 0
-      print "owner=#{@account}\n"
       set_policy_args = [
           's3api',
           'put-bucket-acl',
           '--bucket', @property_hash[:name],
           '--access-control-policy', policy_json(@account, @property_hash[:grants])
       ]
-      print "set_policy_args=#{set_policy_args}\n"
       awscli(set_policy_args)
     end
 
-
+    if !@property_hash[:cors].nil? and @property_hash[:cors].length > 0
+      set_cors_args = [
+          's3api',
+          'put-bucket-cors',
+          '--bucket', @property_hash[:name],
+          '--cors-configuration', cors_property_to_aws(@property_hash[:cors]).to_json
+      ]
+      awscli(set_cors_args)
+    end
 
   end
 
@@ -83,6 +90,8 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
     @property_hash[:grants] = acl["Grants"].map{|g| PuppetX::IntechWIFI::S3.grant_json_to_property(g)}.select{|x| x != owner_grant}
     @property_hash[:owner] = PuppetX::IntechWIFI::S3.owner_to_property(@account)
 
+    @property_hash[:cors] = get_cors_from_aws(@property_hash[:region], @property_hash[:name])
+
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError
     false
@@ -102,6 +111,28 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
         ]
         awscli(set_policy_args)
       end
+
+      if !@property_flush[:cors].nil? and @property_flush[:cors].length  > 0
+        set_cors_args = [
+            's3api',
+            'put-bucket-cors',
+            '--bucket', @property_hash[:name],
+            '--cors-configuration', cors_property_to_aws(@property_flush[:cors]).to_json
+        ]
+        awscli(set_cors_args)
+      end
+
+      if !@property_flush[:cors].nil? and @property_flush[:cors].length  == 0
+        set_cors_args = [
+            's3api',
+            'delete-bucket-cors',
+            '--bucket', @property_hash[:name]
+        ]
+        awscli(set_cors_args)
+      end
+
+
+
 
     end
   end
@@ -135,8 +166,8 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
   def get_policy(region, bucket)
     args = [
         's3api', 'get-bucket-policy',
-        '--bucket', @resource[:name],
-        '--region', @resource[:region]
+        '--bucket', bucket,
+        '--region', region
     ]
 
     policy = JSON.parse(awscli(args.flatten))
@@ -145,6 +176,19 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
   rescue Exception => e
     []
   end
+
+  def get_cors_from_aws(region, bucket)
+    args = [
+        's3api', 'get-bucket-cors',
+        '--bucket', bucket,
+        '--region', region
+    ]
+
+    cors_aws_to_property(JSON.parse(awscli(args.flatten))["CORSRules"])
+  rescue Exception => e
+    []
+  end
+
 
   def policy_json(owner, grants)
     owner_hash = PuppetX::IntechWIFI::S3.owner_to_hash(owner)
@@ -159,6 +203,26 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
         }],
         :Owner => owner_hash
     }.to_json
+  end
+
+  def cors_aws_to_property(source)
+    source.map {|x|
+      {
+          "verbs" => x["AllowedMethods"].select{|v| ["POST", "PUT", "GET", "HEAD", "DELETE", "*"].include? v}.map{|v| v.downcase}.sort,
+          "origins" => x["AllowedOrigins"].sort
+      }
+    }.sort
+  end
+
+  def cors_property_to_aws(source)
+    {
+        "CORSRules" => source.map do |x|
+          {
+              "AllowedMethods" => x["verbs"].map{|v| v.upcase}.select{|v| ["POST", "PUT", "GET", "HEAD", "DELETE"].include? v},
+              "AllowedOrigins" => x["origins"]
+          }
+        end
+    }
   end
 end
 
