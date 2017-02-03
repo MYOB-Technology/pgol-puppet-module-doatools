@@ -31,10 +31,19 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
     @property_hash[:owner] = !resource[:owner].nil? ? resource[:owner] : PuppetX::IntechWIFI::S3.get_owner_for_bucket(pair[:bucket]) {| *arg | awscli(*arg)}
     @property_hash[:grants] = resource[:grants] if !resource[:grants].nil?
 
-    set_s3_grants(pair[:bucket], pair[:key], @property_hash[:owner], @property_hash[:grants]) if !@property_hash[:grants].nil?
-    debug("created object for AWS owner=#{@property_hash[:owner]}")
 
-    print "#{resource[:metadata]}\n"
+    if !@property_hash[:grants].nil?
+      set_policy_args = [
+        's3api',
+        'put-object-acl',
+        '--bucket', pair[:bucket],
+        '--key', pair[:key],
+        '--access-control-policy', PuppetX::IntechWIFI::S3.set_s3_grants_policy(@property_hash[:owner], @property_hash[:grants])
+      ]
+      awscli(set_policy_args)
+    end
+
+    debug("created object for AWS owner=#{@property_hash[:owner]}")
   end
 
   def destroy
@@ -74,7 +83,14 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
         owner = @property_flush[:owner].nil? ? @property_hash[:owner] : @property_flush[:owner]
         grants = @property_flush[:grants].nil? ? @property_hash[:grants] : @property_flush[:grants]
 
-        set_s3_grants(pair[:bucket], pair[:key], owner, grants)
+        set_policy_args = [
+            's3api',
+            'put-object-acl',
+            '--bucket', pair[:bucket],
+            '--key', pair[:key],
+            '--access-control-policy', PuppetX::IntechWIFI::S3.set_s3_grants_policy(owner, grants)
+        ]
+        awscli(set_policy_args)
       end
     end
   end
@@ -94,15 +110,6 @@ Puppet::Type.type(:s3_key).provide(:awscli) do
     args = ['s3api', 'put-object', '--bucket', bucket, '--key',  key, '--body', file.path]
     args << ['--metadata', metadata.to_json] if !metadata.nil?
     awscli(args.flatten)
-  end
-
-  def set_s3_grants(bucket, key, owner, grants)
-    data = {
-        :Grants => grants.map{|x| PuppetX::IntechWIFI::S3.grant_property_to_hash(x)},
-        :Owner => PuppetX::IntechWIFI::S3.owner_to_hash(owner)
-    }.to_json
-
-    awscli('s3api', 'put-object-acl', '--bucket', bucket, '--key', key, '--access-control-policy', data)
   end
 
   def initialize(value={})

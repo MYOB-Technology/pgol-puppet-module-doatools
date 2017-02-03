@@ -53,6 +53,10 @@ module PuppetX
         end
       end
 
+      def S3.owner_as_grant_property(owner)
+        "acc|#{owner['DisplayName']}|#{owner['ID']}|FULL_CONTROL"
+      end
+
       def S3.grant_property_to_hash(source)
         s = source.split('|')
         {
@@ -97,6 +101,13 @@ module PuppetX
 
       def S3.get_owner_for_bucket(bucket, &aws_command)
         owner_to_property(JSON.parse(aws_command.call('s3api', 'get-bucket-acl', '--bucket', bucket))["Owner"])
+      end
+
+      def S3.set_s3_grants_policy(owner, grants)
+        {
+            :Grants => grants.map{|x| PuppetX::IntechWIFI::S3.grant_property_to_hash(x)},
+            :Owner => PuppetX::IntechWIFI::S3.owner_to_hash(owner)
+        }.to_json
       end
 
 
