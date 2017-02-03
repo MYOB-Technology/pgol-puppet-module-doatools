@@ -19,4 +19,30 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:rds_subnet_group) do
   ensurable
 
+  newparam(:name, :namevar => true) do
+
+  end
+
+  #  read only properties...
+  newproperty(:region) do
+    defaultto 'us-east-1'
+    validate do |value|
+      regions = PuppetX::IntechWIFI::Constants.Regions
+      fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
+    end
+  end
+
+  newproperty(:vpc) do
+
+  end
+
+  newproperty(:subnets, :array_matching => :all) do
+    validate do |value|
+      #  validate value matches rules.
+    end
+
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
 end
