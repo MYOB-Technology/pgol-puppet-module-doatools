@@ -142,6 +142,27 @@ module PuppetX
         result[0]
       end
 
+      def AwsCmds.find_rds_subnet_group_by_name(regions, name, &aws_command)
+        result = regions.map{ |r|
+          {
+              :region => r,
+              :data => JSON.parse(aws_command.call('rds', 'describe-db-subnet-groups', '--region', r, '--db-subnet-group-name', name))["DBSubnetGroups"]
+          }
+        }.select{ |a| a[:data].length != 0}.flatten
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
+
+        print "result=#{result[0]}\n"
+
+        result[0]
+
+      rescue Puppet::ExecutionFailure => e
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
+      end
+
+
 
     end
   end

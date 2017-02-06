@@ -32,10 +32,6 @@ Puppet::Type.newtype(:rds_subnet_group) do
     end
   end
 
-  newproperty(:vpc) do
-
-  end
-
   newproperty(:subnets, :array_matching => :all) do
     validate do |value|
       #  validate value matches rules.
