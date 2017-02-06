@@ -28,7 +28,7 @@ Puppet::Type.type(:rds_subnet_group).provide(:awscli) do
         'rds', 'create-db-subnet-group',
         '--region', @resource[:region],
         '--db-subnet-group-name', @resource[:name],
-        '--db-subnet-group-description', 'description',
+        '--db-subnet-group-description', @resource[:description],
         '--subnet-ids', resource[:subnets].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'subnet', subnet){|*arg| awscli(*arg)} }
     ]
 

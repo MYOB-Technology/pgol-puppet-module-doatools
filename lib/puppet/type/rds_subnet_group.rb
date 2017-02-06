@@ -23,6 +23,10 @@ Puppet::Type.newtype(:rds_subnet_group) do
 
   end
 
+  newparam(:description) do
+    defaultto 'A db_subnet_group managed by puppet.'
+  end
+
   #  read only properties...
   newproperty(:region) do
     defaultto 'us-east-1'
