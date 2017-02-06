@@ -160,6 +160,23 @@ module PuppetX
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
       end
 
+      def AwsCmds.find_load_balancer_by_name(regions, name, &aws_command)
+        result = regions.map{ |r|
+          {
+              :region => r,
+              :data => JSON.parse(aws_command.call('elbv2', 'describe-load-balancers', '--region', r, '--names', name))["LoadBalancers"]
+          }
+        }.select{ |a| a[:data].length != 0}.flatten
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
+
+        result[0]
+
+      rescue Puppet::ExecutionFailure => e
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
+      end
 
 
     end

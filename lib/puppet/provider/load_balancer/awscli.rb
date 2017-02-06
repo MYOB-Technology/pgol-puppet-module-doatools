@@ -19,18 +19,61 @@ require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/awscmds'
 require 'puppet_x/intechwifi/exceptions'
 
-Puppet::Type.type(:launch_configuration).provide(:awscli) do
+Puppet::Type.type(:load_balancer).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
+    args = [
+        'elbv2', 'create-load-balancer',
+        '--region', @resource[:region],
+        '--name', @resource[:name],
+        '--subnets', 'subnet-a6f08a8b', 'subnet-66d4a43d'
+        #'--subnet-ids', resource[:subnets].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'subnet', subnet){|*arg| awscli(*arg)} }
+    ]
+
+    awscli(args.flatten)
+
+    @property_hash[:name] = @resource[:name]
+    @property_hash[:region] = @resource[:region]
+    @property_hash[:subnets] = @resource[:subnets]
 
   end
 
   def destroy
+    args = [
+        'elbv2', 'delete-load-balancer',
+        '--region', @resource[:region],
+        '--load-balancer-arn', @arn
+    ]
+
+    awscli(args.flatten)
 
   end
 
   def exists?
+    #
+    #  If the puppet manifest is delcaring the existance of a VPC then we know its region.
+    #
+    regions = [ resource[:region] ] if resource[:region]
+
+    #
+    #  If we don't know the region, then we have to search each region in turn.
+    #
+    regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
+
+    debug("searching regions=#{regions} for load_balancer=#{resource[:name]}\n")
+
+
+    search_results = PuppetX::IntechWIFI::AwsCmds.find_load_balancer_by_name(regions, resource[:name]) do | *arg |
+      awscli(*arg)
+    end
+
+    @property_hash[:region] = search_results[:region]
+    @property_hash[:name] = resource[:name]
+
+    data = search_results[:data][0]
+    @arn = data["LoadBalancerArn"]
+
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
