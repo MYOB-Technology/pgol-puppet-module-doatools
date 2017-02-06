@@ -154,8 +154,6 @@ module PuppetX
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
 
-        print "result=#{result[0]}\n"
-
         result[0]
 
       rescue Puppet::ExecutionFailure => e
