@@ -27,8 +27,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         'elbv2', 'create-load-balancer',
         '--region', @resource[:region],
         '--name', @resource[:name],
-        '--subnets', 'subnet-a6f08a8b', 'subnet-66d4a43d'
-        #'--subnet-ids', resource[:subnets].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'subnet', subnet){|*arg| awscli(*arg)} }
+        '--subnets', resource[:subnets].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'subnet', subnet){|*arg| awscli(*arg)} }
     ]
 
     awscli(args.flatten)
@@ -73,6 +72,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
     data = search_results[:data][0]
     @arn = data["LoadBalancerArn"]
+    @property_hash[:subnets] = data["AvailabilityZones"].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'subnet', subnet["SubnetId"]){|*arg| awscli(*arg)} }
 
     true
 
@@ -87,6 +87,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
   def flush
     if @property_flush and @property_flush.length > 0
+      set_subnets(@property_flush[:subnets]) if !@property_flush[:subnets].nil?
 
     end
   end
@@ -96,6 +97,26 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     @property_flush = {}
   end
 
+  def set_subnets(subnets)
+    args = [
+        'elbv2', 'set-subnets',
+        '--region', @property_hash[:region],
+        '--load-balancer-arn', @arn,
+        '--subnets', subnets.map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'subnet', subnet){|*arg| awscli(*arg)} }
+    ]
+    awscli(args.flatten)
+
+  end
+
   mk_resource_methods
+
+  def region=(value)
+    @property_flush[:region] = value
+  end
+
+  def subnets=(value)
+    @property_flush[:subnets] = value
+  end
+
 
 end
