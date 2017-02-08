@@ -30,11 +30,15 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--subnets', resource[:subnets].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'subnet', subnet){|*arg| awscli(*arg)} }
     ]
 
-    awscli(args.flatten)
+    @arn = JSON.parse(awscli(args.flatten))["LoadBalancers"][0]["LoadBalancerArn"]
 
     @property_hash[:name] = @resource[:name]
     @property_hash[:region] = @resource[:region]
     @property_hash[:subnets] = @resource[:subnets]
+
+    @resource[:listeners].each{|x| create_listener(x)} if !@resource[:listeners].nil?
+    @property_hash[:listeners] = @resource[:listeners] if !@resource[:listeners].nil?
+
 
   end
 
