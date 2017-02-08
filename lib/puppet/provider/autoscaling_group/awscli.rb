@@ -50,14 +50,22 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     args << ["--launch-configuration-name",
              PuppetX::IntechWIFI::AwsCmds.find_launch_configuration_by_name(
                  [resource[:region]], resource[:launch_configuration]){|*arg| awscli(*arg)
-             }]["LaunchConfigurationName"]
+             }["LaunchConfigurationName"]]
     args << ["--vpc-zone-identifier", resource[:subnets].map{|subnet|
-      PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'subnet', subnet){|*arg| awscli(*arg)}
-    }]
+      PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', subnet){|*arg| awscli(*arg)}
+    }.join(",")]
     args << ["--health-check-grace-period", resource[:healthcheck_grace]] unless resource[:healthcheck_grace].nil?
     args << ["--health-check-type", resource[:healthcheck_type]] unless resource[:healthcheck_type].nil?
 
     awscli(args.flatten)
+
+    @property_hash[:region] = resource[:region]
+    @property_hash[:desired_instances] = resource[:desired_instances]
+    @property_hash[:minimum_instances] = resource[:minimum_instances]
+    @property_hash[:maximum_instances] = resource[:maximum_instances]
+    @property_hash[:launch_configuration] = resource[:launch_configuration]
+    @property_hash[:healthcheck_type] = resource[:healthcheck_type] unless resource[:healthcheck_type].nil?
+    @property_hash[:healthcheck_grace] = resource[:healthcheck_grace] unless resource[:healthcheck_grace].nil?
 
   end
 
