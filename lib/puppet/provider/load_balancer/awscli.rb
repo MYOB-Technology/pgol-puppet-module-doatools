@@ -36,20 +36,31 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     @property_hash[:region] = @resource[:region]
     @property_hash[:subnets] = @resource[:subnets]
 
+    @resource[:targets].each{|x| create_target(@resource[:region], x)} if !@resource[:targets].nil?
+    @property_hash[:targets] = @resource[:targets] if !@resource[:targets].nil?
+
     @resource[:listeners].each{|x| create_listener(x)} if !@resource[:listeners].nil?
     @property_hash[:listeners] = @resource[:listeners] if !@resource[:listeners].nil?
+
 
 
   end
 
   def destroy
+    #  We need to remove the listeners first.
+    @puppet_hash[:listeners].each{|x| destroy_listener(x)} if !@puppet_hash[:listeners].nil?
+
+    #  Then the targets
+    @puppet_hash[:targets].each{|x| destroy_target(x)} if !@puppet_hash[:target].nil?
+
+    #  and then we can delete the load balancer.
     args = [
         'elbv2', 'delete-load-balancer',
         '--region', @resource[:region],
         '--load-balancer-arn', @arn
     ]
 
-    awscli(args.flatten)
+    # awscli(args.flatten)
 
   end
 
@@ -80,6 +91,19 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     @property_hash[:listeners] = JSON.parse(awscli('elbv2', 'describe-listeners', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["Listeners"].map do |x|
       "#{x["Protocol"].downcase}://#{target_from_arn x["DefaultActions"][0]["TargetGroupArn"]}:#{x["Port"]}#{x["Certificates"].nil? ? "" : ("?certificate=" + x["Certificates"][0]["CertificateArn"])}"
     end
+    @property_hash[:targets] = JSON.parse(awscli('elbv2', 'describe-target-groups', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["TargetGroups"].map do |x|
+      {
+          "name" => x["TargetGroupName"],
+          "port" => x["Port"],
+          "check_interval" => x["HealthCheckIntervalSeconds"],
+          "timeout" => x["HealthCheckTimeoutSeconds"],
+          "healthy" => x["HealthyThresholdCount"],
+          "failed" => x["UnhealthyThresholdCount"],
+          "vpc" => PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'vpc', x["VpcId"]){|*arg| awscli(*arg)}
+      }
+    end
+
+
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -94,9 +118,10 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   def flush
     if @property_flush and @property_flush.length > 0
       set_subnets(@property_flush[:subnets]) if !@property_flush[:subnets].nil?
-      #@property_flush[:listeners].select{|x| !@property_hash[:listeners].include? x}.each{|x| create_listener(x)} if !@property_flush[:listeners].nil?
+      @property_flush[:targets].select{|x| !@property_hash[:targets].include?(x)}.each{|x| create_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
       @property_flush[:listeners].select{|x| !@property_hash[:listeners].include?(x)}.each{|x| create_listener(x)} if !@property_flush[:listeners].nil?
       @property_hash[:listeners].select{|x| !@property_flush[:listeners].include?(x)}.each{|x| destroy_listener(x)} if !@property_flush[:listeners].nil?
+      @property_hash[:targets].select{|x| !@property_flush[:targets].include?(x)}.each{|x| destroy_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
     end
   end
 
@@ -154,6 +179,56 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     awscli(args.flatten)
 
   end
+
+  def create_target(region, source)
+    args = [
+        'elbv2', 'create-target-group',
+        '--region', region,
+        '--name', source["name"],
+        '--protocol', 'HTTP',
+        '--port', source["port"],
+        '--vpc-id', PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'vpc', source["vpc"]){|*arg| awscli(*arg)},
+        '--health-check-protocol', 'HTTP',
+        '--health-check-port', source["port"],
+    ]
+
+    args << ['--health-check-path', source["path"] ]   if !source["path"].nil?
+    args << ['--health-check-interval-seconds', source["check_interval"] ]   if !source["check_interval"].nil?
+    args << ['--health-check-timeout-seconds', source["timeout"] ]   if !source["timeout"].nil?
+    args << ['--healthy-threshold-count', source["healthy"] ]   if !source["healthy"].nil?
+    args << ['--unhealthy-threshold-count', source["failed"] ]   if !source["failed"].nil?
+    args << ['--health-check-path', source["path"] ]   if !source["path"].nil?
+
+    awscli(args.flatten)
+
+  end
+
+  def modify_target(region, source)
+
+  end
+
+
+  def destroy_target(region, source)
+    args = [
+        'elbv2', 'describe-target-groups',
+        '--region', region,
+        '--load-balancer-arn', @arn
+    ]
+    arns = JSON.parse(awscli(args.flatten))["TargetGroups"].select{|x| x["TargetGroupName"] == source["name"]}.map{|x| x["TargetGroupArn"]}.flatten
+
+    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, source["name"] if arns.length == 0
+    raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, source["name"] if arns.length > 0
+
+    args = [
+        'elbv2', 'delete-target-group',
+        '--region', region,
+        '--target-group-arn', arns[0]
+    ]
+    awscli(args.flatten)
+
+  end
+
+
 
   def target_from_arn(target_arn)
     /^arn:aws:elasticloadbalancing:[a-z_\-0-9]+:[0-9]{12}:targetgroup\/([a-z_\-0-9]+)\/[0-9a-f]{16}$/.match(target_arn)[1]
