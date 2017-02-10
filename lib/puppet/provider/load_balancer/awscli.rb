@@ -30,6 +30,8 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--subnets', resource[:subnets].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'subnet', subnet){|*arg| awscli(*arg)} }
     ]
 
+    args << [ '--security-groups', resource[:security_groups].map{|x| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'security-group', x){|*arg| awscli(*arg)}  } ] if !@resource[:security_groups].nil? and @resource[:security_groups].length > 0
+
     @arn = JSON.parse(awscli(args.flatten))["LoadBalancers"][0]["LoadBalancerArn"]
 
     @property_hash[:name] = @resource[:name]
@@ -51,7 +53,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     @property_hash[:listeners].each{|x| destroy_listener(x)} if !@property_hash[:listeners].nil?
 
     #  Then the targets
-    @property_hash[:targets].each{|x| destroy_target(@property_hash[:region], x)} if !@property_hash[:target].nil?
+    @property_hash[:targets].each{|x| destroy_target(@property_hash[:region], x)} if !@property_hash[:targets].nil?
 
     #  and then we can delete the load balancer.
     args = [
@@ -92,6 +94,9 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
       "#{x["Protocol"].downcase}://#{target_from_arn x["DefaultActions"][0]["TargetGroupArn"]}:#{x["Port"]}#{x["Certificates"].nil? ? "" : ("?certificate=" + x["Certificates"][0]["CertificateArn"])}"
     end
     @property_hash[:targets] = list_elb_targets()
+
+    @property_hash[:security_groups] = data["SecurityGroups"].map{|sg| PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'security-group', sg){| *arg | awscli(*arg)} }
+
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -114,6 +119,14 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
       @property_hash[:targets].select{|x| !@property_flush[:targets].any?{|y| same_target_name(x, y)}}.each{|x| destroy_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
 
       @property_flush[:targets].select{|x| @property_hash[:targets].any?{|y| same_target_name(x, y) and x != y } }.each{|x| modify_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
+
+      awscli([
+          'elbv2', 'set-security-groups',
+          '--region', @property_hash[:region],
+          '--load-balancer-arn', @arn,
+          '--security-groups', @property_flush[:security_groups].map{|x| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'security-group', x){|*arg| awscli(*arg)}  }
+      ].flatten) if !@property_flush[:security_groups].nil?
+
     end
     print "completed flush\n"
   end
@@ -307,5 +320,8 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     @property_flush[:targets] = value
   end
 
+  def security_groups=(value)
+    @property_flush[:security_groups] = value
+  end
 
 end

@@ -61,5 +61,12 @@ Puppet::Type.newtype(:load_balancer) do
     end
   end
 
+  newproperty(:security_groups, :array_matching => :all) do
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
+
+
 end
 
