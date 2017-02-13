@@ -17,7 +17,39 @@
 define doatools::role (
   $ensure=present,
   $region="us-east-1",
+  $vpc=$name,
+  $instance_type='t2.micro',
+  $image=default,
+  $min=0,
+  $max=5,
+  $desired=1,
+  $availability = [ 'a', 'b', 'c'],
+  $zone_label= ''
 ) {
+  $subnets= $availability.map |$az| { "${vpc}_${zone_label}${az}" }
 
+
+  launch_configuration { "${vpc}_${name}_lc" :
+    ensure => $ensure,
+    region => $region,
+    image => $image,
+    instance_type => $instance_type,
+  }
+
+  autoscaling_group { "${vpc}_${name}_asg":
+    ensure => $ensure,
+    region => $region,
+    minimum_instances => $min,
+    maximum_instances => $max,
+    desired_instances => $desired,
+    launch_configuration => "${vpc}_${name}_lc",
+    subnets => $subnets,
+  }
+
+  if $ensure == absent {
+    Autoscaling_group["${vpc}_${name}_asg"]->Launch_configuration["${vpc}_${name}_lc"]
+  } else {
+    Launch_configuration["${vpc}_${name}_lc"] -> Autoscaling_group["${vpc}_${name}_asg"]
+    }
 
 }

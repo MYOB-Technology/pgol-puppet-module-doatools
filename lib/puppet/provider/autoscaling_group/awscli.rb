@@ -70,6 +70,12 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
 
   def destroy
+    args = [
+        "autoscaling", "delete-auto-scaling-group", "--region", resource[:region],
+        "--auto-scaling-group-name", resource[:name],
+        "--force"
+    ]
+    awscli(args.flatten)
 
   end
 
