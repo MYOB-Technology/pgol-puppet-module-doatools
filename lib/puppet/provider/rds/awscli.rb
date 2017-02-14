@@ -104,7 +104,7 @@ Puppet::Type.type(:rds).provide(:awscli) do
     @property_hash[:storage_type] = data["StorageType"]
     @property_hash[:storage_size] = data["AllocatedStorage"]
     @property_hash[:license_model] = data["LicenseModel"]
-    @property_hash[:security_groups] = data["VpcSecurityGroups"].select{|sg|  ["active", "adding"].include? sg["Status"]}.map{|sg| PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'security-group', sg["VpcSecurityGroupId"]){| *arg | awscli(*arg)} }
+    @property_hash[:security_groups] = data["VpcSecurityGroups"].select{|sg|  ["active", "adding"].include? sg["Status"]}.map{|sg| PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'security-group', sg["VpcSecurityGroupId"]){| *arg | awscli(*arg)} }
 
 
     @property_hash[:public_access] = PuppetX::IntechWIFI::Logical.logical(data["PubliclyAccessible"])

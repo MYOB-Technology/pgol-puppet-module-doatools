@@ -106,7 +106,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     @property_hash[:maximum_instances] = Integer(data["MaxSize"])
     @property_hash[:launch_configuration] = PuppetX::IntechWIFI::Autoscaling_Rules.base_lc_name(data["LaunchConfigurationName"])
     @property_hash[:subnets] = data["VPCZoneIdentifier"].split(",").map{|subnet|
-      PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'subnet', subnet){|*arg| awscli(*arg)}
+      PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'subnet', subnet){|*arg| awscli(*arg)}
     }
     @property_hash[:healthcheck_grace] = Integer(data["HealthCheckGracePeriod"])
     @property_hash[:healthcheck_type] = data["HealthCheckType"]

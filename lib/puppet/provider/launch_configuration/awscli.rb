@@ -43,7 +43,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     }.reduce([]){|memo, lc| memo << lc }
 
     lcs.each{|lc| awscli("autoscaling", "delete-launch-configuration", '--region', @property_hash[:region], "--launch-configuration-name", lc['LaunchConfigurationName']) }
-
   end
 
   def exists?
@@ -72,7 +71,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:index] = PuppetX::IntechWIFI::Autoscaling_Rules.index(launch_config["LaunchConfigurationName"])
     @property_hash[:image] = launch_config["ImageId"]
     @property_hash[:instance_type] = launch_config["InstanceType"]
-    @property_hash[:security_groups] = launch_config["SecurityGroups"].map{|id| PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'security-group', id){| *arg | awscli(*arg) }}
+    @property_hash[:security_groups] = launch_config["SecurityGroups"].map {|id|
+      PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'security-group', id ){| *arg | awscli(*arg) }
+    }
     @property_hash[:userdata] = Base64.decode64(launch_config["UserData"])
     @property_hash[:ssh_key_name] = launch_config["KeyName"]
 
