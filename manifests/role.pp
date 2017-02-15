@@ -29,6 +29,7 @@ define doatools::role (
   $target={
 
   },
+  $database=undef,
 ) {
   $subnets= $availability.map |$az| { "${vpc}_${zone_label}${az}" }
 
@@ -84,6 +85,59 @@ define doatools::role (
 
       Load_balancer["${vpc}-${name}-elb"] -> Security_group["${vpc}_${name}_elb_sg"] -> Vpc[$vpc]
     }
+  }
+
+  notice("database=${database} ensure=${ensure}")
+  if ($database!=undef) and ($ensure=='present') {
+    rds_subnet_group {"${vpc}-${name}-rdsnet":
+      ensure => $ensure,
+      region => $region,
+      subnets => $subnets
+    }
+
+    $db_data = {
+      "${vpc}-${name}-rds" => {
+        ensure => $ensure,
+        region => $region,
+        db_subnet_group => "${vpc}-${name}-rdsnet",
+        master_username => lest($database["master_username"]) || { 'admin'},
+        master_password => lest($database["master_password"]) || { 'password!'},
+        database => lest($database["database"]) || { "${vpc}_${name}"},
+        multi_az => lest($database["multi_az"]) || { 'false'},
+        public_access => lest($database["public_access"]) || { 'false'},
+        instance_type => lest($database["instance_type"]) || { 'db.t2.micro'},
+        storage_size => lest($database["storage_size"]) || { '50'},
+      }
+    }
+
+    create_resources(rds, $db_data, $database)
+
+    security_group { "${vpc}_${name}_rds_sg":
+      region => $region,
+      ensure => $ensure,
+      vpc => $vpc,
+      description => "database security group",
+    }
+    Doatools::Network[$vpc]->Rds_subnet_group["${vpc}-${name}-rdsnet"]->Rds["${vpc}-${name}-rds"]
+
+  } else {
+    rds_subnet_group {"${vpc}-${name}-rdsnet":
+      ensure => absent,
+      region => $region,
+    }
+
+    rds {"${vpc}-${name}-rds":
+      ensure => absent,
+      region => $region,
+    }
+
+    security_group { "${vpc}_${name}_rds_sg":
+      region => $region,
+      ensure => absent,
+    }
+
+    Rds["${vpc}-${name}-rds"]->Rds_subnet_group["${vpc}-${name}-rdsnet"]
+
   }
 
 
