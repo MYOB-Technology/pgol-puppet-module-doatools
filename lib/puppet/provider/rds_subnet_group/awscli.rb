@@ -72,7 +72,7 @@ Puppet::Type.type(:rds_subnet_group).provide(:awscli) do
     @property_hash[:name] = resource[:name]
 
     data = search_results[:data][0]
-    @property_hash[:subnets] = data["Subnets"].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'subnet', subnet["SubnetIdentifier"]){|*arg| awscli(*arg)} }
+    @property_hash[:subnets] = data["Subnets"].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'subnet', subnet["SubnetIdentifier"]){|*arg| awscli(*arg)} }
 
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e

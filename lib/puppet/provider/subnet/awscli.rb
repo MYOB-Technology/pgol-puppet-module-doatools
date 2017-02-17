@@ -109,7 +109,7 @@ Puppet::Type.type(:subnet).provide(:awscli) do
     @property_hash[:availability_zone] = PuppetX::IntechWIFI::Constants.ZoneName data["AvailabilityZone"]
     @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(data["MapPublicIpOnLaunch"])
 
-    @property_hash[:vpc] = PuppetX::IntechWIFI::AwsCmds.find_name_by_id(region, "vpc", @property_hash[:vpcid]) do | *arg |
+    @property_hash[:vpc] = PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(region, "vpc", @property_hash[:vpcid]) do | *arg |
       awscli(*arg)
     end
 

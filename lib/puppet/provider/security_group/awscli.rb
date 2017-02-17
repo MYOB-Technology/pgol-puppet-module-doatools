@@ -25,8 +25,6 @@ Puppet::Type.type(:security_group).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
-    print("About to create security group\n")
-
     #  Ensure the VPC already exists, and get its vpcid.
     begin
       @property_hash[:vpcid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], "vpc", resource[:vpc]) do | *arg |
@@ -35,9 +33,7 @@ Puppet::Type.type(:security_group).provide(:awscli) do
     rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
       fail("We cannot created this security group, unless the vpc=>#{resource[:vpc]} already exists.")
     end
-    print("We have found the vpc\n")
 
-    print("About to create security group description=#{resource[:description]}\n")
     @property_hash[:sgid] = JSON.parse(awscli('ec2', 'create-security-group', '--region', resource[:region], '--group-name', resource[:name], '--description', resource[:description], '--vpc-id', @property_hash[:vpcid]))["GroupId"]
     @property_hash[:region] = resource[:region]
     @property_hash[:description] = resource[:description]
@@ -47,12 +43,25 @@ Puppet::Type.type(:security_group).provide(:awscli) do
 
   end
 
-  def destroy
-    response = awscli('ec2', 'delete-security-group', '--region', @property_hash[:region], '--group-id', @property_hash[:sgid])
+  def destroy()
+    destroy_internal
+  rescue Exception => e
+    fail(e)
+  end
 
-    @property_hash.clear
+  def destroy_internal(count=0, max_count=3)
+    response = awscli('ec2', 'delete-security-group', '--region', @property_hash[:region], '--group-id', @property_hash[:sgid])
+  rescue Puppet::ExecutionFailure => e
+    if (count < 3) and (e.to_s.include? "DependencyViolation")
+      info("Dependency violation #{count + 1} of #{max_count} , Retrying in 45 seconds...")
+      sleep 45
+      destroy_internal(count + 1, max_count)
+    else
+      fail(e)
+    end
 
   end
+
 
   def exists?
     #
@@ -111,7 +120,7 @@ Puppet::Type.type(:security_group).provide(:awscli) do
     end
     @property_hash[:description] = data["Description"]
     begin
-      @property_hash[:vpc] = PuppetX::IntechWIFI::AwsCmds.find_name_by_id(region, "vpc", @property_hash[:vpcid]) do | *arg |
+      @property_hash[:vpc] = PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(region, "vpc", @property_hash[:vpcid]) do | *arg |
         awscli(*arg)
       end
     rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e

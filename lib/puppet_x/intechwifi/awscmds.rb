@@ -42,6 +42,13 @@ module PuppetX
         result
       end
 
+      def AwsCmds.find_name_or_id_by_id(region, resource_type, id, &aws_command)
+        AwsCmds.find_tag([region], resource_type, "Name", "resource-id", id, &aws_command)[:tag]["Value"]
+      rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+        id
+      end
+
+
       def AwsCmds.find_name_by_id(region, resource_type, id, &aws_command)
         AwsCmds.find_tag([region], resource_type, "Name", "resource-id", id, &aws_command)[:tag]["Value"]
       end
