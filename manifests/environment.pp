@@ -15,11 +15,19 @@
 #
 
 define doatools::environment (
+  $region='us-east-1',
   $network={
 
   },
   $roles=[],
   $ensure=present
 )  {
+  $network_data = {
+    $name => {
+      'region' => $region,
+      'ensure' => $ensure
+    }
+  }
+  create_resources('doatools::network', $network_data, $network)
 }
 
