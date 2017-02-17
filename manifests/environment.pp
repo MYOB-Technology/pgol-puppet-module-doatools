@@ -19,7 +19,9 @@ define doatools::environment (
   $network={
 
   },
-  $roles=[],
+  $roles={
+
+  },
   $ensure=present
 )  {
   $network_data = {
@@ -29,5 +31,16 @@ define doatools::environment (
     }
   }
   create_resources('doatools::network', $network_data, $network)
+
+  $roles.keys.each | $r| {
+    $role_data = {
+      $r => {
+        'region' => $region,
+        'ensure' => $ensure,
+        'vpc' => $name,
+      }
+    }
+    create_resources('doatools::role', $role_data, $roles[$r])
+  }
 }
 
