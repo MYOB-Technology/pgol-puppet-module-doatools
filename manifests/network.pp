@@ -13,7 +13,7 @@ define doatools::network (
   $default_access = {
     ingress => [ "all||sg|${name}" ],
     egress  => [ "all||sg|${name}" ],
-  },
+  }
 ){
   vpc { $name :
     ensure      => $ensure,
@@ -55,14 +55,14 @@ define doatools::network (
 
   $zones.each |$i, $z | {
     if $z["availability"] != undef {
-      $azs = $z["availability"] 
+      $azs = $z["availability"]
     } else {
       $azs = $availability
     }
-  
+
     $azs.each |$azi, $az | {
       $actual_cidr = make_cidr($z["cidr"], $azi, $azs.size)
-      $subnet_name = "${name}_${z["label"]}${az}"
+      $subnet_name = "${name}_${z['label']}${az}"
 
       subnet { $subnet_name:
         ensure => $ensure,
@@ -76,6 +76,6 @@ define doatools::network (
       if $ensure == absent {
         Subnet[$subnet_name] -> Vpc[$name]
       }
-    }   
+    }
   }
 }
