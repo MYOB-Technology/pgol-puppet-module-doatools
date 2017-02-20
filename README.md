@@ -1,19 +1,126 @@
-# Doatools 
+# Doatools
+
+#### Table of Contents
+
+1. [A devops AWS / Puppet toolkit](#a-devops-aws-/-puppet-toolkit)
+2. [Setup](#setup)
+3. [Useage](#usage)
+4. [Reference](#reference)
+
+ 
 ## A devops AWS / Puppet toolkit
 
-This puppet module is predicated on the following vision of a devops approach to puppet and AWS integration.
+### Why create yet another puppet AWS component?
+This module was created out of a frustration of existing methods for managing AWS infrastructure in a programatic way.  Creating stacks with significant flexibility using Cloud Formation is painful - and easily broken by people making changes using the AWS Console.  The supported puppetlabs AWS components literal implementation around launch configuration / autoscaling groups makes maintaining configurations over time difficult - and cannot manage default routes / security groups on VPC's didnt fit in with my vision on how I would like to use puppet to manage AWS.
 
-The infrastructure consists of:
+### The Vision
 
-1. One or more isolated environment.
-* Each environment is a functional replica which serves a seperate business purposes (e.g. quality assurance, production, hot stand by, etc).
-* Within each environment, software services are grouped together into distinct server roles.
-* For each role, there may be 1 or more EC2 instances, and this number may change over time.
-* Within each role, all EC2 instances are functionally equivilent.
-* State is only persistently stored in databases or as S3 objects.
-* The grouping of software services into roles may vary between environments.
+Imagine you have to manage a large complex application based around a service orientated architecture within the AWS infrastructure? You need to support multiple server roles - each needing different network access, IAM permisions and software installations. In addition you need to dynamically scale based on the time of day, manage multiple broadly simular deployments for the development processes (each using software at different stages of the development pipeline) and you have the makings of a complex problem.
 
-*If this matches your vision, then you may find this module useful.*
+The long term vision of this module is to incrementally provide the building blocks to solve this challenge. 
+
+### The Current Feature set
+
+This release will enable you to:
+
+1. Declare an AWS VPC with multiple subnets, default routing and an internet gatway to host your application.
+2. Declare multiple server roles, with each server role potentially using RDS databases and elastic load balancers as part of its application stack
+3. Set the userdata script to configure and install the software onto the servers at first boot.
+
+###  Should I use this module?
+
+If this module's vision is close to the vision you have for your application, that the current feature set meets enough of your immediate needs, and the fact that **this module is still in early development, should be considered beta code and is likely to change significantly as it matures** does not scare you off, then by all means use it.
+
+As a final warning, **at this stage, there is no guarantee of long term resources being applied to this module**
+
+
+## Setup
+
+
+This module uses Amazons AWS command line tool to interact with the AWS infrastructure. You will need the following:
+
+* python2 version 2.6.5+, or python3 version 3.3+
+* pip
+* awscli 1.11.45
+
+```
+pip install --upgrade --user awscli==1.11.45
+```
+
+The doatools module written and tested using AWS 1.11.45, later versions are highly likely to work, albeit with increasing risk of Amazon introducing a breaking change.
+
+
+The installation of the module from Puppet Forge is as simple as
+
+```
+puppet module install iwifi-doatools
+```
+
+This should automatically include the installation of the ruby gems required by this module.
+
+The AWS authentication is handled by the AWS command line application. It assumes that the aws command line can authenticate with AWS without the need for any parameters.  The simplest way to authenticate is to set up your default credentials in the ~/.aws/credentials file.
+
+
+## Usage
+
+###  Creating AWS resources directly
+
+This module allows you to manage AWS resources directly using the puppet DSL. This example will ensure that a VPC called 'doatools_vpc' exists in the Ohio region.
+
+```
+vpc { 'doatools_vpc':
+  region => us-east-2
+}
+```
+
+and by setting ensure to absent, we can make sure it does not exist
+
+```
+vpc { 'doatools_vpc':
+  ensure => absent,
+  region => us-east-2
+}  
+
+```
+
+*Notice that we have included the region even in the deletion.  This is important. without specifying the region, puppet will have used the default value for region property (us-east-1), decided that the VPC did not exist and left the vpc in the us-east-2 region still active.*
+
+It is possible to manage all supported AWS components directly at this level.
+
+### Using Higher level resources
+
+This module includes higher level resources that abstract away some of the details (and some control) to make provisioning whole environments quicker and easier to implement.
+
+This example creates a AWS VPC with a functional network and internet connectivity in the ohio region
+
+```
+network { 'doatools':
+  region => us-east-2
+}
+```
+
+*This example creates a VPC, 3 subnets and an internet gateway for the same effort.*
+
+This example changes the default security group to only allows HTTP and MySQL traffic between instances
+
+```
+network { 'doatools':
+  region         => us-east-2,
+  default_access => {
+    ingress => [ 'tcp|80|sg|doatools', 'tcp|3306|sg|doatools' ],
+    egress  => [ 'tcp|80|sg|doatools', 'tcp|3306|sg|doatools' ],
+  }
+}
+```
+and to delete the entire network
+
+```
+network { 'doatools':
+  ensure => absent,
+  region => us-east-2
+}
+
+```
 
 
 ### Supported AWS Network Components
@@ -28,7 +135,12 @@ The infrastructure consists of:
 * elastic load balancer
 * launch\_config
 * autoscaling\_group
+
+### Supported AWS Storage Components
+
 * rds
+* s3_bucket
+* s3_key
 
 ### Supported AWS IAM Components
 
@@ -36,18 +148,16 @@ The infrastructure consists of:
 * iam_policy
 
 
-### Composite Components
+### Application Infrastructure Components
 
 * **network** - a AWS VPC, subnets, route table and internet gateway.
 * **role** - An application stack consisting of a launch configuration, autoscaling group and optional load balancers and database servers.
 * **environment** - a complete environment containing a network component and a set of role components.
 
 
-### Prerequisits
-This module is uses the aws command line to probe and change the AWS environment. written and tested using AWS 1.11.45, other versions may work.
 
 
-### AWS Component Reference
+## Reference
 
 These components are modelled to provide a puppet style representation of the key AWS components. To achieve this there are a hand full of abstractions and compromises which are needed to model AWS components as a puppet component
 
