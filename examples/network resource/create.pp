@@ -18,16 +18,16 @@ require doatools
 
 node 'default' {
   doatools::network { 'doatools':
-    region   => 'us-east-1',
-    vpc_cidr => '192.168.74.0/23',
-    environment => 'doatools vpc demo',
-    availability => ['a', 'b', 'c'],
+    region          => 'us-east-1',
+    vpc_cidr        => '192.168.74.0/23',
+    environment     => 'doatools vpc demo',
+    availability    => ['a', 'b', 'c'],
     internet_access => true,
-    default_access => {
-      ingress  => [
+    default_access  => {
+      ingress => [
         'tcp|80|sg|doatools'
       ],
-      egress => [
+      egress  => [
         'tcp|3306|sg|doatools'
       ],
     }

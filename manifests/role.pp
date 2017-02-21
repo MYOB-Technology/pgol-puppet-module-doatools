@@ -16,7 +16,7 @@
 
 define doatools::role (
   $ensure=present,
-  $region="us-east-1",
+  $region='us-east-1',
   $vpc=$name,
   $instance_type='t2.micro',
   $image=default,
@@ -34,24 +34,24 @@ define doatools::role (
   $subnets= $availability.map |$az| { "${vpc}_${zone_label}${az}" }
 
   security_group { "${vpc}_${name}_ec2_sg":
-    ensure => $ensure,
-    vpc => $vpc,
-    region => $region,
-    description => "instance security group",
+    ensure      => $ensure,
+    vpc         => $vpc,
+    region      => $region,
+    description => 'instance security group',
   }
 
   if $listeners!=undef {
     $listeners_internal = $listeners.map |$l| {
-      if $l == "http" { "http://${vpc}-${name}-tgt:80" } else {
+      if $l == 'http' { "http://${vpc}-${name}-tgt:80" } else {
         "https://${vpc}-${name}-tgt:443?certificate=${l}"
       }
     }
 
     security_group { "${vpc}_${name}_elb_sg":
-      ensure => $ensure,
-      vpc => $vpc,
-      region => $region,
-      description => "load balancer security group",
+      ensure      => $ensure,
+      vpc         => $vpc,
+      region      => $region,
+      description => 'load balancer security group',
     }
 
     $target_internal = {
@@ -65,22 +65,22 @@ define doatools::role (
     }
 
     load_balancer { "${vpc}-${name}-elb":
-      ensure => $ensure,
-      region => $region,
-      subnets => $subnets,
-      listeners => $listeners_internal,
-      targets => [$target_internal],
+      ensure          => $ensure,
+      region          => $region,
+      subnets         => $subnets,
+      listeners       => $listeners_internal,
+      targets         => [$target_internal],
       security_groups => [ "${vpc}_${name}_elb_sg" ]
     }
   } else {
     if $ensure == absent {
       security_group { "${vpc}_${name}_elb_sg":
+        ensure => $ensure,
         region => $region,
-        ensure => $ensure
       }
       load_balancer { "${vpc}-${name}-elb":
-        region => $region,
         ensure => $ensure,
+        region => $region,
       }
 
       Load_balancer["${vpc}-${name}-elb"] -> Security_group["${vpc}_${name}_elb_sg"] -> Vpc[$vpc]
@@ -90,8 +90,8 @@ define doatools::role (
   notice("database=${database} ensure=${ensure}")
   if ($database!=undef) and ($ensure=='present') {
     rds_subnet_group {"${vpc}-${name}-rdsnet":
-      ensure => $ensure,
-      region => $region,
+      ensure  => $ensure,
+      region  => $region,
       subnets => $subnets
     }
 
@@ -103,8 +103,8 @@ define doatools::role (
         master_username => lest($database["master_username"]) || { 'admin'},
         master_password => lest($database["master_password"]) || { 'password!'},
         database => lest($database["database"]) || { "${vpc}_${name}"},
-        multi_az => lest($database["multi_az"]) || { 'false'},
-        public_access => lest($database["public_access"]) || { 'false'},
+        multi_az => lest($database["multi_az"]) || { false},
+        public_access => lest($database["public_access"]) || { false},
         instance_type => lest($database["instance_type"]) || { 'db.t2.micro'},
         storage_size => lest($database["storage_size"]) || { '50'},
       }
@@ -113,10 +113,10 @@ define doatools::role (
     create_resources(rds, $db_data, $database)
 
     security_group { "${vpc}_${name}_rds_sg":
-      region => $region,
-      ensure => $ensure,
-      vpc => $vpc,
-      description => "database security group",
+      ensure      => $ensure,
+      region      => $region,
+      vpc         => $vpc,
+      description => 'database security group',
     }
     Doatools::Network[$vpc]->Rds_subnet_group["${vpc}-${name}-rdsnet"]->Rds["${vpc}-${name}-rds"]
 
@@ -132,8 +132,8 @@ define doatools::role (
     }
 
     security_group { "${vpc}_${name}_rds_sg":
-      region => $region,
       ensure => absent,
+      region => $region,
     }
 
     Rds["${vpc}-${name}-rds"]->Rds_subnet_group["${vpc}-${name}-rdsnet"]
@@ -145,21 +145,21 @@ define doatools::role (
 
 
   launch_configuration { "${vpc}_${name}_lc" :
-    ensure => $ensure,
-    region => $region,
-    image => $image,
-    instance_type => $instance_type,
+    ensure          => $ensure,
+    region          => $region,
+    image           => $image,
+    instance_type   => $instance_type,
     security_groups => [ "${vpc}_${name}_ec2_sg" ]
   }
 
   autoscaling_group { "${vpc}_${name}_asg":
-    ensure => $ensure,
-    region => $region,
-    minimum_instances => $min,
-    maximum_instances => $max,
-    desired_instances => $desired,
+    ensure               => $ensure,
+    region               => $region,
+    minimum_instances    => $min,
+    maximum_instances    => $max,
+    desired_instances    => $desired,
     launch_configuration => "${vpc}_${name}_lc",
-    subnets => $subnets,
+    subnets              => $subnets,
   }
 
 
