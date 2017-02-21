@@ -68,8 +68,8 @@ define doatools::network (
     }
 
     $azs.each |$azi, $az | {
-      $actual_cidr = make_cidr($::z["cidr"], $azi, $azs.size)
-      $subnet_name = "${name}_${::z['label']}${az}"
+      $actual_cidr = make_cidr($z['cidr'], $azi, $azs.size)
+      $subnet_name = "${name}_${z['label']}${az}"
 
       subnet { $subnet_name:
         ensure            => $ensure,
