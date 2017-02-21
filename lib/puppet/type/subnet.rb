@@ -40,7 +40,7 @@ Puppet::Type.newtype(:subnet) do
   end
 
   newproperty(:availability_zone) do
-    defaultto :blue
+    defaultto 'a'
     validate do |value|
       fail("Invalid availability zone #{value}") unless PuppetX::IntechWIFI::Constants.AvailabilityZones.include? value
     end
