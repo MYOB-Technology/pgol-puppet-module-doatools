@@ -27,7 +27,7 @@ We recomend that you:
 
 ## IAM permisions
 
-* Create an IAM role granting permision to access S3
+* [Create an IAM role granting permision to access S3](iam role and policies/create.pp)
 
 ## Environment
 

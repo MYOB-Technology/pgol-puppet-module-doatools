@@ -29,7 +29,10 @@ Puppet::Type.newtype(:iam_role) do
   end
 
   newproperty(:trust, :array_matching => :all) do
-    defaultvalue = ["ec2"]
+    validate { |v| PuppetX::IntechWIFI::Constants.PrincipalLeys.include? v }
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
   end
 
 end

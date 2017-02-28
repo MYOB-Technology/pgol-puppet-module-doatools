@@ -80,6 +80,11 @@ module PuppetX
         @@principal_map.select{|p| p[:key] == key}[0][:value]
       end
 
+      def self.PrincipalKeys
+        @@principal_map.keys
+      end
+
+
       @@rds_engines = [
           "mysql",
           "mariadb",

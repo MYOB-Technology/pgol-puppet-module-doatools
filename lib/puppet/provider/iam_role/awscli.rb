@@ -50,6 +50,15 @@ Puppet::Type.type(:iam_role).provide(:awscli) do
 
   end
 
+  def destroy
+    @property_hash[:policies].map{|p| PuppetX::IntechWIFI::AwsCmds.find_iam_profile_by_name(p, "All"){ | *arg | awscli(*arg) }["Arn"] }.each{|p|
+      awscli("iam", "detach-role-policy", "--role-name", @property_hash[:name], "--policy-arn", p)
+    }
+
+    awscli("iam", "delete-role", "--role-name", @property_hash[:name])
+
+  end
+
 
   def exists?
     debug("searching for iam_role=#{resource[:name]}\n")
@@ -78,6 +87,7 @@ Puppet::Type.type(:iam_role).provide(:awscli) do
   end
 
   def generate_role_statement(trust)
+    trust = ['ec2'] if trust.nil?
     {
         :Version => "2012-10-17",
         :Statement => trust.map{ |k|
@@ -90,7 +100,6 @@ Puppet::Type.type(:iam_role).provide(:awscli) do
           }
         }
     }
-
   end
 
   def set_trust(new_trust)
