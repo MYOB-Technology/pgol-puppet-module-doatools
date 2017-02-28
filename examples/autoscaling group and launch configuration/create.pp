@@ -12,27 +12,25 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
-require 'puppet_x/intechwifi/logical'
-require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:iam_role) do
-  ensurable
+require doatools
 
-  newparam(:name, :namevar => true) do
-  end
+node 'default' {
+  launch_configuration { "doatools_role_lc" :
+    region          => 'us-east-1',
+    image           => 'ami-6d1c2007',
+    instance_type   => 't2.micro',
+    security_groups => [ "doatools" ]
+  }
 
-  newproperty(:policies, :array_matching => :all) do
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
-  end
-
-  newproperty(:trust, :array_matching => :all) do
-    validate { |v| PuppetX::IntechWIFI::Constants.PrincipalLeys.include? v }
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
-  end
-
-end
+  autoscaling_group { "doatools_role_asg":
+    region               => 'us-east-1',
+    minimum_instances    => 0,
+    maximum_instances    => 5,
+    desired_instances    => 2,
+    launch_configuration => "doatools_role_lc",
+    subnets              => [ 'doatools_a', 'doatools_b', 'doatools_c' ]
+  }
+}

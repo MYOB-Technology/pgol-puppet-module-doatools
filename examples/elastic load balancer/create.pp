@@ -12,27 +12,33 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
-require 'puppet_x/intechwifi/logical'
-require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:iam_role) do
-  ensurable
+require doatools
 
-  newparam(:name, :namevar => true) do
-  end
-
-  newproperty(:policies, :array_matching => :all) do
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
-  end
-
-  newproperty(:trust, :array_matching => :all) do
-    validate { |v| PuppetX::IntechWIFI::Constants.PrincipalLeys.include? v }
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
-  end
-
-end
+node 'default' {
+  load_balancer{'doatools':
+    ensure => present,
+    region => 'us-east-1',
+    subnets => [
+      'doatools_a',
+      'doatools_b',
+      'doatools_c'
+    ],
+    listeners => [
+      'http://doatools:80',
+#      'https://doatools_tgt:443?certificate=<certificate-arn>'
+    ],
+    targets => [{
+      name => 'doatools',
+      port => 80,
+      check_interval => 30,
+      timeout => 10,
+      healthy => 3,
+      failed => 2,
+      vpc => 'doatools',
+    }],
+    security_groups => [ "doatools" ]
+  }
+}
