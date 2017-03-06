@@ -1,0 +1,7 @@
+#
+---
+
+lookup_options:
+
+environment::roles: "%{alias('roles')}"
+environment::region: "%{alias('vpc_region')}"

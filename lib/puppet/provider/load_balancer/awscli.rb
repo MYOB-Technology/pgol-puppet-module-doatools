@@ -192,14 +192,12 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--vpc-id', PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'vpc', source["vpc"]){|*arg| awscli(*arg)},
         '--health-check-protocol', 'HTTP',
         '--health-check-port', source["port"],
+        '--health-check-path', defined?(source["path"]).nil? ? source["path"] : '/',
+        '--health-check-interval-seconds', defined?(source["check_interval"]).nil? ? source["check_interval"] : 30,
+        '--health-check-timeout-seconds', defined?(source["timeout"]).nil? ? source["timeout"] : 10,
+        '--healthy-threshold-count', defined?(source["healthy"]).nil? ? source["healthy"] : 3,
+        '--unhealthy-threshold-count', defined?(source["failed"]).nil? ? source["failed"] : 3
     ]
-
-    args << ['--health-check-path', source["path"] ]   if !source["path"].nil?
-    args << ['--health-check-interval-seconds', source["check_interval"] ]   if !source["check_interval"].nil?
-    args << ['--health-check-timeout-seconds', source["timeout"] ]   if !source["timeout"].nil?
-    args << ['--healthy-threshold-count', source["healthy"] ]   if !source["healthy"].nil?
-    args << ['--unhealthy-threshold-count', source["failed"] ]   if !source["failed"].nil?
-    args << ['--health-check-path', source["path"] ]   if !source["path"].nil?
 
     awscli(args.flatten)
 
@@ -220,15 +218,13 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     args = [
         'elbv2', 'modify-target-group',
         '--region', region,
-        '--target-group-arn', arns[0]
+        '--target-group-arn', arns[0],
+        '--health-check-path', defined?(source["path"]).nil? ? source["path"] : '/',
+        '--health-check-interval-seconds', defined?(source["check_interval"]).nil? ? source["check_interval"] : 30,
+        '--health-check-timeout-seconds', defined?(source["timeout"]).nil? ? source["timeout"] : 10,
+        '--healthy-threshold-count', defined?(source["healthy"]).nil? ? source["healthy"] : 3,
+        '--unhealthy-threshold-count', defined?(source["failed"]).nil? ? source["failed"] : 3
     ]
-
-    args << ['--health-check-path', source["path"] ]   if !source["path"].nil?
-    args << ['--health-check-interval-seconds', source["check_interval"] ]   if !source["check_interval"].nil?
-    args << ['--health-check-timeout-seconds', source["timeout"] ]   if !source["timeout"].nil?
-    args << ['--healthy-threshold-count', source["healthy"] ]   if !source["healthy"].nil?
-    args << ['--unhealthy-threshold-count', source["failed"] ]   if !source["failed"].nil?
-    args << ['--health-check-path', source["path"] ]   if !source["path"].nil?
 
     awscli(args.flatten)
 

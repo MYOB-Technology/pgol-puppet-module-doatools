@@ -22,6 +22,41 @@ Puppet::Type.newtype(:load_balancer) do
   newparam(:name, :namevar => true) do
   end
 
+  autobefore(:subnets) do
+    result = []
+    if self[:ensure] == :absent
+      result << [ self[:subnets] ]
+    end
+    result.flatten
+  end
+
+  autobefore(:security_group) do
+    result = []
+    if self[:ensure] == :absent
+      result << [ self[:security_groups] ]
+    end
+    result.flatten
+  end
+
+
+  autorequire(:subnets) do
+    result = []
+    if self[:ensure] == :present
+      result << [ self[:subnets] ]
+    end
+    result.flatten
+  end
+
+  autorequire(:security_group) do
+    result = []
+    if self[:ensure] == :present
+      result << [ self[:security_groups] ]
+    end
+    result.flatten
+  end
+
+
+
   #  read only properties...
   newproperty(:region) do
     defaultto 'us-east-1'

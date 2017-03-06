@@ -19,9 +19,22 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:security_group) do
   ensurable
 
-  autorequire(:vpc) do
-    self[:vpc]
+  autobefore(:vpc) do
+    result = []
+    if self[:ensure] == :absent
+      result << [ self[:vpc] ]
+    end
+    result.flatten
   end
+
+  autorequire(:vpc) do
+    result = []
+    if self[:ensure] == :present
+      result << [ self[:vpc] ]
+    end
+    result.flatten
+  end
+
 
   newparam(:name, :namevar => true) do
   end

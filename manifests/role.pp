@@ -15,22 +15,31 @@
 #
 
 define doatools::role (
-  $ensure=present,
-  $region='us-east-1',
   $vpc=$name,
-  $instance_type='t2.micro',
-  $image=default,
-  $min=0,
-  $max=5,
-  $desired=1,
-  $availability = [ 'a', 'b', 'c'],
-  $zone_label= '',
-  $listeners=undef,
-  $target={
-
-  },
-  $database=undef,
+  $l_vpc=$vpc,
+  $l_role=$name,
+  $ensure=lookup('role::ensure', Data, 'first', present),
+  $region=lookup('role::region', Data, 'first', 'us-east-1'),
+  $instance_type=lookup('role::instance_type', Data, 'first', 't2.micro'),
+  $image=undef,
+  $min=lookup('role::min', Data, 'first', 0),
+  $max=lookup('role::max', Data, 'first', 5),
+  $desired=lookup('role::desired', Data, 'first', 1),
+  $availability = lookup('role::availability', Data, 'first', [ 'a', 'b', 'c']),
+  $zone_label= lookup('role::zone_label', Data, 'first', ''),
+  $listeners=lookup('role::listeners', Data, 'first', undef),
+  $target=lookup('role::target', Data, 'first', { }),
+  $database=lookup('role::database', Data, 'first', undef),
 ) {
+  if $image==undef {
+    $l_region=$region
+    $image_internal=lookup('role::image', Data, 'first', default)
+  }
+  else {
+    $image_internal=$image
+  }
+
+
   $subnets= $availability.map |$az| { "${vpc}_${zone_label}${az}" }
 
   security_group { "${vpc}_${name}_ec2_sg":
@@ -54,14 +63,16 @@ define doatools::role (
       description => 'load balancer security group',
     }
 
+
+
     $target_internal = {
+      check_interval => 30,
+      failed => 3,
+      healthy => 3,
       name => "${vpc}-${name}-tgt",
-      port => $target['port'],
-      check_interval => $target['check_interval'],
-      timeout => $target['timeout'],
-      healthy => $target['healthy'],
-      failed => $target['failed'],
-      vpc => $vpc
+      port => 80,
+      timeout => 10,
+      vpc => $vpc,
     }
 
     load_balancer { "${vpc}-${name}-elb":
@@ -69,7 +80,7 @@ define doatools::role (
       region          => $region,
       subnets         => $subnets,
       listeners       => $listeners_internal,
-      targets         => [$target_internal],
+      targets         => [deep_merge($target_internal, $target)],
       security_groups => [ "${vpc}_${name}_elb_sg" ]
     }
   } else {
@@ -147,7 +158,7 @@ define doatools::role (
   launch_configuration { "${vpc}_${name}_lc" :
     ensure          => $ensure,
     region          => $region,
-    image           => $image,
+    image           => $image_internal,
     instance_type   => $instance_type,
     security_groups => [ "${vpc}_${name}_ec2_sg" ]
   }

@@ -1,0 +1,34 @@
+#
+---
+
+vpc_cidr: "192.168.249.0/24"
+
+vpc_region: "us-east-1"
+
+availability_zones:
+  - "a"
+  - "b"
+  - "c"
+
+environment_name: "dev"
+
+zones:
+  - "label": ""
+    "cidr": "192.168.249.0/24"
+    "public_ip": "true"
+  - "label": "pri"
+    "cidr": "192.168.249.192/26"
+    "public_ip": "false"
+
+security_group_ingress_rules:
+  - "tcp|80|sg|${vpc}"
+
+security_group_egress_rules:
+  - "tcp|3306|sg|${vpc}"
+
+roles:
+  "smartcityapi": {}
+  "openvpn": {}
+
+network::internet_access: "true"
+

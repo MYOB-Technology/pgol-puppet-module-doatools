@@ -1,0 +1,6 @@
+#
+---
+
+role::image: "%{alias('centos73_ami')}"
+role::availability: "%{alias('availability_zones')}"
+role::zone_label: ""

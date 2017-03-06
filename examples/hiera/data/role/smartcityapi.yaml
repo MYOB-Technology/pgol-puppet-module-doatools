@@ -1,0 +1,8 @@
+#
+---
+
+role::listeners:
+  - "http"
+
+role::target:
+  "port": 90

@@ -1,15 +1,17 @@
 define doatools::network (
-  $ensure=present,
-  $vpc_cidr='192.168.0.0/24',
-  $region='us-east-1',
-  $environment=$name,
-  $availability = [ 'a', 'b', 'c'],
-  $internet_access=true,
-  $default_access = {
+  $vpc=$name,
+  $l_vpc=$vpc,
+  $ensure=lookup('network::ensure', Data, 'first', present),
+  $vpc_cidr=lookup('network::vpc_cidr', Data, 'first', '192.168.0.0/24'),
+  $region=lookup('network::region', Data, 'first', 'us-east-1'),
+  $environment=lookup('network::environment', Data, 'first', $name),
+  $availability = lookup('network::availability', Data, 'first', [ 'a', 'b', 'c']),
+  $internet_access = lookup('network::internet_access', Data, 'first', true),
+  $default_access = lookup('network::default_access', Data, 'first', {
     ingress => [ "all||sg|${name}" ],
     egress  => [ "all||sg|${name}" ],
-  },
-  $zones = undef,
+  }),
+  $zones = lookup('network::zones', Data, 'first', undef),
 ){
   $zones_internal = lest($zones) || {
     [{
@@ -29,7 +31,8 @@ define doatools::network (
     environment => $environment,
   }
 
-  if $internet_access == true {
+  if $internet_access == "true" or $internet_access == true {
+    warning("declaring internet access")
     internet_gateway { $name:
       ensure => $ensure,
       region => $region,
@@ -41,6 +44,7 @@ define doatools::network (
     }
 
   }else {
+    warning("declaring NO internet access")
     internet_gateway { $name:
       ensure => absent,
       region => $region,

@@ -1,0 +1,19 @@
+#
+---
+
+network::ensure: 'present'
+network::vpc_cidr: "%{alias('vpc_cidr')}"
+network::region: "%{alias('vpc_region')}"
+network::environment: "%{alias('environment')}"
+network::availability: "%{alias('availability_zones')}"
+network::internet_access: 'true'
+network::default_access:
+  ingress: []
+  egress: []
+network::zones: "%{alias('zones')}"
+
+
+
+roles: {}
+
+

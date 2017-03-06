@@ -15,15 +15,19 @@
 #
 
 define doatools::environment (
-  $region='us-east-1',
-  $network={
-
-  },
-  $roles={
-
-  },
-  $ensure=present
+  $vpc = $name,
+  $l_vpc = $vpc,
+  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
+  $network=lookup('environment::network', Data, 'first', { }),
+  $roles=lookup('environment::roles', Data, 'first', {}),
+  $ensure=lookup('environment::ensure', Data, 'first', present)
 )  {
+
+  if $ensure == present {
+    $sequence = "require"
+  } else {
+    $sequence = "before"
+  }
   $network_data = {
     $name => {
       'region' => $region,
@@ -38,6 +42,7 @@ define doatools::environment (
         'region' => $region,
         'ensure' => $ensure,
         'vpc' => $name,
+        $sequence => Doatools::Network[$name],
       }
     }
     create_resources('doatools::role', $role_data, $roles[$r])
