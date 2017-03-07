@@ -112,12 +112,6 @@ Puppet::Type.type(:security_group).provide(:awscli) do
       end
     end
     @property_hash[:vpcid] = data["VpcId"]
-    @property_hash[:in] = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(data["IpPermissions"], region) do | *arg |
-      awscli(*arg)
-    end
-    @property_hash[:out] = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(data["IpPermissionsEgress"], region) do | *arg |
-      awscli(*arg)
-    end
     @property_hash[:description] = data["Description"]
     begin
       @property_hash[:vpc] = PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(region, "vpc", @property_hash[:vpcid]) do | *arg |
@@ -128,74 +122,11 @@ Puppet::Type.type(:security_group).provide(:awscli) do
     end
   end
 
-  def set_in(region, data)
-    apply_network_rules region, @property_hash[:in], data, "authorize-security-group-ingress", "revoke-security-group-ingress"
-  end
-
-  def set_out(region, data)
-    apply_network_rules region, @property_hash[:out], data, "authorize-security-group-egress", "revoke-security-group-egress"
-  end
-
-  def apply_network_rules region, current, planned, add, remove
-    add_rules = planned.select{|r| !current.include? r }
-    delete_rules = current.select{|r| !planned.include? r }
-
-    add_rules.map{|a|
-      data = a.split("|")
-
-      args = [ "ec2", add, "--region", region, "--group-id", @property_hash[:sgid], "--protocol", data[0] ]
-      args << ["--port", data[1]] if data[1] and data[1].length > 0
-      args << ["--cidr", data[3]] if data[2] == "cidr"
-
-      if data[2] == "sg"
-        name = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(region, 'security-group', data[3]) do | *arg |
-          awscli(*arg)
-        end
-
-        args << ["--source-group", name]
-      end
-
-      awscli(args.flatten)
-
-    }
-    delete_rules.each{|d|
-      data = d.split("|")
-
-      args = [ "ec2", remove, "--region", region, "--group-id", @property_hash[:sgid], "--protocol", data[0] ]
-      args << ["--port", data[1]] if data[1] and data[1].length > 0
-      args << ["--cidr", data[3]] if data[2] == "cidr"
-      if data[2] == "sg"
-        name = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(region, 'security-group', data[3]) do | *arg |
-          awscli(*arg)
-        end
-
-        args << ["--source-group", name]
-      end
-      awscli(args.flatten)
-    }
-  end
-
-  def flush
-    if @property_flush
-      if @property_flush[:in] then set_in(@property_hash[:region], @property_flush[:in]) end
-      if @property_flush[:out] then set_out(@property_hash[:region], @property_flush[:out]) end
-    end
-  end
-
   def initialize(value={})
     super(value)
     @property_flush = {}
   end
 
   mk_resource_methods
-
-  def in=(value)
-    @property_flush[:in] = value
-  end
-
-  def out=(value)
-    @property_flush[:out] = value
-  end
-
 
 end

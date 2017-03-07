@@ -16,31 +16,27 @@
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:security_group) do
+Puppet::Type.newtype(:security_group_rules) do
   ensurable
 
-  autobefore(:vpc) do
+  autobefore(:security_group) do
     result = []
     if self[:ensure] == :absent
-      result << [ self[:vpc] ]
+      result << [ self[:name] ]
     end
     result.flatten
   end
 
-  autorequire(:vpc) do
+  autorequire(:security_group) do
     result = []
     if self[:ensure] == :present
-      result << [ self[:vpc] ]
+      result << [ self[:name] ]
     end
     result.flatten
   end
 
 
   newparam(:name, :namevar => true) do
-  end
-
-  newproperty(:vpc) do
-
   end
 
   #  read only properties...
@@ -52,10 +48,17 @@ Puppet::Type.newtype(:security_group) do
     end
   end
 
-  newproperty(:environment) do
-  end
+  newproperty(:in, :array_matching => :all) do
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
 
-  newproperty(:description) do
+
+  end
+  newproperty(:out, :array_matching => :all) do
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
   end
 
 end
