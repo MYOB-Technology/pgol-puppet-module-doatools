@@ -53,6 +53,10 @@ node 'default' {
     vpc         => 'doatools',
     description => 'example security group',
     environment => 'doatools vpc demo',
+  }
+
+  security_group_rules { 'doatools2':
+    region      => 'us-east-1',
     in          => [
       'tcp|80|sg|doatools2'
     ],
