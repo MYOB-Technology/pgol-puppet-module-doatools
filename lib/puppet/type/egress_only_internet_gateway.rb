@@ -38,7 +38,7 @@ Puppet::Type.newtype(:internet_gateway) do
 
   end
 
-  newproperty(:ipaddr) do
+  newproperty(:elastic_ip) do
 
   end
 
