@@ -31,6 +31,8 @@ Puppet::Type.newtype(:security_group_rules) do
     result = []
     if self[:ensure] == :present
       result << [ self[:name] ]
+      result << self[:in].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]}
+      result << self[:out].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]}
     end
     result.flatten
   end

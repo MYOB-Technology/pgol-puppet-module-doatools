@@ -58,6 +58,11 @@ define doatools::network (
       region      => $region,
       vpc         => $name,
       environment => $environment,
+    }
+
+    security_group_rules { $name:
+      ensure      => $ensure,
+      region      => $region,
       in          => $default_access['ingress'],
       out         => $default_access['egress'],
     }
