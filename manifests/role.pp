@@ -31,12 +31,35 @@ define doatools::role (
   $target=lookup('role::target', Data, 'first', { }),
   $database=lookup('role::database', Data, 'first', undef),
 ) {
-  if $image==undef {
+  if $image==undef and $ensure==present {
     $l_region=$region
-    $image_internal=lookup('role::image', Data, 'first', default)
+    $image_internal=lookup('role::image', Data, 'first', 'ami-6d1c2007')
   }
   else {
     $image_internal=$image
+  }
+
+  # The EC2 security group rules vary depending on whether we have databases and load balancers in the role.
+  if $database!=undef {
+    $ec2_egress = [
+      "tcp|3306|sg|${vpc}_${name}_rds_sg"
+    ]
+  }
+  else {
+    $ec2_egress = [
+    ]
+  }
+
+  if $listeners!=undef {
+    $ec2_ingress = [
+      "tcp|80|sg|${vpc}_${name}_elb_sg"
+    ]
+  }
+  else {
+    $ec2_ingress = [
+      "tcp|80|cidr|0.0.0.0/0",
+      "tcp|443|cidr|0.0.0.0/0",
+    ]
   }
 
 
@@ -48,6 +71,14 @@ define doatools::role (
     region      => $region,
     description => 'instance security group',
   }
+
+  security_group_rules { "${vpc}_${name}_ec2_sg":
+    ensure      => $ensure,
+    region      => $region,
+    in          => $ec2_ingress,
+    out         => $ec2_egress,
+  }
+
 
   if $listeners!=undef {
     $listeners_internal = $listeners.map |$l| {
@@ -63,16 +94,29 @@ define doatools::role (
       description => 'load balancer security group',
     }
 
+    security_group_rules { "${vpc}_${name}_elb_sg":
+      ensure      => $ensure,
+      region      => $region,
+      in          => [
+        "tcp|80|cidr|0.0.0.0/0",
+        "tcp|443|cidr|0.0.0.0/0",
+      ],
+      out         => [
+        "tcp|80|sg|${vpc}_${name}_ec2_sg"
+      ],
+    }
 
+    $target_required = {
+      name => "${vpc}-${name}-tgt",
+      vpc => $vpc,
+    }
 
-    $target_internal = {
+    $target_defaults = {
       check_interval => 30,
       failed => 3,
       healthy => 3,
-      name => "${vpc}-${name}-tgt",
       port => 80,
       timeout => 10,
-      vpc => $vpc,
     }
 
     load_balancer { "${vpc}-${name}-elb":
@@ -80,10 +124,11 @@ define doatools::role (
       region          => $region,
       subnets         => $subnets,
       listeners       => $listeners_internal,
-      targets         => [deep_merge($target_internal, $target)],
+      targets         => [deep_merge($target_defaults, $target, $target_required)],
       security_groups => [ "${vpc}_${name}_elb_sg" ]
     }
   } else {
+
     if $ensure == absent {
       security_group { "${vpc}_${name}_elb_sg":
         ensure => $ensure,
@@ -129,6 +174,15 @@ define doatools::role (
       vpc         => $vpc,
       description => 'database security group',
     }
+
+    security_group_rules { "${vpc}_${name}_rds_sg":
+      ensure      => $ensure,
+      region      => $region,
+      in          => [ "all||sg|${vpc}_${name}_ec2_sg"],
+      out         => [
+      ],
+    }
+
     Doatools::Network[$vpc]->Rds_subnet_group["${vpc}-${name}-rdsnet"]->Rds["${vpc}-${name}-rds"]
 
   } else {

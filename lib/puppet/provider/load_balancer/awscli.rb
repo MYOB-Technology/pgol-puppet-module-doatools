@@ -38,7 +38,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     @property_hash[:region] = @resource[:region]
     @property_hash[:subnets] = @resource[:subnets]
 
-    @resource[:targets].each{|x| create_target(@resource[:region], x)} if !@resource[:targets].nil?
+    @resource[:targets].each{|x| print"Creating Target: #{x}\n" ; create_target(@resource[:region], x)} if !@resource[:targets].nil?
     @property_hash[:targets] = @resource[:targets] if !@resource[:targets].nil?
 
     @resource[:listeners].each{|x| create_listener(x)} if !@resource[:listeners].nil?
