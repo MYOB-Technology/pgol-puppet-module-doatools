@@ -27,7 +27,7 @@ Puppet::Type.newtype(:nat_gateway) do
 
   end
 
-  newaparam(:elastic_ip) do
+  newparam(:elastic_ip) do
 
   end
 

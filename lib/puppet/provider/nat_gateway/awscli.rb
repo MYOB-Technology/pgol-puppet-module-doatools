@@ -19,7 +19,7 @@ require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/awscmds'
 require 'puppet_x/intechwifi/exceptions'
 
-Puppet::Type.type(:load_balancer).provide(:awscli) do
+Puppet::Type.type(:nat_gateway).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
@@ -31,6 +31,27 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def exists?
+    # Find the VPC first...
+    @property_hash[:vpcid] = PuppetX::IntechWIFI::AwsCmds.find_vpc_tag([resource[:region]], resource[:name]){ | *arg | awscli(*arg) }[:tag]["ResourceId"]
+    @property_hash[:region] = resource[:region]
+
+    @property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:subnet]){ | *arg | awscli(*arg) }
+
+    cli_args = [
+        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}"
+    ]
+    nats = JSON.parse(awscli(cli_args))["NatGateways"].select do |x|
+      x["SubnetId"] == @property_hash[:subnetid] and !["failed", "deleted", "deleting"].include? x["State"]
+    end
+
+    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if nats.length == 0
+    raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, resource[:name] if nats.length > 1
+
+    # Now we can be sure we have exactly one NAT gateway.
+    nat=nats[0]
+
+    public_ips = nat["NatGatewayAddresses"].select{|x| !x["PublicIp"].nil?}.map{|x| x["PublicIp"]}
+    @property_hash[:elastic_ip] = public_ips[0] if public_ips.length == 1
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
