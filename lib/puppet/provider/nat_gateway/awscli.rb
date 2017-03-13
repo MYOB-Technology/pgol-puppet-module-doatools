@@ -23,22 +23,43 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
+    eip_args = [
+        'ec2', 'describe-addresses', '--region', @resource[:region],
+        '--filters', 'Name=domain,Values=vpc',
+    ]
+
+    eip_args << [ '--public-ips', @resource[:elastic_ip] ] if !@resource[:elastic_ip].nil?
+
+    eips = JSON.parse(awscli(eip_args.flatten))["Addresses"].select{|x| x["AssociationId"].nil?}.map{|x| x["AllocationId"]}
+
+    fail("No available Elastic IP address") if eips.length == 0
+
+    cli_args = [
+        'ec2', 'create-nat-gateway', '--region', @resource[:region],
+        '--subnet-id', PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:name]){ | *arg | awscli(*arg) },
+        '--allocation-id', eips[0],
+    ]
+
+    awscli(cli_args)
 
   end
 
   def destroy
+    cli_args = [
+        'ec2', 'delete-nat-gateway', '--region', @resource[:region],
+        '--nat-gateway-id', @property_hash[:ngw_id]
+    ]
 
+    awscli(cli_args.flatten)
   end
 
   def exists?
     # Find the VPC first...
-    @property_hash[:vpcid] = PuppetX::IntechWIFI::AwsCmds.find_vpc_tag([resource[:region]], resource[:name]){ | *arg | awscli(*arg) }[:tag]["ResourceId"]
     @property_hash[:region] = resource[:region]
-
-    @property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:subnet]){ | *arg | awscli(*arg) }
+    @property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:name]){ | *arg | awscli(*arg) }
 
     cli_args = [
-        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}"
+        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--filter', "Name=subnet-id,Values=#{@property_hash[:subnetid]}"
     ]
     nats = JSON.parse(awscli(cli_args))["NatGateways"].select do |x|
       x["SubnetId"] == @property_hash[:subnetid] and !["failed", "deleted", "deleting"].include? x["State"]
@@ -52,6 +73,7 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
 
     public_ips = nat["NatGatewayAddresses"].select{|x| !x["PublicIp"].nil?}.map{|x| x["PublicIp"]}
     @property_hash[:elastic_ip] = public_ips[0] if public_ips.length == 1
+    @property_hash[:ngw_id] = nat["NatGatewayId"]
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -72,12 +94,7 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
 
   end
 
-
   mk_resource_methods
-
-  def region=(value)
-    @property_flush[:region] = value
-  end
 
 end
 

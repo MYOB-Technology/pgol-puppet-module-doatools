@@ -23,10 +23,6 @@ Puppet::Type.newtype(:nat_gateway) do
 
   end
 
-  newparam(:subnet) do
-
-  end
-
   newparam(:elastic_ip) do
 
   end
