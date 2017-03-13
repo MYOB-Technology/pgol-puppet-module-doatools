@@ -20,26 +20,14 @@ Puppet::Type.newtype(:internet_gateway) do
   ensurable
 
   autorequire(:vpc) do
-    self[:vpc] if self[:ensure] == :present
+    self[:name] if self[:ensure] == :present
   end
 
   autobefore(:vpc) do
-    self[:vpc] if self[:ensure] == :absent
+    self[:name] if self[:ensure] == :absent
   end
 
   newparam(:name, :namevar => true) do
-  end
-
-  newparam(:environment) do
-
-  end
-
-  newproperty(:vpc) do
-
-  end
-
-  newproperty(:elastic_ip) do
-
   end
 
   #  read only properties...

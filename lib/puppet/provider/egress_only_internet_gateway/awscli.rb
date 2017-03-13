@@ -31,8 +31,36 @@ Puppet::Type.type(:egress_only_internet_gateway).provide(:awscli) do
   end
 
   def exists?
+    #
+    # At this point in time, it is not possible to tag egress only
+    # internet gateways with a name, so the only way we can deal with this, is
+    # to find the VPC and then see if an egress only internet gateway is
+    # attached to this VPC
+    #
 
+    @property_hash[:vpcid] = PuppetX::IntechWIFI::AwsCmds.AwsCmds.find_id_by_name(resource[:region], "vpc", resource[:name]) {| *arg | awscli(*arg) }
+    @property_hash[:region] = resource[:region]
+
+    eoigs = JSON.parse(awscli('ec2', 'describe-egress-only-internet-gateways', '--region', search_result[:region]))["EgressOnlyInternetGateways"].select{
+        |x| x["Attachments"]["VpcId"] == @property_hash[:vpcid]
+    }
+
+    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if eoigs.length == 0
+    raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, resource[:name] if eoigs.length > 1
+
+    eoig = eoigs[0]
+
+    @property_hash[:name] = region[:name]
+
+
+  rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+    debug(e)
     false
+
+  rescue PuppetX::IntechWIFI::Exceptions::MultipleMatchesError => e
+    fail(e)
+    false
+
   end
 
   def flush
