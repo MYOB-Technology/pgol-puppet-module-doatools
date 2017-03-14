@@ -16,25 +16,26 @@
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:subnet) do
+Puppet::Type.newtype(:nat_gateway) do
   ensurable
 
-  autorequire(:vpc) do
+  autorequire(:subnet) do
     if self[:ensure] == :present
-      self[:vpc]
+      self[:name]
     end
   end
 
-  autobefore(:vpc) do
+  autobefore(:subnet) do
     if self[:ensure] == :absent
-      self[:vpc]
+      self[:name]
     end
   end
 
   newparam(:name, :namevar => true) do
+
   end
 
-  newproperty(:vpc) do
+  newparam(:elastic_ip) do
 
   end
 
@@ -46,44 +47,5 @@ Puppet::Type.newtype(:subnet) do
       fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
     end
   end
-
-  newproperty(:availability_zone) do
-    defaultto 'a'
-    validate do |value|
-      fail("Invalid availability zone #{value}") unless PuppetX::IntechWIFI::Constants.AvailabilityZones.include? value
-    end
-  end
-
-  newproperty(:environment) do
-  end
-
-  newproperty(:cidr) do
-    defaultto '10.0.0.0/8'
-    validate do |value|
-      #  Its not worth doing a lot of validation as AWS will reject invalid strings.
-
-      #  Reject any invalid characters
-      fail("Invalid CIDR #{value}") unless value =~ /^[0-9\.\/]+$/
-
-    end
-  end
-
-  newproperty(:public_ip) do
-    validate do |value|
-      fail("The subnet public property can be [true|false]") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
-    end
-    munge do |value|
-      PuppetX::IntechWIFI::Logical.logical(value)
-    end
-  end
-
-  newproperty(:routetable) do
-
-  end
-
-  newproperty(:nacl) do
-
-  end
-
-
 end
+

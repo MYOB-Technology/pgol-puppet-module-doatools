@@ -32,7 +32,6 @@ define doatools::network (
   }
 
   if $internet_access == "true" or $internet_access == true {
-    warning("declaring internet access")
     internet_gateway { $name:
       ensure => $ensure,
       region => $region,
@@ -44,7 +43,7 @@ define doatools::network (
     }
 
   }else {
-    warning("declaring NO internet access")
+    warning("declaring a VPC with no internet access")
     internet_gateway { $name:
       ensure => absent,
       region => $region,
@@ -87,6 +86,37 @@ define doatools::network (
         availability_zone => $az,
         cidr              => $actual_cidr,
         environment       => $environment,
+      }
+
+      #  If we need to create NAT gateways for this zone,
+      if $z['nat'] != undef {
+        $nats = $z['nat']
+        if $nats =~ Tuple[String, 1, 5] and $azi < $nats.size {
+          # looks like its full redundancy, one per AZ
+          nat_gateway {
+            $subnet_name:
+              ensure     => $ensure,
+              region     => $region,
+              elastic_ip => $nats[$azi],
+          }
+          if $ensure == absent {
+            Nat_gateway[$subnet_name]->Internet_gateway[$name]
+          }
+        } else {
+          # Only one NAT gateway.
+          warning("Implementing a single nat gateway. There my be situations when this zone will not be able to access the internet.")
+          if $azi == 0 {
+            nat_gateway {
+              $subnet_name:
+                ensure     => $ensure,
+                region     => $region,
+                elastic_ip => $nats
+            }
+            if $ensure == absent {
+              Nat_gateway[$subnet_name]->Internet_gateway[$name]
+            }
+          }
+        }
       }
 
       if $ensure == absent {
