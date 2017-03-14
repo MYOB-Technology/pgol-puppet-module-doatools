@@ -34,13 +34,19 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
 
     fail("No available Elastic IP address") if eips.length == 0
 
+    @property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:name]){ | *arg | awscli(*arg) }
+
     cli_args = [
         'ec2', 'create-nat-gateway', '--region', @resource[:region],
-        '--subnet-id', PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:name]){ | *arg | awscli(*arg) },
+        '--subnet-id', @property_hash[:subnetid],
         '--allocation-id', eips[0],
     ]
 
-    awscli(cli_args)
+    @property_hash[:ngw_id] = JSON.parse(awscli(cli_args))["NatGateway"]["NatGatewayId"]
+
+    @property_hash[:region] = @resource[:region]
+
+    self.wait_for_state(['available'])
 
   end
 
@@ -51,6 +57,36 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
     ]
 
     awscli(cli_args.flatten)
+
+    self.wait_for_state(['deleted'])
+
+  end
+
+  def wait_for_state end_states
+    notice("Waiting for a status change to #{end_states}")
+
+    cli_args = [
+        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--nat-gateway-ids', @property_hash[:ngw_id]
+    ]
+
+    sleep(30)
+
+    current_state = "no state"
+
+    while true do
+      state = JSON.parse(awscli(cli_args))["NatGateways"][0]["State"]
+
+      fail('change of state failed for nat_gateway') if ['failed'].include? state
+
+      if state != current_state
+        notice("status is now #{state}")
+        current_state = state
+        break if end_states.include? state
+      end
+      sleep(5)
+    end
+
+
   end
 
   def exists?

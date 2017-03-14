@@ -20,7 +20,15 @@ Puppet::Type.newtype(:subnet) do
   ensurable
 
   autorequire(:vpc) do
-    self[:vpc]
+    if self[:ensure] == :present
+      self[:vpc]
+    end
+  end
+
+  autobefore(:vpc) do
+    if self[:ensure] == :absent
+      self[:vpc]
+    end
   end
 
   newparam(:name, :namevar => true) do

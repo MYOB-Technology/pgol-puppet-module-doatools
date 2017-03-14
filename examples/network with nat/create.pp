@@ -12,40 +12,35 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
-require 'puppet_x/intechwifi/logical'
-require 'puppet_x/intechwifi/constants'
+require doatools
 
-Puppet::Type.newtype(:nat_gateway) do
-  ensurable
-
-  autorequire(:subnet) do
-    if self[:ensure] == :present
-      self[:name]
-    end
-  end
-
-  autobefore(:subnet) do
-    if self[:ensure] == :absent
-      self[:name]
-    end
-  end
-
-  newparam(:name, :namevar => true) do
-
-  end
-
-  newparam(:elastic_ip) do
-
-  end
-
-  #  read only properties...
-  newproperty(:region) do
-    defaultto 'us-east-1'
-    validate do |value|
-      regions = PuppetX::IntechWIFI::Constants.Regions
-      fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
-    end
-  end
-end
-
+node 'default' {
+  doatools::network { 'doatools':
+    region          => 'us-east-1',
+    vpc_cidr        => '192.168.74.0/23',
+    environment     => 'doatools vpc demo',
+    availability    => ['a', 'b', 'c'],
+    internet_access => true,
+    default_access  => {
+      ingress => [
+        'tcp|80|sg|doatools'
+      ],
+      egress  => [
+        'tcp|3306|sg|doatools'
+      ],
+    },
+    zones => [ {
+        label     =>'',
+        cidr      =>'192.168.74.0/24',
+        public_ip => true,
+      }, {
+        label     =>'p',
+        cidr      => '192.168.75.0/24',
+	public_ip => false,
+        nat       => ['34.206.108.159', '34.206.183.158', '34.199.175.122' ],
+      }
+    ]
+  }
+}
