@@ -38,8 +38,12 @@ Puppet::Type.type(:route_table).provide(:awscli) do
 
     rt = JSON.parse(awscli(args))["RouteTable"]
     @property_hash[:rtid] = rt["RouteTableId"]
+    @property_hash[:region] = resource[:region]
 
     awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:rtid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+
+    #  Create the routes
+    resource[:routes].each{|x| create_route(x)}
 
   end
 
@@ -81,6 +85,8 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     end
     @property_hash[:environment] = PuppetX::IntechWIFI::AwsCmds.find_tag_from_list(rt["Tags"], "Environment")
 
+    @property_hash[:routes] = rt["Routes"].select{|x| x["GatewayId"] != 'local'}.map{|x| self.puppetise_route(x)}
+
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -92,8 +98,71 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     false
   end
 
+  def update_routes current, desired
+    add = desired.select{|x| !current.include? x}
+    del = current.select{|x| !desired.include? x }
+
+    add.each{|x| create_route x}
+    del.each{|x| delete_route x}
+  end
+
+
+  def create_route route
+    rt_segments = route.split('|')
+
+    raise RouteFormatError route if rt_segments.length != 3
+
+    args = [
+        'ec2', 'create-route',
+        '--region', @property_hash[:region],
+        '--route-table-id', @property_hash[:rtid],
+        '--destination-cidr-block', rt_segments[0],
+        self.target_type_args(rt_segments[1], rt_segments[2])
+    ]
+
+    awscli(args.flatten)
+
+  end
+
+  def delete_route route
+    rt_segments = route.split('|')
+    raise RouteFormatError route if rt_segments.length != 3
+
+    args = [
+        'ec2', 'delete-route',
+        '--region', @property_hash[:region],
+        '--route-table-id', @property_hash[:rtid],
+        '--destination-cidr-block', rt_segments[0],
+    ]
+
+    awscli(args.flatten)
+
+  end
+
+  def puppetise_route route
+    #
+    #  format:  cidr|target type|target name/id
+    #
+    #
+    target_type = route['GatewayId'].split('-')[0]
+
+    name = {
+        'igw' => self.method(:igw_id_to_name)
+    }[target_type].(route['GatewayId'])
+
+    "#{route['DestinationCidrBlock']}|#{target_type}|#{name}"
+
+  end
+
+  def target_type_args spec, ident
+    {
+        'igw' => [ '--gateway-id', self.igw_name_to_id(ident)]
+    }[spec]
+  end
+
   def flush
     if @property_flush
+      update_routes(@property_hash[:routes], @property_flush[:routes]) if !@property_flush[:routes].nil?
     end
   end
 
@@ -103,6 +172,26 @@ Puppet::Type.type(:route_table).provide(:awscli) do
   end
 
   mk_resource_methods
+
+  def routes=(value)
+    @property_flush[:routes] = value
+  end
+
+  #
+  # Methods to convert between target names and ids.
+  #
+  # Because not all target types can be tagged, there is no global way
+  # to convert between identity and puppet object name
+  #
+
+  def igw_id_to_name(id)
+    PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'internet-gateway', id) { | *arg |  awscli(*arg) }
+  end
+
+  def igw_name_to_id(name)
+    print "Called igw_name_to_id region=#{@property_hash[:region]}  name=#{name}\n"
+    PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'internet-gateway', name) { | *arg |  awscli(*arg) }
+  end
 
 
 end

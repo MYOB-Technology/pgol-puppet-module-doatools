@@ -44,6 +44,13 @@ module PuppetX
         end
       end
 
+      class RouteFormatError < StandardError
+        def initialize(data)
+          super("Route format is 'cidr|target type|target id', not '#{data}'.")
+        end
+      end
+
+
     end
   end
 end
