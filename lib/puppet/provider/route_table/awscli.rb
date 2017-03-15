@@ -31,6 +31,31 @@ Puppet::Type.type(:route_table).provide(:awscli) do
   end
 
   def exists?
+    search_result = PuppetX::IntechWIFI::AwsCmds.find_tag([@resource[:region]], 'route-table', "Name", "value" ,resource[:name]) { | *arg |  awscli(*arg) }
+    @property_hash[:ensure] = :present
+    @property_hash[:rtid] = search_result[:tag]["ResourceId"]
+    @property_hash[:region] = search_result[:region]
+    @property_hash[:name] = resource[:name]
+
+    details_args = [
+        'ec2', 'describe-route-tables',
+        '--region', @property_hash[:region],
+        '--route-table-ids', @property_hash[:rtid]
+    ]
+
+    rts = JSON.parse(awscli(details_args))["RouteTables"]
+
+    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if rts.length == 0
+    raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, resource[:name] if rts.length > 1
+
+    rt = rts[0]
+
+    @property_hash[:vpc]= PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], "vpc", rt["VpcId"]){ | *arg | awscli(*arg) }
+    @property_hash[:vpc_default] = rt["Associations"].select{|x| x["Main"] == true}.map{|x| x["Main"]}.reduce(PuppetX::IntechWIFI::Logical.logical(false)){ |memo, value| PuppetX::IntechWIFI::Logical.logical_true(memo) ? memo : PuppetX::IntechWIFI::Logical.logical(value)}
+    @property_hash[:subnets] = rt["Associations"].select{|x| !x["SubnetId"].nil?}.map do |x|
+      PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], "subnet", x["SubnetId"]){ | *arg | awscli(*arg) }
+    end
+    @property_hash[:environment] = PuppetX::IntechWIFI::AwsCmds.find_tag_from_list(rt["Tags"], "Environment")
 
     true
 

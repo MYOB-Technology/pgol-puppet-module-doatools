@@ -22,6 +22,11 @@ module PuppetX
     module AwsCmds
       @vpc_tag_cache = { :key => nil, :value => nil}
 
+      def AwsCmds.find_tag_from_list(tag_list, name)
+        tags = tag_list.select{|x| x["Key"] == name}.map{|x| x["Value"]}
+        tags.length == 1 ? tags[0] : nil
+      end
+
       def AwsCmds.clear_vpc_tag_cache(name)
         @vpc_tag_cache = { :key => nil, :value => nil} if @vpc_tag_cache[:key] == name
       end

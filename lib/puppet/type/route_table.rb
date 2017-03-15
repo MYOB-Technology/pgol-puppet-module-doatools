@@ -41,8 +41,19 @@ Puppet::Type.newtype(:route_table) do
     end
   end
 
-  newproperty(:vpc) do
+  newproperty(:subnets, :array_matching => :all) do
+    def insync?(is)
+      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+    end
+  end
 
+  newproperty(:vpc) do
+  end
+
+  newproperty(:vpc_default) do
+    validate do |value|
+      fail("vpc_default valid options are [enabled|disabled] and not '#{value}'") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
+    end
   end
 
 end
