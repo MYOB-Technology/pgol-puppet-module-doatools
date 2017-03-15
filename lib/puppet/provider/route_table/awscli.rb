@@ -23,10 +23,34 @@ Puppet::Type.type(:route_table).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
+    begin
+      vpcid = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], "vpc", resource[:vpc]) { | *arg | awscli(*arg) }
+
+    rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+      fail("We cannot create this route table, unless the vpc=>#{resource[:vpc]} already exists.")
+    end
+
+    args = [
+        'ec2', 'create-route-table',
+        '--region', @resource[:region],
+        '--vpc-id', vpcid,
+    ]
+
+    rt = JSON.parse(awscli(args))["RouteTable"]
+    @property_hash[:rtid] = rt["RouteTableId"]
+
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:rtid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
 
   end
 
   def destroy
+    args = [
+        'ec2', 'delete-route-table',
+        '--region', @property_hash[:region],
+        '--route-table-id', @property_hash[:rtid],
+    ]
+
+    awscli(args)
 
   end
 
