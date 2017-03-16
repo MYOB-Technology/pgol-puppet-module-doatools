@@ -102,8 +102,8 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     add = desired.select{|x| !current.include? x}
     del = current.select{|x| !desired.include? x }
 
-    add.each{|x| create_route x}
     del.each{|x| delete_route x}
+    add.each{|x| create_route x}
   end
 
 
@@ -144,20 +144,27 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     #  format:  cidr|target type|target name/id
     #
     #
-    target_type = route['GatewayId'].split('-')[0]
 
-    name = {
-        'igw' => self.method(:igw_id_to_name)
-    }[target_type].(route['GatewayId'])
+    print "#{route}\n"
+    handler = [
+        [ 'GatewayId', self.method(:igw_id_to_name), 'igw'],
+        [ 'NatGatewayId', self.method(:natgw_id_to_name), 'nat'],
+    ].select{|x| !route[x[0]].nil?}.map{|x| [route[x[0]], x[1], x[2]]}.flatten
+    print "handler=#{handler}"
 
-    "#{route['DestinationCidrBlock']}|#{target_type}|#{name}"
+    name = handler[1].(handler[0])
+
+    "#{route['DestinationCidrBlock']}|#{handler[2]}|#{name}"
 
   end
 
   def target_type_args spec, ident
-    {
-        'igw' => [ '--gateway-id', self.igw_name_to_id(ident)]
+    data = {
+        'igw' => [ '--gateway-id', self.method(:igw_name_to_id)],
+        'nat' => [ '--nat-gateway-id', self.method(:natgw_name_to_id)]
     }[spec]
+
+    [data[0], data[1].(ident)]
   end
 
   def flush
@@ -188,9 +195,42 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'internet-gateway', id) { | *arg |  awscli(*arg) }
   end
 
+  def natgw_id_to_name(id)
+    # We need to identify the natgw subnet, and then find the subnets name.
+
+    cli_args = [
+        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--nat-gateway-ids', id
+    ]
+
+    nat = JSON.parse(awscli(cli_args.flatten))["NatGateways"][0]
+
+    PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'subnet', nat["SubnetId"]) { | *arg |  awscli(*arg) }
+
+  rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+    id
+  end
+
+
   def igw_name_to_id(name)
-    print "Called igw_name_to_id region=#{@property_hash[:region]}  name=#{name}\n"
     PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'internet-gateway', name) { | *arg |  awscli(*arg) }
+  end
+
+  def natgw_name_to_id(name)
+    snid = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'subnet', name) { | *arg |  awscli(*arg) }
+
+    cli_args = [
+        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--filter', "Name=subnet-id,Values=#{snid}"
+    ]
+    nats = JSON.parse(awscli(cli_args))["NatGateways"].select do |x|
+      x["SubnetId"] == snid and !["failed", "deleted", "deleting"].include? x["State"]
+    end
+
+    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if nats.length == 0
+    raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, resource[:name] if nats.length > 1
+
+    # Now we can be sure we have exactly one NAT gateway.
+    nats[0]["NatGatewayId"]
+
   end
 
 
