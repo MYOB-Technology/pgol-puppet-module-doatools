@@ -85,7 +85,11 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     end
     @property_hash[:environment] = PuppetX::IntechWIFI::AwsCmds.find_tag_from_list(rt["Tags"], "Environment")
 
-    @property_hash[:routes] = rt["Routes"].select{|x| x["GatewayId"] != 'local'}.map{|x| self.puppetise_route(x)}
+    @property_hash[:routes] = rt["Routes"].select{ |x|
+      x["GatewayId"] != 'local'
+    }.select{ |x|
+      x["GatewayId"][0..3] != 'vpce'
+    }.map{|x| self.puppetise_route(x)}
 
     true
 
@@ -145,12 +149,10 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     #
     #
 
-    print "#{route}\n"
     handler = [
         [ 'GatewayId', self.method(:igw_id_to_name), 'igw'],
         [ 'NatGatewayId', self.method(:natgw_id_to_name), 'nat'],
     ].select{|x| !route[x[0]].nil?}.map{|x| [route[x[0]], x[1], x[2]]}.flatten
-    print "handler=#{handler}"
 
     name = handler[1].(handler[0])
 
