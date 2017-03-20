@@ -16,29 +16,23 @@
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:security_group_rules) do
+Puppet::Type.newtype(:route_table_routes) do
   ensurable
 
-  autobefore(:security_group) do
-    result = []
-    if self[:ensure] == :absent
-      result << [ self[:name] ]
-    end
-    result.flatten
-  end
-
-  autorequire(:security_group) do
-    result = []
+  autorequire(:route_table) do
     if self[:ensure] == :present
-      result << [ self[:name] ]
-      result << self[:in].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:in].nil?
-      result << self[:out].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:out].nil?
+      self[:name]
     end
-    result.flatten
   end
 
+  autobefore(:route_table) do
+    if self[:ensure] == :absent
+      self[:name]
+    end
+  end
 
   newparam(:name, :namevar => true) do
+
   end
 
   #  read only properties...
@@ -50,14 +44,13 @@ Puppet::Type.newtype(:security_group_rules) do
     end
   end
 
-  newproperty(:in, :array_matching => :all) do
+  newproperty(:routes, :array_matching => :all) do
     def insync?(is)
       is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
     end
-
-
   end
-  newproperty(:out, :array_matching => :all) do
+
+  newproperty(:subnets, :array_matching => :all) do
     def insync?(is)
       is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
     end

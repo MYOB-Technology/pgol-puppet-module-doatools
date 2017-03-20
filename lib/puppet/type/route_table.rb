@@ -20,6 +20,7 @@ Puppet::Type.newtype(:route_table) do
   ensurable
 
   newparam(:name, :namevar => true) do
+
   end
 
   #  read only properties...
@@ -35,19 +36,8 @@ Puppet::Type.newtype(:route_table) do
 
   end
 
-  newproperty(:routes, :array_matching => :all) do
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
-  end
-
-  newproperty(:subnets, :array_matching => :all) do
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
-  end
-
   newproperty(:vpc) do
+
   end
 
   newproperty(:vpc_default) do

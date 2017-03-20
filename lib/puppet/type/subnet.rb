@@ -25,11 +25,25 @@ Puppet::Type.newtype(:subnet) do
     end
   end
 
+  autorequire(:route_table) do
+    if self[:ensure] == :present
+      self[:route_table]
+    end
+  end
+
+
   autobefore(:vpc) do
     if self[:ensure] == :absent
       self[:vpc]
     end
   end
+
+  autobefore(:route_table) do
+    if self[:ensure] == :absent
+      self[:route_table]
+    end
+  end
+
 
   newparam(:name, :namevar => true) do
   end
@@ -77,7 +91,7 @@ Puppet::Type.newtype(:subnet) do
     end
   end
 
-  newproperty(:routetable) do
+  newproperty(:route_table) do
 
   end
 
