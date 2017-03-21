@@ -11,7 +11,11 @@ define doatools::network (
     ingress => [ "all||sg|${name}" ],
     egress  => [ "all||sg|${name}" ],
   }),
-  $zones = lookup('network::zones', Data, 'first', undef),
+  $zones = lookup('network::zones', Data, 'first', [{
+    label     => '%{vpc}%{az}',
+    cidr      => $vpc_cidr,
+    public_ip => true,
+  }]),
 ){
   define_network_resources($ensure,
     {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability },
