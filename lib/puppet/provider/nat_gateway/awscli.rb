@@ -63,7 +63,7 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
   end
 
   def wait_for_state end_states
-    notice("Waiting for a status change to #{end_states}")
+    info("Waiting for a status change to #{end_states}")
 
     cli_args = [
         'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--nat-gateway-ids', @property_hash[:ngw_id]
@@ -79,7 +79,7 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
       fail('change of state failed for nat_gateway') if ['failed'].include? state
 
       if state != current_state
-        notice("status is now #{state}")
+        info("status is now #{state}")
         current_state = state
         break if end_states.include? state
       end

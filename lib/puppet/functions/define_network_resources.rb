@@ -10,11 +10,22 @@ Puppet::Functions.create_function('define_network_resources') do
         :availabilty => vpc_data['availability'],
     }
 
-    internet_gateway = facts[:internet_gateway] ? {
+    vpc_security_group = status == 'present' ? {
         vpc_data['name'] => {
             :ensure => status,
             :region => vpc_data['region'],
             :vpc   => vpc_data['name'],
+            :environment => vpc_data['environment'],
+
+        }
+    } : { }
+
+    vpc_security_group_rules = status == 'present' ? {
+        vpc_data['name'] => {
+            :ensure => 'present',
+            :region => vpc_data['region'],
+            :in => security_group_rules[:ingress],
+            :out => security_group_rules[:egress],
         }
     } : { }
 
@@ -42,6 +53,14 @@ Puppet::Functions.create_function('define_network_resources') do
             natgw
         } : { }
 
+    internet_gateway = {
+        vpc_data['name'] => {
+            :ensure => (facts[:internet_gateway] and status == 'present') ? 'present' : 'absent',
+            :region => vpc_data['region'],
+            :vpc   => vpc_data['name'],
+            :nat_gateways => nat_gateways.keys,
+        }
+    }
 
     #
     # This is the Data structure we are returning...
@@ -133,26 +152,11 @@ Puppet::Functions.create_function('define_network_resources') do
         },
         {
             'resource_type' => "security_group",
-            'resources' => {
-                vpc_data['name'] => {
-                    :ensure => status,
-                    :region => vpc_data['region'],
-                    :vpc   => vpc_data['name'],
-                    :environment => vpc_data['environment'],
-
-                }
-            }
+            'resources' => vpc_security_group
         },
         {
             'resource_type' => "security_group_rules",
-            'resources' => {
-                vpc_data['name'] => {
-                    :ensure => status,
-                    :region => vpc_data['region'],
-                    :in => security_group_rules[:ingress],
-                    :out => security_group_rules[:egress],
-                }
-            }
+            'resources' => vpc_security_group_rules
         },
         {
             'resource_type' => "internet_gateway",
@@ -187,7 +191,10 @@ Puppet::Functions.create_function('define_network_resources') do
                         route_table_routes[route_table_routes_name] = {
                             'ensure' => status,
                             'region' => vpc_data['region'],
-                            'routes' => [ "0.0.0.0/0|nat|#{route_table_routes_name}"],
+                            'routes' => [
+                                "0.0.0.0/0|nat|#{route_table_routes_name}",
+                                "192.168.1.0/24|blackhole|none"
+                            ]
                         }
                     }
 
@@ -199,7 +206,10 @@ Puppet::Functions.create_function('define_network_resources') do
                     route_table_routes[route_table_routes_name] = {
                         'ensure' => status,
                         'region' => vpc_data['region'],
-                        'routes' => [ "0.0.0.0/0|nat|#{route_table_routes_name}"]
+                        'routes' => [
+                            "0.0.0.0/0|nat|#{route_table_routes_name}",
+                            "192.168.1.0/24|blackhole|none"
+                        ]
                     }
                 end
                 route_table_routes

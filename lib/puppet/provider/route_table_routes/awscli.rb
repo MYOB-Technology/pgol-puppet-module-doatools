@@ -18,6 +18,7 @@ require 'puppet_x/intechwifi/constants'
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/awscmds'
 require 'puppet_x/intechwifi/exceptions'
+require 'puppet_x/intechwifi/network_rules'
 
 Puppet::Type.type(:route_table_routes).provide(:awscli) do
   commands :awscli => "aws"
@@ -49,10 +50,7 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
     raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, resource[:name] if rts.length > 1
 
     rt = rts[0]
-
-    @property_hash[:subnets] = rt["Associations"].select{|x| !x["SubnetId"].nil?}.map do |x|
-      PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], "subnet", x["SubnetId"]){ | *arg | awscli(*arg) }
-    end
+    @property_hash[:vpcid] = rt["VpcId"]
     @property_hash[:routes] = rt["Routes"].select{ |x|
       x["GatewayId"] != 'local'
     }.select{ |x|
@@ -155,8 +153,8 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
   end
 
   def update_routes current, desired
-    add = desired.select{|x| !current.include? x}
-    del = current.select{|x| !desired.include? x }
+    add = desired.select{|x| !current.any?{|v| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(x, v) } }
+    del = current.select{|x| !desired.any?{|v| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(v, x) } }
 
     del.each{|x| delete_route x}
     add.each{|x| create_route x}
@@ -199,14 +197,45 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
 
 
   def target_type_args spec, ident
-    data = {
-        'igw' => [ '--gateway-id', self.method(:igw_name_to_id)],
-        'nat' => [ '--nat-gateway-id', self.method(:natgw_name_to_id)]
-    }[spec]
+    if spec == 'blackhole'
+      create_blackhole_args()
+    else
+      data = {
+          'igw' => [ '--gateway-id', self.method(:igw_name_to_id)],
+          'nat' => [ '--nat-gateway-id', self.method(:natgw_name_to_id)],
+      }[spec]
 
-    [data[0], data[1].(ident)]
+      [data[0], data[1].(ident)]
+    end
+
   end
 
+  def create_blackhole_args()
+    blackhole_args = []
+
+    args_igw = [
+        'ec2', 'describe-internet-gateways', '--region', @property_hash[:region],
+        '--filters', "Name=attachment.vpc-id,Values=#{@property_hash[:vpcid]}"
+    ]
+
+    args_nat = [
+        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region],
+        '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}"
+    ]
+
+    igw = JSON.parse(awscli(args_igw))["InternetGateways"]
+
+    if igw.length > 0
+      blackhole_args = [ '--gateway-id', igw[0]["InternetGatewayId"] ]
+    else
+      nat = JSON.parse(awscli(args_nat))["NatGateways"]
+      blackhole_args = [ '--nat-gateway-id', nat[0]["NatGatewayId"] ] if nat.length > 0
+    end
+
+    fail("No suitable blackhole target") if blackhole_args.length == 0
+
+    blackhole_args
+  end
 
 
 end

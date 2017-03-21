@@ -104,6 +104,14 @@ module PuppetX
         (new_base >> 24).to_s + "." + (new_base >> 16 & 0xFF).to_s + "." + (new_base >> 8 & 0xFF).to_s + "." + (new_base & 0xFF).to_s + "/" + new_cidr_size.to_s
       end
 
+      def self.RouteRuleMatch(declared, detected)
+        cidr_match = declared[0] == detected[0]
+        target_match = declared[1] == detected[1] and declared[2] == detected[2]
+        blackhole = declared[1] == 'blackhole'
+
+        cidr_match and (target_match or blackhole)
+      end
+
 
     end
 

@@ -39,7 +39,7 @@ Puppet::Type.newtype(:subnet) do
   end
 
   autobefore(:route_table) do
-    if self[:ensure] == :absent
+    if self[:ensure] == :absent or self[:ensure] == 'absent'
       self[:route_table]
     end
   end
