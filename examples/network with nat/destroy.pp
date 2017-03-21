@@ -18,19 +18,31 @@ require doatools
 
 node 'default' {
   doatools::network { 'doatools':
-    ensure => 'absent',
-    region => 'us-east-1',
+    ensure          => 'absent',
+    region          => 'us-east-1',
+    vpc_cidr        => '192.168.74.0/23',
+    environment     => 'doatools vpc demo',
+    availability    => ['a', 'b', 'c'],
+    internet_access => true,
+    default_access  => {
+      ingress => [
+        'tcp|80|sg|doatools'
+      ],
+      egress  => [
+        'tcp|3306|sg|doatools'
+      ],
+    },
     zones => [ {
-        label     =>'',
+        label     =>'%{vpc}%{az}',
         cidr      =>'192.168.74.0/24',
         public_ip => true,
       }, {
-        label     =>'p',
+        label     =>'%{vpc}%{az}p',
         cidr      => '192.168.75.0/24',
         public_ip => false,
         nat       => ['34.206.108.159', '34.206.183.158', '34.199.175.122' ],
       }
     ]
-
   }
 }
+

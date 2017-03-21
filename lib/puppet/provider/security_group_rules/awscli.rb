@@ -65,8 +65,6 @@ Puppet::Type.type(:security_group_rules).provide(:awscli) do
     ingress = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(groups[0]["IpPermissions"], search_result[:region]) { | *arg | awscli(*arg) }
     egress = PuppetX::IntechWIFI::Network_Rules.AwsToPuppetString(groups[0]["IpPermissionsEgress"], search_result[:region]) { | *arg | awscli(*arg) }
 
-    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if ingress.length == 0 and egress.length == 0
-
     @property_hash[:in] = ingress
     @property_hash[:out] = egress
     true

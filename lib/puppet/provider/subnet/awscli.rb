@@ -46,6 +46,9 @@ Puppet::Type.type(:subnet).provide(:awscli) do
       @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(resource[:public_ip])
       set_public_ip(@property_hash[:public_ip])
     end
+
+    set_route_table(resource[:route_table]) if !resource[:route_table].nil?
+
     @property_hash[:ensure] = :present
   end
 
@@ -113,6 +116,17 @@ Puppet::Type.type(:subnet).provide(:awscli) do
       awscli(*arg)
     end
 
+    route_table_args = [
+        'ec2', 'describe-route-tables', '--region', region,
+        '--filter', "Name=association.subnet-id,Values=#{@property_hash[:subnetid]}"
+    ]
+
+    rts = JSON.parse(awscli(route_table_args))["RouteTables"]
+
+    if rts.length > 0
+      @property_hash[:route_table] = PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(region, "route-table", rts[0]["RouteTableId"]) { |*arg| awscli(*arg) }
+    end
+
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     raise PuppetX::IntechWIFI::Exceptions::VpcNotNamedError , @property_hash[:vpcid]
 
@@ -123,11 +137,17 @@ Puppet::Type.type(:subnet).provide(:awscli) do
     awscli('ec2', 'modify-subnet-attribute', '--region', @property_hash[:region], '--subnet-id', @property_hash[:subnetid], '--no-map-public-ip-on-launch') if PuppetX::IntechWIFI::Logical.logical_false(value)
   end
 
+  def set_route_table(value)
+    awscli('ec2', 'associate-route-table', '--region', @property_hash[:region], '--subnet-id', @property_hash[:subnetid], '--route-table-id',
+           PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], "route-table", value) { |*args| awscli(*args)}
+    )
+  end
 
 
   def flush
     if @property_flush
       if @property_flush[:public_ip] then set_public_ip(@property_flush[:public_ip]) end
+      if @property_flush[:route_table] then set_route_table(@property_flush[:route_table]) end
     end
   end
 
@@ -141,6 +161,11 @@ Puppet::Type.type(:subnet).provide(:awscli) do
   def public_ip=(value)
     @property_flush[:public_ip] = value
   end
+
+  def route_table=(value)
+    @property_flush[:route_table] = value
+  end
+
 
 
 end

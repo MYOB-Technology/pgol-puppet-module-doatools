@@ -15,30 +15,17 @@
 
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
+require 'puppet_x/intechwifi/network_rules'
 
-Puppet::Type.newtype(:security_group_rules) do
+Puppet::Type.newtype(:route_table_routes) do
   ensurable
 
-  autobefore(:security_group) do
-    result = []
-    if self[:ensure] == :absent
-      result << [ self[:name] ]
-    end
-    result.flatten
+  autorequire(:route_table) do
+    self[:name]
   end
-
-  autorequire(:security_group) do
-    result = []
-    if self[:ensure] == :present
-      result << [ self[:name] ]
-      result << self[:in].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:in].nil?
-      result << self[:out].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:out].nil?
-    end
-    result.flatten
-  end
-
 
   newparam(:name, :namevar => true) do
+
   end
 
   #  read only properties...
@@ -50,16 +37,15 @@ Puppet::Type.newtype(:security_group_rules) do
     end
   end
 
-  newproperty(:in, :array_matching => :all) do
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+  newproperty(:routes, :array_matching => :all) do
+    validate do | value|
+      splits = value.split('|')
+      fail("route should be in the format 'cidr|<type>|<instance>'") unless splits.length == 3
+      fail("route type can be one of [nat|igw|blackhole]") unless ['nat', 'igw', 'blackhole'].include? splits[1]
     end
-
-
-  end
-  newproperty(:out, :array_matching => :all) do
     def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+      @should.map{|v| v.split('|')}.all?{|v| is.map{|x| x.split('|')}.any?{ |x| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(v, x) } } and
+          is.map{|v| v.split('|')}.all?{|v| @should.map{|x| x.split('|')}.any?{ |x| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(x, v) } }
     end
   end
 

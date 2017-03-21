@@ -55,6 +55,11 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def destroy
+    route_id = JSON.parse(awscli('ec2', 'describe-route-tables', '--region', resource[:region], '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}"))["RouteTables"][0]["RouteTableId"]
+    info("vpc #{resource[:name]} has a default route table #{route_id}")
+    awscli('ec2', 'delete-tags', '--region', resource[:region], '--resources', route_id, '--tags', "Key=Name", "Key=Environment")
+
+
     response = awscli('ec2', 'delete-vpc', '--region', @property_hash[:region], '--vpc-id', @property_hash[:vpcid])
     debug("Clearing vpc-id cache for #{name}\n")
     PuppetX::IntechWIFI::AwsCmds.clear_vpc_tag_cache @property_hash[:name]

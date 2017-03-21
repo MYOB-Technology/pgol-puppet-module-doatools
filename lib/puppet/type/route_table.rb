@@ -16,39 +16,27 @@
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:subnet) do
+Puppet::Type.newtype(:route_table) do
   ensurable
 
-  autorequire(:vpc) do
-    if self[:ensure] == :present
-      self[:vpc]
-    end
-  end
-
-  autorequire(:route_table) do
-    if self[:ensure] == :present
-      self[:route_table]
-    end
-  end
-
-
   autobefore(:vpc) do
+    result = []
     if self[:ensure] == :absent
-      self[:vpc]
+      result << [ self[:vpc] ]
     end
+    result.flatten
   end
 
-  autobefore(:route_table) do
-    if self[:ensure] == :absent or self[:ensure] == 'absent'
-      self[:route_table]
+  autorequire(:vpc) do
+    result = []
+    if self[:ensure] == :present
+      result << [ self[:vpc] ]
     end
+    result.flatten
   end
 
 
   newparam(:name, :namevar => true) do
-  end
-
-  newproperty(:vpc) do
 
   end
 
@@ -61,43 +49,18 @@ Puppet::Type.newtype(:subnet) do
     end
   end
 
-  newproperty(:availability_zone) do
-    defaultto 'a'
-    validate do |value|
-      fail("Invalid availability zone #{value}") unless PuppetX::IntechWIFI::Constants.AvailabilityZones.include? value
-    end
-  end
-
   newproperty(:environment) do
+
   end
 
-  newproperty(:cidr) do
-    defaultto '10.0.0.0/8'
+  newproperty(:vpc) do
+
+  end
+
+  newproperty(:vpc_default) do
     validate do |value|
-      #  Its not worth doing a lot of validation as AWS will reject invalid strings.
-
-      #  Reject any invalid characters
-      fail("Invalid CIDR #{value}") unless value =~ /^[0-9\.\/]+$/
-
+      fail("vpc_default valid options are [enabled|disabled] and not '#{value}'") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
     end
   end
-
-  newproperty(:public_ip) do
-    validate do |value|
-      fail("The subnet public property can be [true|false]") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
-    end
-    munge do |value|
-      PuppetX::IntechWIFI::Logical.logical(value)
-    end
-  end
-
-  newproperty(:route_table) do
-
-  end
-
-  newproperty(:nacl) do
-
-  end
-
 
 end

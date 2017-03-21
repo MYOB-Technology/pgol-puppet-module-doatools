@@ -20,10 +20,35 @@ Puppet::Type.newtype(:internet_gateway) do
   ensurable
 
   autorequire(:vpc) do
-    self[:vpc]
+    if self[:ensure] == :present
+      self[:vpc]
+    end
   end
 
+  autorequire(:nat_gateway) do
+    if self[:ensure] == :absent
+      self[:nat_gateways]
+    end
+  end
+
+  autobefore(:vpc) do
+    if self[:ensure] == :absent
+      self[:vpc]
+    end
+  end
+
+  autobefore(:nat_gateway) do
+    if self[:ensure] == :present
+      self[:nat_gateways]
+    end
+  end
+
+
   newparam(:name, :namevar => true) do
+  end
+
+  newparam(:nat_gateways) do
+
   end
 
 
@@ -33,6 +58,7 @@ Puppet::Type.newtype(:internet_gateway) do
   newproperty(:vpc) do
 
   end
+
 
   #  read only properties...
   newproperty(:region) do
