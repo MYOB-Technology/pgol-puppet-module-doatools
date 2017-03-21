@@ -56,11 +56,11 @@ node 'default' {
   }
 
   security_group_rules { 'doatools2':
-    region      => 'us-east-1',
-    in          => [
+    region => 'us-east-1',
+    in     => [
       'tcp|80|sg|doatools2'
     ],
-    out         => [
+    out    => [
       'tcp|3306|sg|doatools2'
     ],
   }

@@ -33,7 +33,7 @@ node 'default' {
       'Demo_Array'  => [
         'val1',
         'val2',
-      ], 
+      ],
     },
   }
 

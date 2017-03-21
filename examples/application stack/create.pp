@@ -33,9 +33,9 @@ node 'default' {
       ],
     }
   }->doatools::role { 'doatools':
-    region => 'us-east-1',
+    region    => 'us-east-1',
     image     => 'ami-6d1c2007',
-    vpc => 'doatools',
+    vpc       => 'doatools',
     desired   => 0,
     listeners => [
       'http',
