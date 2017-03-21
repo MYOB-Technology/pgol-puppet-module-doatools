@@ -1,0 +1,10 @@
+#
+---
+
+"network::vpc_cidr": "%{alias('vpc_cidr')}"
+"region": "%{aws_region}"
+"environment": "%{alias('')}"
+"availability": "%{alias('')}"
+"internet_access": "%{alias('')}"
+"default_access": "%{alias('')}"
+"zones": "%{alias('')}"

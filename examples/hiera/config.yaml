@@ -1,0 +1,21 @@
+---
+
+version: 5
+
+defaults:
+  datadir: "/Users/m_shaw/source/doatools/examples/hiera/data"
+  data_hash: yaml_data
+
+hierarchy:
+  - name: "Roles"
+    paths:
+    - "role/%{l_role}.yaml"
+    - "role/common.yaml"
+  - name: "AWS Environment"
+    paths:
+    - "aws/%{l_vpc}.yaml"
+    - "aws/%{l_region}.yaml"
+    - "aws/common.yaml"
+  - name: "common"
+    paths:
+    - "common.yaml"
