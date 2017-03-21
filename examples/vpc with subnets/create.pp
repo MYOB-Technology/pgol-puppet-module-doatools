@@ -21,10 +21,20 @@ node 'default' {
   vpc { 'doatools':
     region         => 'us-east-1',
     cidr           => '192.168.74.0/23',
-    environment    => 'doatools vpc demo',
     dns_hostnames  => true,
     dns_resolution => true,
     is_default     => false,
+    tags           => {
+      'Environment' => 'doatools by tags',
+      'Demo'        => 'test_string',
+      'Demo_Hash'   => {
+          my_val => 'hello'
+      },
+      'Demo_Array'  => [
+        'val1',
+        'val2',
+      ], 
+    },
   }
 
   subnet { 'doatools_a' :

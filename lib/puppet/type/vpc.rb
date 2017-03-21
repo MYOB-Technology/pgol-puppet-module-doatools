@@ -15,6 +15,7 @@
 
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
+require 'puppet_x/intechwifi/tags_property'
 
 Puppet::Type.newtype(:vpc) do
   ensurable
@@ -73,6 +74,15 @@ Puppet::Type.newtype(:vpc) do
   end
 
   newproperty(:is_default) do
+  end
+
+  newproperty(:tags) do
+    validate do | value|
+      PuppetX::IntechWIFI::Tags_Property.validate_value(value)
+    end
+    def insync?(is)
+      @should.any?{|x| PuppetX::IntechWIFI::Tags_Property.insync?(is, x)}
+    end
   end
 
 end

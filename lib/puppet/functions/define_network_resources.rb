@@ -15,7 +15,7 @@ Puppet::Functions.create_function('define_network_resources') do
             :ensure => status,
             :region => vpc_data['region'],
             :vpc   => vpc_data['name'],
-            :environment => vpc_data['environment'],
+            :tags => vpc_data['tags'],
 
         }
     } : { }
@@ -74,7 +74,7 @@ Puppet::Functions.create_function('define_network_resources') do
                     :ensure => status,
                     :region => vpc_data['region'],
                     :cidr   => vpc_data['cidr'],
-                    :environment => vpc_data['environment'],
+                    :tags => vpc_data['tags'],
 
                 }
             }
@@ -99,7 +99,7 @@ Puppet::Functions.create_function('define_network_resources') do
                             'ensure' => status,
                             'region' => vpc_data['region'],
                             'vpc' => vpc_data['name'],
-                            'environment' => vpc_data['environment'],
+                            'tags' => vpc_data['tags'],
                         }
                     }
                 end
@@ -141,7 +141,7 @@ Puppet::Functions.create_function('define_network_resources') do
                         'vpc'    => vpc_data['name'],
                         'availability_zone' => az,
                         'cidr'   => PuppetX::IntechWIFI::Network_Rules.MakeCidr(zone['cidr'], index, availability.length),
-                        'environment' => vpc_data['environment'],
+                        'tags' => vpc_data['tags'],
                         'route_table' => subnets_without_nat.include?(subnet_name) ? default_route_table : subnet_name,
                         'public_ip' => zone['public_ip'].nil? ? false : zone['public_ip']
                     }

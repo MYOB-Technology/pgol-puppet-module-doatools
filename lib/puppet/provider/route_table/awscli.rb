@@ -40,7 +40,10 @@ Puppet::Type.type(:route_table).provide(:awscli) do
     @property_hash[:rtid] = rt["RouteTableId"]
     @property_hash[:region] = resource[:region]
 
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:rtid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:rtid], '--tags', "Key=Name,Value=#{resource[:name]}")
+
+    @property_hash[:tags] = resource[:tags]
+    PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:rtid], {}, @property_hash[:tags]){| *arg | awscli(*arg)}
 
   end
 
@@ -77,7 +80,8 @@ Puppet::Type.type(:route_table).provide(:awscli) do
 
     @property_hash[:vpc]= PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], "vpc", rt["VpcId"]){ | *arg | awscli(*arg) }
     @property_hash[:vpc_default] = rt["Associations"].select{|x| x["Main"] == true}.map{|x| x["Main"]}.reduce(PuppetX::IntechWIFI::Logical.logical(false)){ |memo, value| PuppetX::IntechWIFI::Logical.logical_true(memo) ? memo : PuppetX::IntechWIFI::Logical.logical(value)}
-    @property_hash[:environment] = PuppetX::IntechWIFI::AwsCmds.find_tag_from_list(rt["Tags"], "Environment")
+
+    @property_hash[:tags] = PuppetX::IntechWIFI::Tags_Property.parse_tags(rt["Tags"])
 
     true
 
@@ -94,6 +98,7 @@ Puppet::Type.type(:route_table).provide(:awscli) do
   def flush
     if @property_flush
       update_routes(@property_hash[:routes], @property_flush[:routes]) if !@property_flush[:routes].nil?
+      PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:vpcid], @property_hash[:tags], @property_flush[:tags]){| *arg | awscli(*arg)} if !@property_flush[:tags].nil?
     end
   end
 
@@ -106,6 +111,10 @@ Puppet::Type.type(:route_table).provide(:awscli) do
 
   def routes=(value)
     @property_flush[:routes] = value
+  end
+
+  def tags=(value)
+    @property_flush[:tags] = value
   end
 
 end

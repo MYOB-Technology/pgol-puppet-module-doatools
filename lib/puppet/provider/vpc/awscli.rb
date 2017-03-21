@@ -38,17 +38,20 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     @property_hash[:region] = resource[:region]
     @property_hash[:cidr] = resource[:cidr]
 
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:vpcid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:vpcid], '--tags', "Key=Name,Value=#{resource[:name]}")
     if resource[:dns_hostnames] then @property_flush[:dns_hostnames] = resource[:dns_hostnames] end
     if resource[:dns_resolution] then @property_flush[:dns_resolution] = resource[:dns_resolution] end
 
     route_id = JSON.parse(awscli('ec2', 'describe-route-tables', '--region', resource[:region], '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}"))["RouteTables"][0]["RouteTableId"]
     info("vpc #{resource[:name]} has a default route table #{route_id}")
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', route_id, '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', route_id, '--tags', "Key=Name,Value=#{resource[:name]}")
 
     sg_id = JSON.parse(awscli('ec2', 'describe-security-groups', '--region', resource[:region], '--filter', "Name=vpc-id,Values=#{@property_hash[:vpcid]}", "Name=group-name,Values=default"))["SecurityGroups"][0]["GroupId"]
     info("vpc #{resource[:name]} has a default security group #{sg_id}")
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', sg_id, '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', sg_id, '--tags', "Key=Name,Value=#{resource[:name]}")
+
+    @property_hash[:tags] = resource[:tags]
+    PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:vpcid], {}, @property_hash[:tags]){| *arg | awscli(*arg)}
 
     @property_hash[:ensure] = :present
 
@@ -104,18 +107,8 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def extract_values(region, vpc)
-    tags = vpc["Tags"]
+    @property_hash[:tags] = PuppetX::IntechWIFI::Tags_Property.parse_tags(vpc["Tags"])
 
-    if tags
-      tags.each do |tag|
-        if tag["Key"] == "Name"
-          fail("VPC name tag value=#{tag["Value"]} does not match name=#{resource[:name]}.") unless tag['Value'] == "#{resource[:name]}"
-        end
-        if tag["Key"] == "Environment"
-          @property_hash[:environment] = tag["Value"]
-        end
-      end
-    end
     @property_hash[:region] = region
     @property_hash[:cidr] = vpc["CidrBlock"]
     @property_hash[:dns_resolution] = get_dns_resolution(region, @property_hash[:vpcid])
@@ -123,7 +116,6 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     @property_hash[:state] = vpc["State"]
 
   end
-
 
   def get_dns_resolution(region, vpcid)
     PuppetX::IntechWIFI::Logical.logical(JSON.parse(awscli("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsSupport"))["EnableDnsSupport"]["Value"])
@@ -146,6 +138,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     if @property_flush
       if @property_flush[:dns_hostnames] then set_dns_hostnames(@property_hash[:region], @property_hash[:vpcid], @property_flush[:dns_hostnames]) end
       if @property_flush[:dns_resolution] then set_dns_resolution(@property_hash[:region], @property_hash[:vpcid], @property_flush[:dns_resolution]) end
+      PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:vpcid], @property_hash[:tags], @property_flush[:tags]){| *arg | awscli(*arg)} if !@property_flush[:tags].nil?
     end
   end
 
@@ -169,6 +162,11 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   def dns_resolution=(value)
     @property_flush[:dns_resolution] = value
   end
+
+  def tags=(value)
+    @property_flush[:tags] = value
+  end
+
 
   def cidr=(value)
     fail("it is not possible to change the CIDR of an active VPC. you will need to delete it and then recreate it again.")

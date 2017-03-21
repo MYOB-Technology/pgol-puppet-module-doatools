@@ -52,10 +52,15 @@ Puppet::Type.newtype(:security_group) do
     end
   end
 
-  newproperty(:environment) do
-  end
-
   newproperty(:description) do
   end
 
+  newproperty(:tags) do
+    validate do | value|
+      PuppetX::IntechWIFI::Tags_Property.validate_value(value)
+    end
+    def insync?(is)
+      @should.any?{|x| PuppetX::IntechWIFI::Tags_Property.insync?(is, x)}
+    end
+  end
 end

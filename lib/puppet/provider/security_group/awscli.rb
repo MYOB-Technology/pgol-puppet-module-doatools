@@ -37,7 +37,11 @@ Puppet::Type.type(:security_group).provide(:awscli) do
     @property_hash[:sgid] = JSON.parse(awscli('ec2', 'create-security-group', '--region', resource[:region], '--group-name', resource[:name], '--description', resource[:description], '--vpc-id', @property_hash[:vpcid]))["GroupId"]
     @property_hash[:region] = resource[:region]
     @property_hash[:description] = resource[:description]
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:sgid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:sgid], '--tags', "Key=Name,Value=#{resource[:name]}")
+
+    @property_hash[:tags] = resource[:tags]
+    PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:sgid], {}, @property_hash[:tags]){| *arg | awscli(*arg)}
+
 
     @property_hash[:ensure] = :present
 
@@ -99,18 +103,8 @@ Puppet::Type.type(:security_group).provide(:awscli) do
   end
 
   def extract_values(region, data)
-    tags = data["Tags"]
+    @property_hash[:tags] = PuppetX::IntechWIFI::Tags_Property.parse_tags(data["Tags"])
 
-    if tags
-      tags.each do |tag|
-        if tag["Key"] == "Name"
-          fail("VPC name tag value=#{tag["Value"]} does not match name=#{resource[:name]}.") unless tag['Value'] == resource[:name]
-        end
-        if tag["Key"] == "Environment"
-          @property_hash[:environment] = tag["Value"]
-        end
-      end
-    end
     @property_hash[:vpcid] = data["VpcId"]
     @property_hash[:description] = data["Description"]
     begin
@@ -127,6 +121,17 @@ Puppet::Type.type(:security_group).provide(:awscli) do
     @property_flush = {}
   end
 
+  def flush
+    if @property_flush
+      PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:sgid], @property_hash[:tags], @property_flush[:tags]){| *arg | awscli(*arg)} if !@property_flush[:tags].nil?
+    end
+  end
+
+
   mk_resource_methods
+
+  def tags=(value)
+    @property_flush[:tags] = value
+  end
 
 end

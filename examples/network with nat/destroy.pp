@@ -21,7 +21,9 @@ node 'default' {
     ensure          => 'absent',
     region          => 'us-east-1',
     vpc_cidr        => '192.168.74.0/23',
-    environment     => 'doatools vpc demo',
+    tags            => {
+      environment => 'doatools vpc demo',
+    },
     availability    => ['a', 'b', 'c'],
     internet_access => true,
     default_access  => {

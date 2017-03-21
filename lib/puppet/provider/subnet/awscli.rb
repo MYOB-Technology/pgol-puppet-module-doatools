@@ -40,7 +40,10 @@ Puppet::Type.type(:subnet).provide(:awscli) do
     @property_hash[:cidr] = subnet["Subnet"]["CidrBlock"]
     @property_hash[:availability_zone] = resource[:availability_zone]
 
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:subnetid], '--tags', "Key=Name,Value=#{resource[:name]}", "Key=Environment,Value=#{resource[:environment]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:subnetid], '--tags', "Key=Name,Value=#{resource[:name]}")
+
+    @property_hash[:tags] = resource[:tags]
+    PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:subnetid], {}, @property_hash[:tags]){| *arg | awscli(*arg)}
 
     if resource[:public_ip] then
       @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(resource[:public_ip])
@@ -94,18 +97,7 @@ Puppet::Type.type(:subnet).provide(:awscli) do
   end
 
   def extract_values(region, data)
-    tags = data["Tags"]
-
-    if tags
-      tags.each do |tag|
-        if tag["Key"] == "Name"
-          fail("VPC name tag value=#{tag["Value"]} does not match name=#{resource[:name]}.") unless tag['Value'] == resource[:name]
-        end
-        if tag["Key"] == "Environment"
-          @property_hash[:environment] = tag["Value"]
-        end
-      end
-    end
+    @property_hash[:tags] = PuppetX::IntechWIFI::Tags_Property.parse_tags(data["Tags"])
     @property_hash[:region] = region
     @property_hash[:cidr] = data["CidrBlock"]
     @property_hash[:vpcid] = data["VpcId"]
@@ -148,6 +140,7 @@ Puppet::Type.type(:subnet).provide(:awscli) do
     if @property_flush
       if @property_flush[:public_ip] then set_public_ip(@property_flush[:public_ip]) end
       if @property_flush[:route_table] then set_route_table(@property_flush[:route_table]) end
+      PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:subnetid], @property_hash[:tags], @property_flush[:tags]){| *arg | awscli(*arg)} if !@property_flush[:tags].nil?
     end
   end
 
@@ -166,6 +159,9 @@ Puppet::Type.type(:subnet).provide(:awscli) do
     @property_flush[:route_table] = value
   end
 
+  def tags=(value)
+    @property_flush[:tags] = value
+  end
 
 
 end

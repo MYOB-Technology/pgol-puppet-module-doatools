@@ -68,9 +68,6 @@ Puppet::Type.newtype(:subnet) do
     end
   end
 
-  newproperty(:environment) do
-  end
-
   newproperty(:cidr) do
     defaultto '10.0.0.0/8'
     validate do |value|
@@ -99,5 +96,13 @@ Puppet::Type.newtype(:subnet) do
 
   end
 
+  newproperty(:tags) do
+    validate do | value|
+      PuppetX::IntechWIFI::Tags_Property.validate_value(value)
+    end
+    def insync?(is)
+      @should.any?{|x| PuppetX::IntechWIFI::Tags_Property.insync?(is, x)}
+    end
+  end
 
 end

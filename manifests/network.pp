@@ -4,7 +4,7 @@ define doatools::network (
   $ensure=lookup('network::ensure', Data, 'first', present),
   $vpc_cidr=lookup('network::vpc_cidr', Data, 'first', '192.168.0.0/24'),
   $region=lookup('network::region', Data, 'first', 'us-east-1'),
-  $environment=lookup('network::environment', Data, 'first', $name),
+  $tags=lookup('network::tags', Data, 'first', {}),
   $availability = lookup('network::availability', Data, 'first', [ 'a', 'b', 'c']),
   $internet_access = lookup('network::internet_access', Data, 'first', true),
   $default_access = lookup('network::default_access', Data, 'first', {
@@ -14,7 +14,7 @@ define doatools::network (
   $zones = lookup('network::zones', Data, 'first', undef),
 ){
   define_network_resources($ensure,
-    {  name => $vpc, cidr => $vpc_cidr, region=> $region, environment => $environment, availability => $availability },
+    {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability },
     $zones,
     $default_access
   ).each |$r| {
