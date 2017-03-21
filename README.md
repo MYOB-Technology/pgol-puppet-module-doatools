@@ -129,6 +129,9 @@ network { 'doatools':
 * subnet
 * internet\_gateway
 * security\_group
+* security\_group\_rules
+* route\_table
+* route\_table\_rules
 
 ### Supported AWS EC2 Components
 
@@ -176,6 +179,7 @@ The vpc component manages the lifecycle of an AWS vpc in a region.  The other ne
 * **cidr** - The CIDR property will be used to set the CIDR in the creation of a new VPC. It is not possible to change the CIDR of an existing VPC. 
 * **dns\_hostnames** - The dns_hostnames property controls whether the VPC creates DNS hostname entries for EC2 instances hosted within the VPC.
 * **dns\_resolution** - the dns\_resolution property controls whether the VPC contains a DNS resolution service. Disabling dns resolution includes disabling DNS resolution for external systems on the wider internet (*e.g. www.google.com*).
+* **tags** - a hash of tag key and values. Values can be strings, hashes and arrays. Non string data stored in json format.
 
 #### subnet
 
@@ -187,6 +191,7 @@ The subnet component manages the lifecycle of an AWS subnet, within a vpc in an 
 * **cidr** - The CIDR for this subnet.  This property cannot be changed after the subnet has been created.
 * **public\_ip** - Do new EC2 instances in this subnet obtain IP addresses by default?
 * **routetable** - The name of the AWS route table associated with this subnet.
+* **tags** - a hash of tag key and values. Values can be strings, hashes and arrays. Non string data stored in json format.
 
 
 #### internet_gateway
@@ -234,8 +239,8 @@ The security_group component manages the identity aspect of the AWS security gro
 
 * **vpc** - The name of the puppet VPC that is associated with this security group.  This cannot be changed after creation.
 * **region** - The name of the AWS region that hosts this security group.
-* **environment** - The name of the logical puppet environment that is associated with this security group.
 * **description** - The description of the purpose of this security group. This cannot be changed after creation.
+* **tags** - a hash of tag key and values. Values can be strings, hashes and arrays. Non string data stored in json format.
 
 
 #### security\_group\_rules
@@ -473,17 +478,17 @@ require doatools
 doatools::network { 'demo_env': 
   vpc_cidr => "192.168.128.0/24",
   region => "us-east-1",
-  environment => ="demonstration",
+  tags => { environment => "demonstration" },
   availability => [ 'a', 'b', 'c'],
   $zones = [
   {
-   label => "p",
+   label => "%{vpc}%{az}",
     cidr => "192.168.128.0/25",
     public_ip => true,
     availability => [ 'a', 'b', 'c' ],
   },
   {
-    label => "",
+    label => "%{vpc}%{az}p",
     cidr => "192.168.128.128/25",
     public_ip => false,
     availability => [ 'a', 'c' ],
