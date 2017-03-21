@@ -24,9 +24,9 @@ define doatools::environment (
 )  {
 
   if $ensure == present {
-    $sequence = "require"
+    $sequence = 'require'
   } else {
-    $sequence = "before"
+    $sequence = 'before'
   }
   $network_data = {
     $name => {

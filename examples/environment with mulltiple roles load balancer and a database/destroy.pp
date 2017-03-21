@@ -21,7 +21,7 @@ node 'default' {
   doatools::environment{ 'doatools':
     ensure => absent,
     region => 'us-east-1',
-    roles => {
+    roles  => {
       'doatools1' => { },
       'doatools2' => { },
     }

@@ -18,19 +18,19 @@
 require doatools
 
 node 'default' {
-  launch_configuration { "doatools_role_lc" :
+  launch_configuration { 'doatools_role_lc' :
     region          => 'us-east-1',
     image           => 'ami-6d1c2007',
     instance_type   => 't2.micro',
-    security_groups => [ "doatools" ]
+    security_groups => [ 'doatools' ]
   }
 
-  autoscaling_group { "doatools_role_asg":
+  autoscaling_group { 'doatools_role_asg':
     region               => 'us-east-1',
     minimum_instances    => 0,
     maximum_instances    => 5,
     desired_instances    => 2,
-    launch_configuration => "doatools_role_lc",
+    launch_configuration => 'doatools_role_lc',
     subnets              => [ 'doatools_a', 'doatools_b', 'doatools_c' ]
   }
 }

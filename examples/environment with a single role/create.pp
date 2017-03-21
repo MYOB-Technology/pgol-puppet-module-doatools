@@ -19,13 +19,13 @@ require doatools
 
 node 'default' {
   doatools::environment{ 'doatools':
-    region => 'us-east-1',
+    region  => 'us-east-1',
     network => {
       vpc_cidr =>'192.168.74.0/23'
     },
-    roles => {
+    roles   => {
       'doatools' => {
-        image => 'ami-6d1c2007',
+        image   => 'ami-6d1c2007',
         desired => 2,
       },
     }

@@ -57,8 +57,8 @@ define doatools::role (
   }
   else {
     $ec2_ingress = [
-      "tcp|80|cidr|0.0.0.0/0",
-      "tcp|443|cidr|0.0.0.0/0",
+      'tcp|80|cidr|0.0.0.0/0',
+      'tcp|443|cidr|0.0.0.0/0',
     ]
   }
 
@@ -73,10 +73,10 @@ define doatools::role (
   }
 
   security_group_rules { "${vpc}_${name}_ec2_sg":
-    ensure      => $ensure,
-    region      => $region,
-    in          => $ec2_ingress,
-    out         => $ec2_egress,
+    ensure => $ensure,
+    region => $region,
+    in     => $ec2_ingress,
+    out    => $ec2_egress,
   }
 
 
@@ -95,28 +95,28 @@ define doatools::role (
     }
 
     security_group_rules { "${vpc}_${name}_elb_sg":
-      ensure      => $ensure,
-      region      => $region,
-      in          => [
-        "tcp|80|cidr|0.0.0.0/0",
-        "tcp|443|cidr|0.0.0.0/0",
+      ensure => $ensure,
+      region => $region,
+      in     => [
+        'tcp|80|cidr|0.0.0.0/0',
+        'tcp|443|cidr|0.0.0.0/0',
       ],
-      out         => [
+      out    => [
         "tcp|80|sg|${vpc}_${name}_ec2_sg"
       ],
     }
 
     $target_required = {
       name => "${vpc}-${name}-tgt",
-      vpc => $vpc,
+      vpc  => $vpc,
     }
 
     $target_defaults = {
       check_interval => 30,
-      failed => 3,
-      healthy => 3,
-      port => 80,
-      timeout => 10,
+      failed         => 3,
+      healthy        => 3,
+      port           => 80,
+      timeout        => 10,
     }
 
     load_balancer { "${vpc}-${name}-elb":
@@ -176,10 +176,10 @@ define doatools::role (
     }
 
     security_group_rules { "${vpc}_${name}_rds_sg":
-      ensure      => $ensure,
-      region      => $region,
-      in          => [ "all||sg|${vpc}_${name}_ec2_sg"],
-      out         => [
+      ensure => $ensure,
+      region => $region,
+      in     => [ "all||sg|${vpc}_${name}_ec2_sg"],
+      out    => [
       ],
     }
 

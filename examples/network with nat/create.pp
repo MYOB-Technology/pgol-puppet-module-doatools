@@ -33,14 +33,14 @@ node 'default' {
         'tcp|3306|sg|doatools'
       ],
     },
-    zones => [ {
+    zones           => [ {
         label     =>'%{vpc}%{az}',
         cidr      =>'192.168.74.0/24',
         public_ip => true,
       }, {
         label     =>'%{vpc}%{az}p',
         cidr      => '192.168.75.0/24',
-	public_ip => false,
+        public_ip => false,
         nat       => ['34.206.108.159', '34.206.183.158', '34.199.175.122' ],
       }
     ]

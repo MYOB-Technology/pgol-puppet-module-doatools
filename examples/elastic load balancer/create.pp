@@ -19,26 +19,26 @@ require doatools
 
 node 'default' {
   load_balancer{'doatools':
-    ensure => present,
-    region => 'us-east-1',
-    subnets => [
+    ensure          => present,
+    region          => 'us-east-1',
+    subnets         => [
       'doatools_a',
       'doatools_b',
       'doatools_c'
     ],
-    listeners => [
+    listeners       => [
       'http://doatools:80',
 #      'https://doatools_tgt:443?certificate=<certificate-arn>'
     ],
-    targets => [{
-      name => 'doatools',
-      port => 80,
+    targets         => [{
+      name           => 'doatools',
+      port           => 80,
       check_interval => 30,
-      timeout => 10,
-      healthy => 3,
-      failed => 2,
-      vpc => 'doatools',
+      timeout        => 10,
+      healthy        => 3,
+      failed         => 2,
+      vpc            => 'doatools',
     }],
-    security_groups => [ "doatools" ]
+    security_groups => [ 'doatools' ]
   }
 }

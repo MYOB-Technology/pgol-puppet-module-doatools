@@ -18,12 +18,12 @@
 require doatools
 
 node 'default' {
-  launch_configuration { "doatools_role_lc" :
+  launch_configuration { 'doatools_role_lc' :
     ensure => absent,
     region => 'us-east-1',
   }
 
-  autoscaling_group { "doatools_role_asg":
+  autoscaling_group { 'doatools_role_asg':
     ensure => absent,
     region => 'us-east-1',
   }
