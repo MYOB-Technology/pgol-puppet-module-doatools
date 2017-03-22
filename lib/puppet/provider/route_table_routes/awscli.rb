@@ -179,8 +179,6 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
   end
 
   def delete_route route
-    print "delete route #{route}\n"
-
     rt_segments = route.split('|')
     raise RouteFormatError route if rt_segments.length != 3
 

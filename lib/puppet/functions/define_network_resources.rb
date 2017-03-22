@@ -36,7 +36,7 @@ Puppet::Functions.create_function('define_network_resources') do
             if !zone['nat'].nil?
                 nats = zone['nat'].kind_of?(Array) ? zone['nat'] : [ zone['nat'] ]
 
-                availability[0..nats.length].each_with_index { |az, index|
+                availability[0..(nats.length-1)].each_with_index { |az, index|
                     nat_gateway_name = sprintf(zone['label'], {
                         :vpc => vpc_data['name'],
                         :az  => az,
@@ -89,7 +89,7 @@ Puppet::Functions.create_function('define_network_resources') do
                 if !zone['nat'].nil?
                     nats = zone['nat'].kind_of?(Array) ? zone['nat'] : [ zone['nat'] ]
 
-                    availability[0..nats.length].each.with_index { |az, index|
+                    availability[0..(nats.length-1)].each.with_index { |az, index|
                         route_table_name = sprintf(zone['label'], {
                             :vpc => vpc_data['name'],
                             :az  => az,
@@ -182,7 +182,7 @@ Puppet::Functions.create_function('define_network_resources') do
                       })
                     }
 
-                    availability[1..nats.length].each.with_index { |az, index|
+                    availability[1..(nats.length-1)].each.with_index { |az, index|
                         route_table_routes_name = sprintf(zone['label'], {
                             :vpc => vpc_data['name'],
                             :az  => az,
@@ -193,8 +193,8 @@ Puppet::Functions.create_function('define_network_resources') do
                             'region' => vpc_data['region'],
                             'routes' => [
                                 "0.0.0.0/0|nat|#{route_table_routes_name}",
-                                "192.168.1.0/24|blackhole|none"
-                            ]
+                                vpc_data['routes']
+                            ].flatten.select{|x| !x.nil?}
                         }
                     }
 
@@ -208,8 +208,8 @@ Puppet::Functions.create_function('define_network_resources') do
                         'region' => vpc_data['region'],
                         'routes' => [
                             "0.0.0.0/0|nat|#{route_table_routes_name}",
-                            "192.168.1.0/24|blackhole|none"
-                        ]
+                            vpc_data['routes']
+                        ].flatten.select{|x| !x.nil?}
                     }
                 end
                 route_table_routes
