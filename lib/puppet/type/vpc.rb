@@ -18,13 +18,44 @@ require 'puppet_x/intechwifi/constants'
 require 'puppet_x/intechwifi/tags_property'
 
 Puppet::Type.newtype(:vpc) do
+  desc <<-DESC
+  The vpc resource models a single AWS VPC in puppet. Creating a new VPC also brings
+  into existance the default route table and security_group, both tagged with the same
+  name as the VPC.
+
+  Other networking components that combine to make up the VPC need to declared as seperate resources.
+
+  @example Create a simple VPC
+    vpc {'example_vpc':
+      region => 'us-east-1'
+    }
+
+  @example Destroy a VPC
+    vpc {'example_vpc':
+      ensure => absent,
+      region => 'us-east-1'
+    }
+
+  @example Typical VPC declaration
+    vpc {'typical_vpc':
+      region        => 'eu-west-1',
+      cidr          => '192.168.182.0/23',
+      dns_hostnames => true,
+      is_default    => true,
+      tags          => {
+        owner => 'Marketing',
+        role  => 'Keeping the marketing department infrastructure seperate from the developers systems'
+      }
+    }
+
+  DESC
+
   ensurable
 
   newparam(:name, :namevar => true) do
   end
 
-  #  read only properties...
-  newproperty(:region) do
+  newparam(:region) do
     defaultto 'us-east-1'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions
@@ -32,7 +63,7 @@ Puppet::Type.newtype(:vpc) do
     end
   end
 
-  newproperty(:cidr) do
+  newparam(:cidr) do
     defaultto '192.168.0.0/24'
     validate do |value|
       #  Its not worth doing a lot of validation as AWS will reject invalid strings.
@@ -41,12 +72,6 @@ Puppet::Type.newtype(:vpc) do
       fail("Invalid CIDR #{value}") unless value =~ /^[0-9\.\/]+$/
 
     end
-  end
-
-  newproperty(:environment) do
-  end
-
-  newproperty(:vpcid) do
   end
 
   #  managed properties
@@ -61,6 +86,7 @@ Puppet::Type.newtype(:vpc) do
   end
 
   newproperty(:dns_resolution) do
+    newvalues(:enabled, :disabled)
     defaultto :enabled
     validate do |value|
       fail("dns_resolution valid options are [enabled|disabled] and not '#{value}'") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
@@ -77,6 +103,22 @@ Puppet::Type.newtype(:vpc) do
   end
 
   newproperty(:tags) do
+    desc <<-DESC
+    The tags property is presented as a hash containing key / value pairs. Values can be
+    strings, hashes or arrays. Hashes and arrays are stored in AWS as JSON strings.
+
+    @example A simple string example.
+      tags => {
+        Environment => "Production"
+        Owner       => "ops@ourcompany.com"
+      }
+
+    @example A Complex data structures.
+      tags => {
+      }
+
+    DESC
+
     validate do | value|
       PuppetX::IntechWIFI::Tags_Property.validate_value(value)
     end

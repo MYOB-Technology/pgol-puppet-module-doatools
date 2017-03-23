@@ -1,3 +1,4 @@
+require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/network_rules'
 
 Puppet::Functions.create_function('define_network_resources') do
@@ -8,6 +9,7 @@ Puppet::Functions.create_function('define_network_resources') do
         :internet_gateway => zones.any?{|x| x['public_ip']},
         :nat_gateway => zones.any?{|x| !x['nat'].nil?},
         :availabilty => vpc_data['availability'],
+        :public_zone_label => zones.reduce(nil){|label, x| (PuppetX::IntechWIFI::Logical.logical_true(x["public_ip"]) and label.nil?) ? x["label"] : label}
     }
 
     vpc_security_group = status == 'present' ? {
@@ -37,7 +39,7 @@ Puppet::Functions.create_function('define_network_resources') do
                 nats = zone['nat'].kind_of?(Array) ? zone['nat'] : [ zone['nat'] ]
 
                 availability[0..(nats.length-1)].each_with_index { |az, index|
-                    nat_gateway_name = sprintf(zone['label'], {
+                    nat_gateway_name = sprintf(facts[:public_zone_label], {
                         :vpc => vpc_data['name'],
                         :az  => az,
                         :index => index
@@ -75,7 +77,8 @@ Puppet::Functions.create_function('define_network_resources') do
                     :region => vpc_data['region'],
                     :cidr   => vpc_data['cidr'],
                     :tags => vpc_data['tags'],
-
+                    :dns_hostnames => vpc_data['dns_hostnames'],
+                    :dns_resolution => vpc_data['dns_resolution'],
                 }
             }
         },
@@ -188,11 +191,16 @@ Puppet::Functions.create_function('define_network_resources') do
                             :az  => az,
                             :index => index
                         })
+                        nat_gateway_name = sprintf(facts[:public_zone_label], {
+                            :vpc => vpc_data['name'],
+                            :az  => az,
+                            :index => index
+                        })
                         route_table_routes[route_table_routes_name] = {
                             'ensure' => status,
                             'region' => vpc_data['region'],
                             'routes' => [
-                                "0.0.0.0/0|nat|#{route_table_routes_name}",
+                                "0.0.0.0/0|nat|#{nat_gateway_name}",
                                 vpc_data['routes']
                             ].flatten.select{|x| !x.nil?}
                         }
@@ -203,11 +211,17 @@ Puppet::Functions.create_function('define_network_resources') do
                         :az  => availability[0],
                         :index => 0,
                     }
+                    nat_gateway_name = sprintf(facts[:public_zone_label], {
+                        :vpc => vpc_data['name'],
+                        :az  => availability[0],
+                        :index => 0,
+                    })
+
                     route_table_routes[route_table_routes_name] = {
                         'ensure' => status,
                         'region' => vpc_data['region'],
                         'routes' => [
-                            "0.0.0.0/0|nat|#{route_table_routes_name}",
+                            "0.0.0.0/0|nat|#{nat_gateway_name}",
                             vpc_data['routes']
                         ].flatten.select{|x| !x.nil?}
                     }

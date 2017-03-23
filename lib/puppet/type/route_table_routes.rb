@@ -44,8 +44,8 @@ Puppet::Type.newtype(:route_table_routes) do
       fail("route type can be one of [nat|igw|blackhole]") unless ['nat', 'igw', 'blackhole'].include? splits[1]
     end
     def insync?(is)
-      @should.map{|v| v.split('|')}.all?{|v| is.map{|x| x.split('|')}.any?{ |x| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(v, x) } } and
-          is.map{|v| v.split('|')}.all?{|v| @should.map{|x| x.split('|')}.any?{ |x| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(x, v) } }
+      @should.all?{|v| is.any?{ |x| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(v, x) } } and
+          is.all?{|v| @should.any?{ |x| PuppetX::IntechWIFI::Network_Rules.RouteRuleMatch(x, v) } }
     end
   end
 

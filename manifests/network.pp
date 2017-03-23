@@ -17,9 +17,11 @@ define doatools::network (
     cidr      => $vpc_cidr,
     public_ip => true,
   }]),
+  $dns_hostnames = lookup('network::dns_hostnames', Data, 'first', disabled),
+  $dns_resolution = lookup('network::dns_hostnames', Data, 'first', enabled),
 ){
   define_network_resources($ensure,
-    {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability, routes => $routes },
+    {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability, routes => $routes, dns_hostnames => $dns_hostnames, dns_resolution => $dns_resolution },
     $zones,
     $default_access
   ).each |$r| {

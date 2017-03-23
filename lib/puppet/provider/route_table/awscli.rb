@@ -98,7 +98,7 @@ Puppet::Type.type(:route_table).provide(:awscli) do
   def flush
     if @property_flush
       update_routes(@property_hash[:routes], @property_flush[:routes]) if !@property_flush[:routes].nil?
-      PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:vpcid], @property_hash[:tags], @property_flush[:tags]){| *arg | awscli(*arg)} if !@property_flush[:tags].nil?
+      PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:rtid], @property_hash[:tags], @property_flush[:tags]){| *arg | awscli(*arg)} if !@property_flush[:tags].nil?
     end
   end
 
