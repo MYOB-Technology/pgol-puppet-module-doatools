@@ -15,8 +15,8 @@
 #
 
 define doatools::role (
-  $vpc=$name,
-  $l_vpc=$vpc,
+  $role = $name,
+  $l_vpc=lookup('role::vpc', Data, 'first', $name),
   $l_role=$name,
   $ensure=lookup('role::ensure', Data, 'first', present),
   $region=lookup('role::region', Data, 'first', 'us-east-1'),
@@ -25,12 +25,18 @@ define doatools::role (
   $min=lookup('role::min', Data, 'first', 0),
   $max=lookup('role::max', Data, 'first', 5),
   $desired=lookup('role::desired', Data, 'first', 1),
-  $availability = lookup('role::availability', Data, 'first', [ 'a', 'b', 'c']),
-  $zone_label= lookup('role::zone_label', Data, 'first', ''),
-  $listeners=lookup('role::listeners', Data, 'first', undef),
-  $target=lookup('role::target', Data, 'first', { }),
-  $database=lookup('role::database', Data, 'first', undef),
+  $availability = lookup('role::availability', Data, 'deep', [ 'a', 'b', 'c']),
+  $zone_labels = lookup('role::zone_labels', Data, 'deep', { "public" => "%{vpc}%{az}pub", "private" => "%{vpc}%{az}pri"}),
+  $listeners=lookup('role::listeners', Data, 'deep', undef),
+  $target=lookup('role::target', Data, 'deep', { }),
+  $database=lookup('role::database', Data, 'deep', undef),
+  $rds_name=lookup('role::rds_name', Data, 'first', $name),
+  $ingress_extra=lookup('role::ingress_extra', Data, 'deep', []),
+  $egress_extra=lookup('role::egress_extra', Data, 'deep', []),
 ) {
+
+  $rds_endpoint = find_rds_endpoint($region, "dev-smartcity-rds")
+
   if $image==undef and $ensure==present {
     $l_region=$region
     $image_internal=lookup('role::image', Data, 'first', 'ami-6d1c2007')
@@ -63,7 +69,8 @@ define doatools::role (
   }
 
 
-  $subnets= $availability.map |$az| { "${vpc}_${zone_label}${az}" }
+  $public_subnets= $availability.map |$index, $az| { format_zone_label($zone_labels["public"], $l_vpc, $az, $index) }
+  $private_subnets = $availability.map |$index, $az| { format_zone_label($zone_labels["private"], $l_vpc, $az, $index) }
 
   security_group { "${vpc}_${name}_ec2_sg":
     ensure      => $ensure,
@@ -75,8 +82,8 @@ define doatools::role (
   security_group_rules { "${vpc}_${name}_ec2_sg":
     ensure => $ensure,
     region => $region,
-    in     => $ec2_ingress,
-    out    => $ec2_egress,
+    in     => [$ec2_ingress, $ingress_extra].flatten,
+    out    => [$ec2_egress, $egress_extra].flatten,
   }
 
 
@@ -122,7 +129,7 @@ define doatools::role (
     load_balancer { "${vpc}-${name}-elb":
       ensure          => $ensure,
       region          => $region,
-      subnets         => $subnets,
+      subnets         => $public_subnets,
       listeners       => $listeners_internal,
       targets         => [deep_merge($target_defaults, $target, $target_required)],
       security_groups => [ "${vpc}_${name}_elb_sg" ]
@@ -143,19 +150,45 @@ define doatools::role (
     }
   }
 
-  notice("database=${database} ensure=${ensure}")
   if ($database!=undef) and ($ensure=='present') {
-    rds_subnet_group {"${vpc}-${name}-rdsnet":
+
+    rds_subnet_group {"${vpc}-${rds_name}-rdsnet":
       ensure  => $ensure,
       region  => $region,
-      subnets => $subnets
+      subnets => $private_subnets
+    }
+
+    $l_database_engine = lest($database["engine"]) || { 'mysql'}
+
+    $rds_ingress_ports = [
+      ["mysql", [3306]],
+      ["mariadb",  [3306]],
+      ["oracle-se1", [1525]],
+      ["oracle-se2", [1526]],
+      ["oracle-se", [1526]],
+      ["oracle-ee", [1526]],
+      ["sqlserver-ee", [1433]],
+      ["sqlserver-se", [1433]],
+      ["sqlserver-ex", [1433]],
+      ["sqlserver-web", [1433]],
+      ["postgres", [5432,5433]],
+      ["aurora", [3306]],
+    ].reduce([]) | $memo, $engine_port_data | {
+      if $engine_port_data[0] == $l_database_engine {
+        $engine_port_data[1].map | $p | {
+           "tcp|${p}|sg|${vpc}_${name}_ec2_sg"
+        }
+      } else {
+        $memo
+      }
     }
 
     $db_data = {
-      "${vpc}-${name}-rds" => {
+      "${vpc}-${rds_name}-rds" => {
         ensure => $ensure,
         region => $region,
-        db_subnet_group => "${vpc}-${name}-rdsnet",
+        db_subnet_group => "${vpc}-${rds_name}-rdsnet",
+        security_groups => [ "${vpc}_${name}_rds_sg" ],
         master_username => lest($database["master_username"]) || { 'admin'},
         master_password => lest($database["master_password"]) || { 'password!'},
         database => lest($database["database"]) || { "${vpc}_${name}"},
@@ -178,12 +211,10 @@ define doatools::role (
     security_group_rules { "${vpc}_${name}_rds_sg":
       ensure => $ensure,
       region => $region,
-      in     => [ "all||sg|${vpc}_${name}_ec2_sg"],
+      in     => $rds_ingress_ports,
       out    => [
       ],
     }
-
-    Doatools::Network[$vpc]->Rds_subnet_group["${vpc}-${name}-rdsnet"]->Rds["${vpc}-${name}-rds"]
 
   } else {
     rds_subnet_group {"${vpc}-${name}-rdsnet":
@@ -205,10 +236,6 @@ define doatools::role (
 
   }
 
-
-
-
-
   launch_configuration { "${vpc}_${name}_lc" :
     ensure          => $ensure,
     region          => $region,
@@ -224,9 +251,8 @@ define doatools::role (
     maximum_instances    => $max,
     desired_instances    => $desired,
     launch_configuration => "${vpc}_${name}_lc",
-    subnets              => $subnets,
+    subnets              => $private_subnets,
   }
-
 
   if $ensure == absent {
     Autoscaling_group["${vpc}_${name}_asg"]->Launch_configuration["${vpc}_${name}_lc"]->Security_group["${vpc}_${name}_ec2_sg"]->Doatools::Network[$vpc]
