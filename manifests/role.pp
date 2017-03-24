@@ -22,6 +22,7 @@ define doatools::role (
   $region=lookup('role::region', Data, 'first', 'us-east-1'),
   $instance_type=lookup('role::instance_type', Data, 'first', 't2.micro'),
   $image=undef,
+  $userdata=lookup('role::userdata', Data, 'first', undef),
   $min=lookup('role::min', Data, 'first', 0),
   $max=lookup('role::max', Data, 'first', 5),
   $desired=lookup('role::desired', Data, 'first', 1),
@@ -241,6 +242,7 @@ define doatools::role (
     region          => $region,
     image           => $image_internal,
     instance_type   => $instance_type,
+    userdata        => $userdata,
     security_groups => [ "${vpc}_${name}_ec2_sg" ]
   }
 
