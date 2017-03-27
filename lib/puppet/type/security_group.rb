@@ -52,7 +52,7 @@ Puppet::Type.newtype(:security_group) do
     end
   end
 
-  newproperty(:description) do
+  newparam(:description) do
   end
 
   newproperty(:tags) do

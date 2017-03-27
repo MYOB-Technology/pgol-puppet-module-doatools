@@ -7,6 +7,7 @@ define doatools::network (
   $tags=lookup('network::tags', Data, 'first', {}),
   $availability = lookup('network::availability', Data, 'first', [ 'a', 'b', 'c']),
   $internet_access = lookup('network::internet_access', Data, 'first', true),
+  $routes = lookup('network::routes', Data, 'first', []),
   $default_access = lookup('network::default_access', Data, 'first', {
     ingress => [ "all||sg|${name}" ],
     egress  => [ "all||sg|${name}" ],
@@ -16,9 +17,13 @@ define doatools::network (
     cidr      => $vpc_cidr,
     public_ip => true,
   }]),
+  $dns_hostnames = lookup('network::dns_hostnames', Data, 'first', disabled),
+  $dns_resolution = lookup('network::dns_hostnames', Data, 'first', enabled),
 ){
+  debug("building network based on zones=${zones}")
+
   define_network_resources($ensure,
-    {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability },
+    {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability, routes => $routes, dns_hostnames => $dns_hostnames, dns_resolution => $dns_resolution },
     $zones,
     $default_access
   ).each |$r| {

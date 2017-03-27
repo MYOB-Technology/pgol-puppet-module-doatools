@@ -39,6 +39,8 @@ module PuppetX
           {:az => 'a', :zone => "a" },
           {:az => 'b', :zone => "b" },
           {:az => 'c', :zone => "c" },
+          {:az => 'd', :zone => "d" },
+          {:az => 'e', :zone => "e" }
       ]
 
       def self.Regions

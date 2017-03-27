@@ -105,10 +105,12 @@ module PuppetX
       end
 
       def self.RouteRuleMatch(declared, detected)
-        cidr_match = declared[0] == detected[0]
-        target_match = declared[1] == detected[1] and declared[2] == detected[2]
-        blackhole = declared[1] == 'blackhole'
+        should = declared.split('|')
+        is = detected.split('|')
 
+        cidr_match = (should[0] == is[0])
+        target_match = ((should[1] == is[1]) and (should[2] == is[2]))
+        blackhole = should[1] == 'blackhole'
         cidr_match and (target_match or blackhole)
       end
 

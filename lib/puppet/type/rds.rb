@@ -85,6 +85,14 @@ Puppet::Type.newtype(:rds) do
 
 
   newproperty(:multi_az) do
+    newvalues(:enabled, :disabled)
+    defaultto :enabled
+    validate do |value|
+      fail("multi_az valid options are [enabled|disabled] and not '#{value}'") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
+    end
+    munge do |value|
+      PuppetX::IntechWIFI::Logical.logical(value)
+    end
 
   end
 

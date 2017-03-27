@@ -130,6 +130,20 @@ Puppet::Type.type(:subnet).provide(:awscli) do
   end
 
   def set_route_table(value)
+    if !@property_hash[:route_table].nil?
+      args = [
+          'ec2', 'describe-route-tables', '--region', @property_hash[:region],
+          '--filters', "Name=association.subnet-id,Values=#{@property_hash[:subnetid]}"
+      ]
+      rts = JSON.parse(awscli(args))["RouteTables"]
+      if rts.length > 0
+        rta = rts[0]["Associations"].select{|x| x["SubnetId"] == @property_hash[:subnetid]}.map{|x| x["RouteTableAssociationId"]}
+        awscli('ec2', 'disassociate-route-table', '--region', @property_hash[:region], '--association-id', rta)
+      end
+
+    end
+
+
     awscli('ec2', 'associate-route-table', '--region', @property_hash[:region], '--subnet-id', @property_hash[:subnetid], '--route-table-id',
            PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], "route-table", value) { |*args| awscli(*args)}
     )

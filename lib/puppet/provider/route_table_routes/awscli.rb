@@ -95,9 +95,14 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
     handler = [
         [ 'GatewayId', self.method(:igw_id_to_name), 'igw'],
         [ 'NatGatewayId', self.method(:natgw_id_to_name), 'nat'],
+        [ 'InstanceId', self.method(:instance_id_to_name), 'ec2'],
     ].select{|x| !route[x[0]].nil?}.map{|x| [route[x[0]], x[1], x[2]]}.flatten
 
+    fail("unable to decode route data #{route}") if handler.length != 3
+
     name = handler[1].(handler[0])
+
+    info("detected route #{route['DestinationCidrBlock']}|#{handler[2]}|#{name}")
 
     "#{route['DestinationCidrBlock']}|#{handler[2]}|#{name}"
 
@@ -127,6 +132,12 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     id
+  rescue Puppet::ExecutionFailure => e
+    id
+  end
+
+  def instance_id_to_name(id)
+    PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'ec2', id) { | *arg |  awscli(*arg) }
   end
 
 
@@ -179,8 +190,6 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
   end
 
   def delete_route route
-    print "delete route #{route}\n"
-
     rt_segments = route.split('|')
     raise RouteFormatError route if rt_segments.length != 3
 
