@@ -27,7 +27,7 @@ define doatools::role (
   $max=lookup('role::max', Data, 'first', 5),
   $desired=lookup('role::desired', Data, 'first', 1),
   $availability = lookup('role::availability', Data, 'deep', [ 'a', 'b', 'c']),
-  $zone_labels = lookup('role::zone_labels', Data, 'deep', { "public" => "%{vpc}%{az}pub", "private" => "%{vpc}%{az}pri"}),
+  $zone_labels = lookup('role::zone_labels', Data, 'deep', { 'public' => '%{vpc}%{az}pub', 'private' => '%{vpc}%{az}pri'}),
   $listeners=lookup('role::listeners', Data, 'deep', undef),
   $target=lookup('role::target', Data, 'deep', { }),
   $database=lookup('role::database', Data, 'deep', undef),
@@ -35,8 +35,6 @@ define doatools::role (
   $ingress_extra=lookup('role::ingress_extra', Data, 'deep', []),
   $egress_extra=lookup('role::egress_extra', Data, 'deep', []),
 ) {
-
-  $rds_endpoint = find_rds_endpoint($region, "dev-smartcity-rds")
 
   if $image==undef and $ensure==present {
     $l_region=$region
@@ -162,23 +160,21 @@ define doatools::role (
     $l_database_engine = lest($database["engine"]) || { 'mysql'}
 
     $rds_ingress_ports = [
-      ["mysql", [3306]],
-      ["mariadb",  [3306]],
-      ["oracle-se1", [1525]],
-      ["oracle-se2", [1526]],
-      ["oracle-se", [1526]],
-      ["oracle-ee", [1526]],
-      ["sqlserver-ee", [1433]],
-      ["sqlserver-se", [1433]],
-      ["sqlserver-ex", [1433]],
-      ["sqlserver-web", [1433]],
-      ["postgres", [5432,5433]],
-      ["aurora", [3306]],
+      ['mysql', [3306]],
+      ['mariadb',  [3306]],
+      ['oracle-se1', [1525]],
+      ['oracle-se2', [1526]],
+      ['oracle-se', [1526]],
+      ['oracle-ee', [1526]],
+      ['sqlserver-ee', [1433]],
+      ['sqlserver-se', [1433]],
+      ['sqlserver-ex', [1433]],
+      ['sqlserver-web', [1433]],
+      ['postgres', [5432,5433]],
+      ['aurora', [3306]],
     ].reduce([]) | $memo, $engine_port_data | {
       if $engine_port_data[0] == $l_database_engine {
-        $engine_port_data[1].map | $p | {
-           "tcp|${p}|sg|${vpc}_${name}_ec2_sg"
-        }
+        $engine_port_data[1].map | $p | { "tcp|${p}|sg|${vpc}_${name}_ec2_sg" }
       } else {
         $memo
       }
@@ -256,11 +252,11 @@ define doatools::role (
     subnets              => $private_subnets,
   }
 
-  if $ensure == absent {
-    Autoscaling_group["${vpc}_${name}_asg"]->Launch_configuration["${vpc}_${name}_lc"]->Security_group["${vpc}_${name}_ec2_sg"]->Doatools::Network[$vpc]
-    Security_group["${vpc}_${name}_ec2_sg"]->Vpc[$vpc]
-  } else {
-    Security_group["${vpc}_${name}_ec2_sg"]->Launch_configuration["${vpc}_${name}_lc"] -> Autoscaling_group["${vpc}_${name}_asg"]
-  }
+  #if $ensure == absent {
+  #  Autoscaling_group["${vpc}_${name}_asg"]->Launch_configuration["${vpc}_${name}_lc"]->Security_group["${vpc}_${name}_ec2_sg"]->Doatools::Network[$vpc]
+  #  Security_group["${vpc}_${name}_ec2_sg"]->Vpc[$vpc]
+  #} else {
+  #  Security_group["${vpc}_${name}_ec2_sg"]->Launch_configuration["${vpc}_${name}_lc"]-> Autoscaling_group["${vpc}_${name}_asg"]
+  #}
 
 }
