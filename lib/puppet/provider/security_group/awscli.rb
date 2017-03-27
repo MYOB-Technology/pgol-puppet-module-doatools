@@ -40,7 +40,7 @@ Puppet::Type.type(:security_group).provide(:awscli) do
     awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:sgid], '--tags', "Key=Name,Value=#{resource[:name]}")
 
     @property_hash[:tags] = resource[:tags]
-    PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:sgid], {}, @property_hash[:tags]){| *arg | awscli(*arg)}
+    PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:sgid], {}, @property_hash[:tags]){| *arg | awscli(*arg)} if !@property_hash[:tags].nil?
 
 
     @property_hash[:ensure] = :present
