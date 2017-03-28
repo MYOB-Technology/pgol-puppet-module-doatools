@@ -71,6 +71,7 @@ Puppet::Type.type(:rds).provide(:awscli) do
   end
 
   def exists?
+
     #
     #  If the puppet manifest is delcaring the existance of a subnet then we know its region.
     #
@@ -81,7 +82,7 @@ Puppet::Type.type(:rds).provide(:awscli) do
     #
     regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
 
-    debug("searching regions=#{regions} for subnet=#{resource[:name]}\n")
+    debug("searching regions=#{regions} for rds=#{resource[:name]}\n")
 
     data = PuppetX::IntechWIFI::AwsCmds.find_rds_by_name(regions, resource[:name]) do | *arg |
       awscli(*arg)
@@ -95,7 +96,7 @@ Puppet::Type.type(:rds).provide(:awscli) do
     @property_hash[:name] = data["DBInstanceIdentifier"]
     @property_hash[:engine] = data["Engine"]
     @property_hash[:engine_version] = data["EngineVersion"]
-    @property_hash[:db_subnet_group] = data["DBSubnetGroup"]["DBSubnetGroupName"]
+    @property_hash[:rds_subnet_group] = data["DBSubnetGroup"]["DBSubnetGroupName"]
     @property_hash[:maintenance_window] = data["PreferredMaintenanceWindow"]
     @property_hash[:backup_window] = data["PreferredBackupWindow"]
     @property_hash[:backup_retention_count] = data["BackupRetentionPeriod"]
@@ -193,7 +194,7 @@ Puppet::Type.type(:rds).provide(:awscli) do
 
     @property_values = [
         ['--db-instance-class',               :instance_type],
-        ['--db-subnet-group-name',            :db_subnet_group],
+        ['--db-subnet-group-name',            :rds_subnet_group],
         ['--preferred-maintenance-window',    :maintenance_window],
         ['--preferred-backup-window',         :backup_window],
         ['--backup-retention-period',         :backup_retention_count],

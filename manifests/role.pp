@@ -15,6 +15,7 @@
 #
 
 define doatools::role (
+  $vpc = $name,
   $role = $name,
   $l_vpc=lookup('role::vpc', Data, 'first', $name),
   $l_role=$name,
@@ -144,8 +145,6 @@ define doatools::role (
         ensure => $ensure,
         region => $region,
       }
-
-      Load_balancer["${vpc}-${name}-elb"] -> Security_group["${vpc}_${name}_elb_sg"] -> Vpc[$vpc]
     }
   }
 
@@ -184,7 +183,7 @@ define doatools::role (
       "${vpc}-${rds_name}-rds" => {
         ensure => $ensure,
         region => $region,
-        db_subnet_group => "${vpc}-${rds_name}-rdsnet",
+        rds_subnet_group => "${vpc}-${rds_name}-rdsnet",
         security_groups => [ "${vpc}_${name}_rds_sg" ],
         master_username => lest($database["master_username"]) || { 'admin'},
         master_password => lest($database["master_password"]) || { 'password!'},
@@ -214,23 +213,22 @@ define doatools::role (
     }
 
   } else {
-    rds_subnet_group {"${vpc}-${name}-rdsnet":
+    rds_subnet_group {"${vpc}-${rds_name}-rdsnet":
       ensure => absent,
       region => $region,
+      subnets => $private_subnets
     }
 
-    rds {"${vpc}-${name}-rds":
+    rds {"${vpc}-${rds_name}-rds":
       ensure => absent,
       region => $region,
+      rds_subnet_group => "${vpc}-${rds_name}-rdsnet",
     }
 
     security_group { "${vpc}_${name}_rds_sg":
       ensure => absent,
       region => $region,
     }
-
-    Rds["${vpc}-${name}-rds"]->Rds_subnet_group["${vpc}-${name}-rdsnet"]
-
   }
 
   launch_configuration { "${vpc}_${name}_lc" :

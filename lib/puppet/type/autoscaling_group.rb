@@ -19,6 +19,32 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:autoscaling_group) do
   ensurable
 
+  autorequire(:subnet) do
+    if self[:ensure] == :present
+      self[:subnets]
+    end
+  end
+
+  autobefore(:subnet) do
+    if self[:ensure] == :absent
+      self[:subnets]
+    end
+  end
+
+  autorequire(:launch_configuration) do
+    if self[:ensure] == :present
+      self[:launch_configuration]
+    end
+  end
+
+  autobefore(:launch_configuration) do
+    if self[:ensure] == :absent
+      self[:launch_configuration]
+    end
+  end
+
+
+
   newparam(:name, :namevar => true) do
   end
 

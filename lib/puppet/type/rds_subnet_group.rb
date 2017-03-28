@@ -19,6 +19,19 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:rds_subnet_group) do
   ensurable
 
+  autorequire(:subnet) do
+    if self[:ensure] == :present
+      self[:subnets]
+    end
+  end
+
+  autobefore(:subnet) do
+    if self[:ensure] == :absent
+      self[:subnets]
+    end
+  end
+
+
   newparam(:name, :namevar => true) do
 
   end

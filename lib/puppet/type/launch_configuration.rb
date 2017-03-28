@@ -19,6 +19,19 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:launch_configuration) do
   ensurable
 
+  autorequire(:security_group) do
+    if self[:ensure] == :present
+      self[:security_groups]
+    end
+  end
+
+  autobefore(:security_group) do
+    if self[:ensure] == :absent
+      self[:security_groups]
+    end
+  end
+
+
   newparam(:name, :namevar => true) do
   end
 

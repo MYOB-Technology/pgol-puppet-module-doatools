@@ -19,6 +19,30 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:rds) do
   ensurable
 
+  autorequire(:rds_subnet_group) do
+    if self[:ensure] == :present
+      self[:rds_subnet_group]
+    end
+  end
+
+  autobefore(:rds_subnet_group) do
+    if self[:ensure] == :absent
+      self[:rds_subnet_group]
+    end
+  end
+
+  autorequire(:security_group) do
+    if self[:ensure] == :present
+      self[:security_groups]
+    end
+  end
+
+  autobefore(:security_group) do
+    if self[:ensure] == :absent
+      self[:security_groups]
+    end
+  end
+
   newparam(:name, :namevar => true) do
     validate do |value|
       fail("RDS name `#{value}` is not allowed by AWS.") unless /^[a-z][a-z0-9\-]+$/ =~ value
@@ -57,7 +81,7 @@ Puppet::Type.newtype(:rds) do
 
   end
 
-  newproperty(:db_subnet_group) do
+  newproperty(:rds_subnet_group) do
 
   end
 
