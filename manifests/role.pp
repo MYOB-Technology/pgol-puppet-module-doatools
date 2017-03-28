@@ -214,14 +214,14 @@ define doatools::role (
 
   } else {
     rds_subnet_group {"${vpc}-${rds_name}-rdsnet":
-      ensure => absent,
-      region => $region,
+      ensure  => absent,
+      region  => $region,
       subnets => $private_subnets
     }
 
     rds {"${vpc}-${rds_name}-rds":
-      ensure => absent,
-      region => $region,
+      ensure           => absent,
+      region           => $region,
       rds_subnet_group => "${vpc}-${rds_name}-rdsnet",
     }
 
@@ -249,12 +249,4 @@ define doatools::role (
     launch_configuration => "${vpc}_${name}_lc",
     subnets              => $private_subnets,
   }
-
-  #if $ensure == absent {
-  #  Autoscaling_group["${vpc}_${name}_asg"]->Launch_configuration["${vpc}_${name}_lc"]->Security_group["${vpc}_${name}_ec2_sg"]->Doatools::Network[$vpc]
-  #  Security_group["${vpc}_${name}_ec2_sg"]->Vpc[$vpc]
-  #} else {
-  #  Security_group["${vpc}_${name}_ec2_sg"]->Launch_configuration["${vpc}_${name}_lc"]-> Autoscaling_group["${vpc}_${name}_asg"]
-  #}
-
 }

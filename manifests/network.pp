@@ -22,10 +22,16 @@ define doatools::network (
 ){
   debug("building network based on zones=${zones}")
 
-  define_network_resources($ensure,
-    {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability, routes => $routes, dns_hostnames => $dns_hostnames, dns_resolution => $dns_resolution },
-    $zones,
-    $default_access
+  define_network_resources($ensure, {
+    name           => $vpc,
+    cidr           => $vpc_cidr,
+    region         => $region,
+    tags           => $tags,
+    availability   => $availability,
+    routes         => $routes,
+    dns_hostnames  => $dns_hostnames,
+    dns_resolution => $dns_resolution
+  }, $zones, $default_access
   ).each |$r| {
     $rt = $r['resource_type']
     $rts = $r['resources'].keys

@@ -26,12 +26,12 @@ Puppet::Type.newtype(:vpc) do
   Other networking components that combine to make up the VPC need to declared as seperate resources.
 
   @example Create a simple VPC
-    vpc {'example_vpc':
+    vpc {'example':
       region => 'us-east-1'
     }
 
   @example Destroy a VPC
-    vpc {'example_vpc':
+    vpc {'example':
       ensure => absent,
       region => 'us-east-1'
     }
@@ -40,11 +40,50 @@ Puppet::Type.newtype(:vpc) do
     vpc {'typical_vpc':
       region        => 'eu-west-1',
       cidr          => '192.168.182.0/23',
-      dns_hostnames => true,
-      is_default    => true,
+      dns_hostnames => enabled,
+      is_default    => enabled,
       tags          => {
         owner => 'Marketing',
         role  => 'Keeping the marketing department infrastructure seperate from the developers systems'
+      }
+    }
+
+  @example JSON tags declaration
+    vpc {'complex':
+      ensure => present,
+      region => 'eu-west-1',
+      cidr   => '10.0.1.0/26',
+      dns_hostnames => enabled,
+      dns_resolution => enabled,
+      is_default => false,
+      tags => {
+        name => "My VPC",
+        roles => [
+          "authenticator",
+          "sessions"
+        ],
+        change_history => [
+          {
+             date    => "20170328",
+             version => 1.4.1,
+             notes   => "patch for issue: EXAP-1043"
+          },
+          {
+             date    => "20170326",
+             version => 1.4.0,
+             notes   => "Release 1.4.0"
+          },
+          {
+             date    => "20170304",
+             version => 1.3.8,
+             notes   => "patch for issue: EXAP-1028"
+          },
+          {
+             date    => "20170224",
+             version => 1.3.7,
+             notes   => "patch for issue: EXAP-1011"
+          }
+        ]
       }
     }
 
@@ -100,23 +139,16 @@ Puppet::Type.newtype(:vpc) do
   end
 
   newproperty(:is_default) do
+    desc <<-DESC
+    The default VPC is region specific. Setting this property to ```enabled``` will set this property to ```disabled``` on the current default VPC.
+    DESC
+
   end
 
   newproperty(:tags) do
     desc <<-DESC
     The tags property is presented as a hash containing key / value pairs. Values can be
     strings, hashes or arrays. Hashes and arrays are stored in AWS as JSON strings.
-
-    @example A simple string example.
-      tags => {
-        Environment => "Production"
-        Owner       => "ops@ourcompany.com"
-      }
-
-    @example A Complex data structures.
-      tags => {
-      }
-
     DESC
 
     validate do | value|

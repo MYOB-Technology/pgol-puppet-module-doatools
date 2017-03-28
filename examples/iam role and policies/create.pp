@@ -8,11 +8,11 @@ node 'default' {
       'Effect'   => 'Allow',
       'Resource' => '*'
     },
-      {
-        'Action'   => 'iam:ChangePassword',
-        'Effect'   => 'Allow',
-        'Resource' => 'arn:aws:iam::309595426446:user/${aws:username}'
-      }],
+    {
+      'Action'   => 'iam:ChangePassword',
+      'Effect'   => 'Allow',
+      'Resource' => 'arn:aws:iam::309595426446:user/${aws:username}' # lint:ignore:disable_single_quote_string_with_variables
+    }],
   }
 
   iam_role { 'doatools_role':
