@@ -41,7 +41,7 @@ Puppet::Type.newtype(:iam_role) do
   end
 
   newproperty(:trust, :array_matching => :all) do
-    validate { |v| PuppetX::IntechWIFI::Constants.PrincipalLeys.include? v }
+    validate { |v| PuppetX::IntechWIFI::Constants.PrincipalKeys.include? v }
     def insync?(is)
       is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
     end
