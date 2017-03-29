@@ -92,7 +92,7 @@ Puppet::Type.newtype(:load_balancer) do
     end
 
     def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+      PuppetX::IntechWIFI::Logical.array_of_hashes_equal?(is, @should)
     end
   end
 
