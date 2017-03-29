@@ -19,6 +19,18 @@ require 'puppet_x/intechwifi/constants'
 Puppet::Type.newtype(:iam_role) do
   ensurable
 
+  autorequire(:iam_policy) do
+    if self[:ensure] == :present
+      self[:policies]
+    end
+  end
+
+  autobefore(:iam_policy) do
+    if self[:ensure] == :absent
+      self[:policies]
+    end
+  end
+
   newparam(:name, :namevar => true) do
   end
 
