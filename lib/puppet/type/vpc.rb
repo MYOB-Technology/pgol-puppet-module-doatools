@@ -132,14 +132,6 @@ Puppet::Type.newtype(:vpc) do
   newproperty(:dhcp_options) do
   end
 
-  newproperty(:is_default) do
-    desc <<-DESC
-    Each region has a single default VPC. Setting a VPC to be the default also removes the default flag from the previous VPC.
-    DESC
-    newvalues(:enabled, :disabled)
-    defaultto :disabled
-  end
-
   newproperty(:tags) do
     desc <<-DESC
     The tags property is presented as a hash containing key / value pairs. Values can be
