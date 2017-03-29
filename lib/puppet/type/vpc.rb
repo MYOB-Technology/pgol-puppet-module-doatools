@@ -57,31 +57,20 @@ Puppet::Type.newtype(:vpc) do
       dns_resolution => enabled,
       is_default => false,
       tags => {
-        name => "My VPC",
         roles => [
-          "authenticator",
-          "sessions"
+          'authenticator',
+          'sessions'
         ],
         change_history => [
           {
-             date    => "20170328",
-             version => 1.4.1,
-             notes   => "patch for issue: EXAP-1043"
+             date    => '20170328',
+             version => '1.4.1',
+             notes   => 'patch for issue: EXAP-1043'
           },
           {
-             date    => "20170326",
-             version => 1.4.0,
-             notes   => "Release 1.4.0"
-          },
-          {
-             date    => "20170304",
-             version => 1.3.8,
-             notes   => "patch for issue: EXAP-1028"
-          },
-          {
-             date    => "20170224",
-             version => 1.3.7,
-             notes   => "patch for issue: EXAP-1011"
+             date    => '20170326',
+             version => '1.4.0',
+             notes   => 'Release 1.4.0'
           }
         ]
       }
@@ -103,6 +92,11 @@ Puppet::Type.newtype(:vpc) do
   end
 
   newparam(:cidr) do
+    desc <<-DESC
+    The virtual private cloud's VPC defines the IP address space that can be contained within this VPC.  Subnets will
+    only be able to be created using partial address ranges within the scope of this CIDR.
+    DESC
+
     defaultto '192.168.0.0/24'
     validate do |value|
       #  Its not worth doing a lot of validation as AWS will reject invalid strings.
@@ -140,9 +134,10 @@ Puppet::Type.newtype(:vpc) do
 
   newproperty(:is_default) do
     desc <<-DESC
-    The default VPC is region specific. Setting this property to ```enabled``` will set this property to ```disabled``` on the current default VPC.
+    Each region has a single default VPC. Setting a VPC to be the default also removes the default flag from the previous VPC.
     DESC
-
+    newvalues(:enabled, :disabled)
+    defaultto :disabled
   end
 
   newproperty(:tags) do
@@ -150,6 +145,8 @@ Puppet::Type.newtype(:vpc) do
     The tags property is presented as a hash containing key / value pairs. Values can be
     strings, hashes or arrays. Hashes and arrays are stored in AWS as JSON strings.
     DESC
+
+    defaultto { }
 
     validate do | value|
       PuppetX::IntechWIFI::Tags_Property.validate_value(value)
