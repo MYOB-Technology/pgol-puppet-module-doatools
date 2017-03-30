@@ -22,7 +22,9 @@ Puppet::Type.newtype(:security_group_rules) do
   autobefore(:security_group) do
     result = []
     if self[:ensure] == :absent
-      result << [ self[:name] ]
+      result << self[:name]
+      result << self[:in].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:in].nil?
+      result << self[:out].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:out].nil?
     end
     result.flatten
   end
@@ -30,7 +32,7 @@ Puppet::Type.newtype(:security_group_rules) do
   autorequire(:security_group) do
     result = []
     if self[:ensure] == :present
-      result << [ self[:name] ]
+      result << self[:name]
       result << self[:in].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:in].nil?
       result << self[:out].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:out].nil?
     end

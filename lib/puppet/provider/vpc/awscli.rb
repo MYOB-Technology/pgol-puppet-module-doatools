@@ -121,7 +121,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def set_dns_resolution(region, vpcid, value)
-    awscli("ec2", "modify-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--enable-dns-support", "{\"Value\":#{value}}")
+    awscli("ec2", "modify-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--enable-dns-support", "{\"Value\":#{PuppetX::IntechWIFI::Logical.string_true_or_false(value)}}")
   end
 
 
@@ -130,7 +130,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def set_dns_hostnames(region, vpcid, value)
-    awscli("ec2", "modify-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--enable-dns-hostnames", "{\"Value\":#{value}}")
+    awscli("ec2", "modify-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--enable-dns-hostnames", "{\"Value\":#{PuppetX::IntechWIFI::Logical.string_true_or_false(value)}}")
   end
 
   def flush

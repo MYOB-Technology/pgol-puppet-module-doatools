@@ -16,6 +16,8 @@
 
 define doatools::role (
   $vpc = $name,
+  $internet_gateway = $vpc,
+  $nat_gateway = $vpc,
   $role = $name,
   $l_vpc=lookup('role::vpc', Data, 'first', $name),
   $l_role=$name,
@@ -132,7 +134,8 @@ define doatools::role (
       subnets         => $public_subnets,
       listeners       => $listeners_internal,
       targets         => [deep_merge($target_defaults, $target, $target_required)],
-      security_groups => [ "${vpc}_${name}_elb_sg" ]
+      security_groups => [ "${vpc}_${name}_elb_sg" ],
+      internet_gateway => $internet_gateway,
     }
   } else {
 
@@ -248,5 +251,7 @@ define doatools::role (
     desired_instances    => $desired,
     launch_configuration => "${vpc}_${name}_lc",
     subnets              => $private_subnets,
+    internet_gateway     => $internet_gateway,
+    nat_gateway          => $nat_gateway,
   }
 }

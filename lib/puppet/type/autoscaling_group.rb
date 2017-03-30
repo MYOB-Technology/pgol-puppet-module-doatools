@@ -43,6 +43,29 @@ Puppet::Type.newtype(:autoscaling_group) do
     end
   end
 
+  autorequire(:internet_gateway) do
+    if self[:ensure] == :present
+      self[:internet_gateway]
+    end
+  end
+
+  autobefore(:internet_gateway) do
+    if self[:ensure] == :absent
+      self[:internet_gateway]
+    end
+  end
+
+  autorequire(:nat_gateway) do
+    if self[:ensure] == :present
+      self[:nat_gateway]
+    end
+  end
+
+  autobefore(:nat_gateway) do
+    if self[:ensure] == :absent
+      self[:nat_gateway]
+    end
+  end
 
 
   newparam(:name, :namevar => true) do
@@ -87,5 +110,14 @@ Puppet::Type.newtype(:autoscaling_group) do
       fail("Unsupported Healthcheck type #{value} we support the following types [ :elb, :ec2]") unless [:elb, :ec2].include? value
     end
   end
+
+  newparam(:internet_gateway) do
+
+  end
+
+  newparam(:nat_gateway) do
+
+  end
+
 
 end

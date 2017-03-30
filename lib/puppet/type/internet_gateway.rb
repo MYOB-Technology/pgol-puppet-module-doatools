@@ -27,7 +27,7 @@ Puppet::Type.newtype(:internet_gateway) do
 
   autorequire(:nat_gateway) do
     if self[:ensure] == :absent
-      self[:nat_gateways]
+      self[:nat_gateway]
     end
   end
 
@@ -39,7 +39,7 @@ Puppet::Type.newtype(:internet_gateway) do
 
   autobefore(:nat_gateway) do
     if self[:ensure] == :present
-      self[:nat_gateways]
+      self[:nat_gateway]
     end
   end
 
@@ -47,7 +47,7 @@ Puppet::Type.newtype(:internet_gateway) do
   newparam(:name, :namevar => true) do
   end
 
-  newparam(:nat_gateways) do
+  newparam(:nat_gateway) do
 
   end
 

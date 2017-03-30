@@ -20,19 +20,15 @@ Puppet::Type.newtype(:security_group) do
   ensurable
 
   autobefore(:vpc) do
-    result = []
     if self[:ensure] == :absent
-      result << [ self[:vpc] ]
+      self[:vpc]
     end
-    result.flatten
   end
 
   autorequire(:vpc) do
-    result = []
     if self[:ensure] == :present
-      result << [ self[:vpc] ]
+      self[:vpc]
     end
-    result.flatten
   end
 
 

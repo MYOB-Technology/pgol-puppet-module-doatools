@@ -35,6 +35,16 @@ module PuppetX
         return result
       end
 
+      def Logical.string_true_or_false(value)
+        if logical_true(value)
+          return 'true'
+        end
+        if logical_false(value)
+          return 'false'
+        end
+      end
+
+
       def Logical.array_of_hashes_equal?(a, b)
         a.all? { |a_hash|
           b_hash = b.select{|b_hash| a_hash["name"] == b_hash["name"]}
