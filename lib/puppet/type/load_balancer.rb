@@ -22,37 +22,40 @@ Puppet::Type.newtype(:load_balancer) do
   newparam(:name, :namevar => true) do
   end
 
-  autobefore(:subnets) do
-    result = []
+  autobefore(:subnet) do
     if self[:ensure] == :absent
-      result << [ self[:subnets] ]
+      self[:subnets]
     end
-    result.flatten
   end
 
   autobefore(:security_group) do
-    result = []
     if self[:ensure] == :absent
-      result << [ self[:security_groups] ]
+      self[:security_groups]
     end
-    result.flatten
   end
 
-
-  autorequire(:subnets) do
-    result = []
-    if self[:ensure] == :present
-      result << [ self[:subnets] ]
+  autobefore(:internet_gateway) do
+    if self[:ensure] == :absent
+      self[:internet_gateway]
     end
-    result.flatten
+  end
+
+  autorequire(:subnet) do
+    if self[:ensure] == :present
+      self[:subnets]
+    end
   end
 
   autorequire(:security_group) do
-    result = []
     if self[:ensure] == :present
-      result << [ self[:security_groups] ]
+      self[:security_groups]
     end
-    result.flatten
+  end
+
+  autorequire(:internet_gateway) do
+    if self[:ensure] == :present
+      self[:internet_gateway]
+    end
   end
 
 
@@ -100,6 +103,10 @@ Puppet::Type.newtype(:load_balancer) do
     def insync?(is)
       is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
     end
+  end
+
+  newparam(:internet_gateway) do
+
   end
 
 
