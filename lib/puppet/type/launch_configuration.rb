@@ -31,6 +31,19 @@ Puppet::Type.newtype(:launch_configuration) do
     end
   end
 
+  autorequire(:iam_role) do
+    if self[:ensure] == :present
+      self[:iam_role]
+    end
+  end
+
+  autobefore(:iam_role) do
+    if self[:ensure] == :absent
+      self[:iam_role]
+    end
+  end
+
+
 
   newparam(:name, :namevar => true) do
   end
@@ -55,6 +68,10 @@ Puppet::Type.newtype(:launch_configuration) do
 
   newproperty(:instance_type) do
   end
+
+  newproperty(:iam_role) do
+  end
+
 
   newproperty(:security_groups, :array_matching => :all) do
     def insync?(is)

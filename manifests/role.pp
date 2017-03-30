@@ -37,6 +37,7 @@ define doatools::role (
   $rds_name=lookup('role::rds_name', Data, 'first', $name),
   $ingress_extra=lookup('role::ingress_extra', Data, 'deep', []),
   $egress_extra=lookup('role::egress_extra', Data, 'deep', []),
+  $iam_policies=lookup('role::iam_policies', Data, 'deep', [])
 ) {
 
   if $image==undef and $ensure==present {
@@ -240,7 +241,10 @@ define doatools::role (
     image           => $image_internal,
     instance_type   => $instance_type,
     userdata        => $userdata,
-    security_groups => [ "${vpc}_${name}_ec2_sg" ]
+    security_groups => [
+      "${vpc}_${name}_ec2_sg"
+    ],
+    iam_role        => "${vpc}_${name}_role",
   }
 
   autoscaling_group { "${vpc}_${name}_asg":
@@ -253,5 +257,18 @@ define doatools::role (
     subnets              => $private_subnets,
     internet_gateway     => $internet_gateway,
     nat_gateway          => $nat_gateway,
+  }
+
+  iam_role { "${vpc}_${name}_role" :
+    ensure   => $ensure,
+    policies => $iam_policies.map | $policy | {
+      $policy["name"]
+    }
+  }
+
+  $iam_policies.each | $policy | {
+    iam_policy { $policy["name"]:
+      policy => $policy["policy"]
+    }
   }
 }

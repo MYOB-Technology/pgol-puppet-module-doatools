@@ -81,9 +81,15 @@ Puppet::Type.newtype(:vpc) do
   ensurable
 
   newparam(:name, :namevar => true) do
+    desc <<-DESC
+    The VPC name must be both unique within this puppet manifest, and unique within the AWS region for this AWS account.
+    DESC
   end
 
   newparam(:region) do
+    desc <<-DESC
+    The region string needs to follow the
+    DESC
     defaultto 'us-east-1'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions

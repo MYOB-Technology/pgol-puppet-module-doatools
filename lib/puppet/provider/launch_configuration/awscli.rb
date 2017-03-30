@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'json'
+require 'tempfile'
 require 'puppet_x/intechwifi/constants'
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/awscmds'
@@ -32,6 +33,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     self.security_groups = resource[:security_groups]
     self.userdata = resource[:userdata]
     self.ssh_key_name = resource[:ssh_key_name]
+    self.iam_role = resource[:iam_role]
 
     @property_hash[:region] = resource[:region]
 
@@ -76,6 +78,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     }
     @property_hash[:userdata] = Base64.decode64(launch_config["UserData"])
     @property_hash[:ssh_key_name] = launch_config["KeyName"]
+    @property_hash[:iam_role] = launch_config["IamInstanceProfile"]
 
     # print "launch_config = #{launch_config}\n"
     true
@@ -100,6 +103,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       @property_flush[:index] = @property_hash[:index] + 1
       new_name = [@property_hash[:name], PuppetX::IntechWIFI::Autoscaling_Rules.encode_index(@property_flush[:index])].join
 
+      userdata_temp_file = nil
+
       args = [
           "autoscaling",
           "create-launch-configuration",
@@ -118,8 +123,12 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
         ]
       end
       if (value(:userdata).nil? == false) and (value(:userdata).length > 0)
+        userdata_temp_file = Tempfile.new('userdata')
+        userdata_temp_file.write(value(:userdata))
+        userdata_temp_file.close
+
         args << [
-            "--user-data", "#{value(:userdata)}"
+            "--user-data", "file://#{userdata_temp_file.path}"
         ]
       end
       if (value(:ssh_key_name).nil? == false) and (value(:ssh_key_name).length > 0)
@@ -128,12 +137,23 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
         ]
       end
 
+  #    if (value(:iam_role).nil? == false) and (value(:iam_role).length > 0)
+  #      role_data = PuppetX::IntechWIFI::AwsCmds.find_iam_role_by_name(value(:iam_role)){ | *arg | awscli(*arg) }
+  #      arn = role_data["Arn"]
+
+  #    args << [
+  #          "--iam-instance-profile", value(:iam_role)
+  #      ]
+  #    end
+
 
       #  Ensure we have a flat array...
       args.flatten
 
       #  Create the new launch_configuration
       awscli(args)
+
+      userdata_temp_file.unlink if !userdata_temp_file.nil?
 
       lcs = JSON.parse(awscli('autoscaling', 'describe-launch-configurations', '--region', @property_hash[:region]))["LaunchConfigurations"].select{|l|
         PuppetX::IntechWIFI::Autoscaling_Rules.is_valid_lc_name?(name, l['LaunchConfigurationName'] ) }.map{|l| l['LaunchConfigurationName']}.sort
@@ -188,6 +208,10 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
   def keep_versions=(value)
     @property_flush[:keep_versions] = value
+  end
+
+  def iam_role=(value)
+    @property_flush[:iam_role] = value
   end
 
 
