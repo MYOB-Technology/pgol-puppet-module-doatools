@@ -25,11 +25,25 @@ Puppet::Type.newtype(:nat_gateway) do
     end
   end
 
+  autorequire(:internet_gateway) do
+    if self[:ensure] == :present
+      self[:internet_gateway]
+    end
+  end
+
+
   autobefore(:subnet) do
     if self[:ensure] == :absent
       self[:name]
     end
   end
+
+  autobefore(:internet_gateway) do
+    if self[:ensure] == :absent
+      self[:internet_gateway]
+    end
+  end
+
 
   newparam(:name, :namevar => true) do
 
@@ -46,6 +60,10 @@ Puppet::Type.newtype(:nat_gateway) do
       regions = PuppetX::IntechWIFI::Constants.Regions
       fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
     end
+  end
+
+  newparam(:internet_gateway) do
+
   end
 end
 
