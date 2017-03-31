@@ -33,7 +33,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     self.security_groups = resource[:security_groups]
     self.userdata = resource[:userdata]
     self.ssh_key_name = resource[:ssh_key_name]
-    self.iam_role = resource[:iam_role]
+    self.iam_instance_profile = resource[:iam_instance_profile]
 
     @property_hash[:region] = resource[:region]
 
