@@ -130,12 +130,12 @@ define doatools::role (
     }
 
     load_balancer { "${vpc}-${name}-elb":
-      ensure          => $ensure,
-      region          => $region,
-      subnets         => $public_subnets,
-      listeners       => $listeners_internal,
-      targets         => [deep_merge($target_defaults, $target, $target_required)],
-      security_groups => [ "${vpc}_${name}_elb_sg" ],
+      ensure           => $ensure,
+      region           => $region,
+      subnets          => $public_subnets,
+      listeners        => $listeners_internal,
+      targets          => [deep_merge($target_defaults, $target, $target_required)],
+      security_groups  => [ "${vpc}_${name}_elb_sg" ],
       internet_gateway => $internet_gateway,
     }
   } else {
