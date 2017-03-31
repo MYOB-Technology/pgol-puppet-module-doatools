@@ -1,3 +1,19 @@
+#  Copyright (C) 2017 IntechnologyWIFI / Michael Shaw
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+#
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 define doatools::network (
   $vpc=$name,
   $l_vpc=$vpc,
@@ -22,10 +38,16 @@ define doatools::network (
 ){
   debug("building network based on zones=${zones}")
 
-  define_network_resources($ensure,
-    {  name => $vpc, cidr => $vpc_cidr, region=> $region, tags => $tags, availability => $availability, routes => $routes, dns_hostnames => $dns_hostnames, dns_resolution => $dns_resolution },
-    $zones,
-    $default_access
+  define_network_resources($ensure, {
+    name           => $vpc,
+    cidr           => $vpc_cidr,
+    region         => $region,
+    tags           => $tags,
+    availability   => $availability,
+    routes         => $routes,
+    dns_hostnames  => $dns_hostnames,
+    dns_resolution => $dns_resolution
+  }, $zones, $default_access
   ).each |$r| {
     $rt = $r['resource_type']
     $rts = $r['resources'].keys

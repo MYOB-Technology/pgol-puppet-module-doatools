@@ -15,6 +15,9 @@
 #
 
 define doatools::role (
+  $vpc = $name,
+  $internet_gateway = $vpc,
+  $nat_gateway = $vpc,
   $role = $name,
   $l_vpc=lookup('role::vpc', Data, 'first', $name),
   $l_role=$name,
@@ -34,6 +37,7 @@ define doatools::role (
   $rds_name=lookup('role::rds_name', Data, 'first', $name),
   $ingress_extra=lookup('role::ingress_extra', Data, 'deep', []),
   $egress_extra=lookup('role::egress_extra', Data, 'deep', []),
+  $iam_policies=lookup('role::iam_policies', Data, 'deep', [])
 ) {
 
   if $image==undef and $ensure==present {
@@ -126,12 +130,13 @@ define doatools::role (
     }
 
     load_balancer { "${vpc}-${name}-elb":
-      ensure          => $ensure,
-      region          => $region,
-      subnets         => $public_subnets,
-      listeners       => $listeners_internal,
-      targets         => [deep_merge($target_defaults, $target, $target_required)],
-      security_groups => [ "${vpc}_${name}_elb_sg" ]
+      ensure           => $ensure,
+      region           => $region,
+      subnets          => $public_subnets,
+      listeners        => $listeners_internal,
+      targets          => [deep_merge($target_defaults, $target, $target_required)],
+      security_groups  => [ "${vpc}_${name}_elb_sg" ],
+      internet_gateway => $internet_gateway,
     }
   } else {
 
@@ -144,8 +149,6 @@ define doatools::role (
         ensure => $ensure,
         region => $region,
       }
-
-      Load_balancer["${vpc}-${name}-elb"] -> Security_group["${vpc}_${name}_elb_sg"] -> Vpc[$vpc]
     }
   }
 
@@ -184,7 +187,7 @@ define doatools::role (
       "${vpc}-${rds_name}-rds" => {
         ensure => $ensure,
         region => $region,
-        db_subnet_group => "${vpc}-${rds_name}-rdsnet",
+        rds_subnet_group => "${vpc}-${rds_name}-rdsnet",
         security_groups => [ "${vpc}_${name}_rds_sg" ],
         master_username => lest($database["master_username"]) || { 'admin'},
         master_password => lest($database["master_password"]) || { 'password!'},
@@ -214,32 +217,34 @@ define doatools::role (
     }
 
   } else {
-    rds_subnet_group {"${vpc}-${name}-rdsnet":
-      ensure => absent,
-      region => $region,
+    rds_subnet_group {"${vpc}-${rds_name}-rdsnet":
+      ensure  => absent,
+      region  => $region,
+      subnets => $private_subnets
     }
 
-    rds {"${vpc}-${name}-rds":
-      ensure => absent,
-      region => $region,
+    rds {"${vpc}-${rds_name}-rds":
+      ensure           => absent,
+      region           => $region,
+      rds_subnet_group => "${vpc}-${rds_name}-rdsnet",
     }
 
     security_group { "${vpc}_${name}_rds_sg":
       ensure => absent,
       region => $region,
     }
-
-    Rds["${vpc}-${name}-rds"]->Rds_subnet_group["${vpc}-${name}-rdsnet"]
-
   }
 
   launch_configuration { "${vpc}_${name}_lc" :
-    ensure          => $ensure,
-    region          => $region,
-    image           => $image_internal,
-    instance_type   => $instance_type,
-    userdata        => $userdata,
-    security_groups => [ "${vpc}_${name}_ec2_sg" ]
+    ensure               => $ensure,
+    region               => $region,
+    image                => $image_internal,
+    instance_type        => $instance_type,
+    userdata             => $userdata,
+    security_groups      => [
+      "${vpc}_${name}_ec2_sg"
+    ],
+    iam_instance_profile => "${vpc}_${name}",
   }
 
   autoscaling_group { "${vpc}_${name}_asg":
@@ -250,13 +255,25 @@ define doatools::role (
     desired_instances    => $desired,
     launch_configuration => "${vpc}_${name}_lc",
     subnets              => $private_subnets,
+    internet_gateway     => $internet_gateway,
+    nat_gateway          => $nat_gateway,
   }
 
-  #if $ensure == absent {
-  #  Autoscaling_group["${vpc}_${name}_asg"]->Launch_configuration["${vpc}_${name}_lc"]->Security_group["${vpc}_${name}_ec2_sg"]->Doatools::Network[$vpc]
-  #  Security_group["${vpc}_${name}_ec2_sg"]->Vpc[$vpc]
-  #} else {
-  #  Security_group["${vpc}_${name}_ec2_sg"]->Launch_configuration["${vpc}_${name}_lc"]-> Autoscaling_group["${vpc}_${name}_asg"]
-  #}
+  iam_instance_profile { "${vpc}_${name}" :
+    ensure   => $ensure,
+    iam_role => "${vpc}_${name}_role",
+  }
 
+  iam_role { "${vpc}_${name}_role" :
+    ensure   => $ensure,
+    policies => $iam_policies.map | $policy | {
+      $policy["name"]
+    }
+  }
+
+  $iam_policies.each | $policy | {
+    iam_policy { $policy["name"]:
+      policy => $policy["policy"]
+    }
+  }
 }

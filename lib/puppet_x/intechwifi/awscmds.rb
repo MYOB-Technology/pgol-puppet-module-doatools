@@ -106,6 +106,12 @@ module PuppetX
         }
       end
 
+      def AwsCmds.find_iam_instance_profile_by_name(name, &aws_command)
+        JSON.parse(aws_command.call('iam', 'get-instance-profile', "--instance-profile-name", name))["InstanceProfile"]
+      rescue Puppet::ExecutionFailure => e
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
+      end
+
       def AwsCmds.find_iam_profile_by_name(name, scope, &aws_command)
         result = JSON.parse(aws_command.call('iam', 'list-policies', "--scope", scope))["Policies"].select{|p| p["PolicyName"] == name}
 

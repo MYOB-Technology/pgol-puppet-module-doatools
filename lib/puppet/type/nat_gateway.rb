@@ -25,11 +25,25 @@ Puppet::Type.newtype(:nat_gateway) do
     end
   end
 
+  autorequire(:internet_gateway) do
+    if self[:ensure] == :present
+      self[:internet_gateway]
+    end
+  end
+
+
   autobefore(:subnet) do
     if self[:ensure] == :absent
       self[:name]
     end
   end
+
+  autobefore(:internet_gateway) do
+    if self[:ensure] == :absent
+      self[:internet_gateway]
+    end
+  end
+
 
   newparam(:name, :namevar => true) do
 
@@ -41,11 +55,21 @@ Puppet::Type.newtype(:nat_gateway) do
 
   #  read only properties...
   newproperty(:region) do
+    desc <<-DESC
+    The region parameter is required for all puppet actions on this resource. It needs to follow the 'us-east-1' style,
+    and not the 'N. Virginia' format. Changing this paramter does not move the resource from one region to another,
+    but it may create a new resource in the new region, and will completely ignore the existing resource in the old
+    region
+    DESC
     defaultto 'us-east-1'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions
       fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
     end
+  end
+
+  newparam(:internet_gateway) do
+
   end
 end
 

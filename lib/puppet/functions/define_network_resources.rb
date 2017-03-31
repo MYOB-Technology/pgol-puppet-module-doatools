@@ -48,6 +48,8 @@ Puppet::Functions.create_function('define_network_resources') do
                         'ensure' => status,
                         'region' => vpc_data['region'],
                         'elastic_ip' => nats[index],
+                        'internet_gateway' => vpc_data['name'],
+
                     }
                 }
             end

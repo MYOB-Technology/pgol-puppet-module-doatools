@@ -29,13 +29,33 @@ module PuppetX
 
       def Logical.logical(value)
         result = nil
-        if logical_true(value) then result = 'true' end
-        if logical_false(value) then result = 'false' end
+        if logical_true(value) then result = 'enabled' end
+        if logical_false(value) then result = 'disabled' end
         if result == nil then fail("Value '#{value}' could not be converted into a true/false value") end
         return result
       end
 
+      def Logical.string_true_or_false(value)
+        if logical_true(value)
+          return 'true'
+        end
+        if logical_false(value)
+          return 'false'
+        end
+      end
 
+
+      def Logical.array_of_hashes_equal?(a, b)
+        a.all? { |a_hash|
+          b_hash = b.select{|b_hash| a_hash["name"] == b_hash["name"]}
+          false if b_hash.length != 1
+          true if a_hash.keys.all? { |a_key| b_hash[0][a_key] == a_hash[a_key] }
+        } and b.all? { |b_hash|
+          a_hash = a.select{|a_hash| b_hash["name"] == a_hash["name"]}
+          false if a_hash.length != 1
+          true if b_hash.keys.all? { |b_key| a_hash[0][b_key] == b_hash[b_key]}
+        }
+      end
     end
   end
 end

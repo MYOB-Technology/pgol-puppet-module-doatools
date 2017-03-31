@@ -22,7 +22,9 @@ Puppet::Type.newtype(:security_group_rules) do
   autobefore(:security_group) do
     result = []
     if self[:ensure] == :absent
-      result << [ self[:name] ]
+      result << self[:name]
+      result << self[:in].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:in].nil?
+      result << self[:out].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:out].nil?
     end
     result.flatten
   end
@@ -30,7 +32,7 @@ Puppet::Type.newtype(:security_group_rules) do
   autorequire(:security_group) do
     result = []
     if self[:ensure] == :present
-      result << [ self[:name] ]
+      result << self[:name]
       result << self[:in].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:in].nil?
       result << self[:out].select{|x| !x.index('|sg|').nil? }.map{|x| x[(x.rindex('|')+1)..-1]} if !self[:out].nil?
     end
@@ -43,6 +45,12 @@ Puppet::Type.newtype(:security_group_rules) do
 
   #  read only properties...
   newproperty(:region) do
+    desc <<-DESC
+    The region parameter is required for all puppet actions on this resource. It needs to follow the 'us-east-1' style,
+    and not the 'N. Virginia' format. Changing this paramter does not move the resource from one region to another,
+    but it may create a new resource in the new region, and will completely ignore the existing resource in the old
+    region
+    DESC
     defaultto 'us-east-1'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions
