@@ -81,13 +81,22 @@ Puppet::Type.newtype(:vpc) do
   ensurable
 
   newparam(:name, :namevar => true) do
+    desc <<-DESC
+    The VPC name must be both unique within this puppet manifest, and unique within the AWS region for this AWS account.
+    DESC
   end
 
   newparam(:region) do
+    desc <<-DESC
+    The region parameter is required for all puppet actions on this resource. It needs to follow the 'us-east-1' style,
+    and not the 'N. Virginia' format. Changing this paramter does not move the resource from one region to another,
+    but it may create a new resource in the new region, and will completely ignore the existing resource in the old
+    region
+    DESC
     defaultto 'us-east-1'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions
-      fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
+      warn("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
     end
   end
 
@@ -109,7 +118,16 @@ Puppet::Type.newtype(:vpc) do
 
   #  managed properties
   newproperty(:dns_hostnames) do
+    desc <<-DESC
+    Enabling dns_hostnames will mean that it becomes possible to refere to specific EC2 instances using their hostname,
+    and for DNS to resolve this.  However, this does not solve the problem of identifying newly created instances, as
+    they will be created with a new name based on their IP address, so their DNS entry is only predictable if you
+    already know their IP address.
+
+    If you have a situation where this is useful, you can enable this VPC feature.
+    DESC
     defaultto :disabled
+    newvalues(:enabled, :disabled)
     validate do |value|
       fail("dns_hostnames valid options are [enabled|disabled] and not '#{value}'") unless (PuppetX::IntechWIFI::Logical.logical_true(value) or PuppetX::IntechWIFI::Logical.logical_false(value))
     end
@@ -119,6 +137,10 @@ Puppet::Type.newtype(:vpc) do
   end
 
   newproperty(:dns_resolution) do
+    desc <<-DESC
+    Enabling dns_resolution ensures that local EC2 instances have a DNS server available on their local network, and
+    that new instances are configured to use this DNS server for DNS lookups.
+    DESC
     newvalues(:enabled, :disabled)
     defaultto :enabled
     validate do |value|
@@ -127,9 +149,6 @@ Puppet::Type.newtype(:vpc) do
     munge do |value|
       PuppetX::IntechWIFI::Logical.logical(value)
     end
-  end
-
-  newproperty(:dhcp_options) do
   end
 
   newproperty(:tags) do

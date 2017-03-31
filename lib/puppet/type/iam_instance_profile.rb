@@ -16,36 +16,26 @@
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:iam_role) do
+Puppet::Type.newtype(:iam_instance_profile) do
   ensurable
 
-  autorequire(:iam_policy) do
+  autorequire(:iam_role) do
     if self[:ensure] == :present
-      self[:policies]
+      self[:iam_role]
     end
   end
 
-  autobefore(:iam_policy) do
+  autobefore(:iam_role) do
     if self[:ensure] == :absent
-      self[:policies]
+      self[:iam_role]
     end
   end
-
 
   newparam(:name, :namevar => true) do
   end
 
-  newproperty(:policies, :array_matching => :all) do
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
-  end
-
-  newproperty(:trust, :array_matching => :all) do
-    validate { |v| PuppetX::IntechWIFI::Constants.PrincipalLeys.include? v }
-    def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
-    end
+  newproperty(:iam_role) do
   end
 
 end
+
