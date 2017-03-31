@@ -236,15 +236,15 @@ define doatools::role (
   }
 
   launch_configuration { "${vpc}_${name}_lc" :
-    ensure          => $ensure,
-    region          => $region,
-    image           => $image_internal,
-    instance_type   => $instance_type,
-    userdata        => $userdata,
-    security_groups => [
+    ensure               => $ensure,
+    region               => $region,
+    image                => $image_internal,
+    instance_type        => $instance_type,
+    userdata             => $userdata,
+    security_groups      => [
       "${vpc}_${name}_ec2_sg"
     ],
-    iam_role        => "${vpc}_${name}_role",
+    iam_instance_profile => "${vpc}_${name}",
   }
 
   autoscaling_group { "${vpc}_${name}_asg":
@@ -257,6 +257,11 @@ define doatools::role (
     subnets              => $private_subnets,
     internet_gateway     => $internet_gateway,
     nat_gateway          => $nat_gateway,
+  }
+
+  iam_instance_profile { "${vpc}_${name}" :
+    ensure   => $ensure,
+    iam_role => "${vpc}_${name}_role",
   }
 
   iam_role { "${vpc}_${name}_role" :

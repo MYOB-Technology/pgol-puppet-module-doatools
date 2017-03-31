@@ -31,15 +31,15 @@ Puppet::Type.newtype(:launch_configuration) do
     end
   end
 
-  autorequire(:iam_role) do
+  autorequire(:iam_instance_profile) do
     if self[:ensure] == :present
-      self[:iam_role]
+      self[:iam_instance_profile]
     end
   end
 
-  autobefore(:iam_role) do
+  autobefore(:iam_instance_profile) do
     if self[:ensure] == :absent
-      self[:iam_role]
+      self[:iam_instance_profile]
     end
   end
 
@@ -69,7 +69,7 @@ Puppet::Type.newtype(:launch_configuration) do
   newproperty(:instance_type) do
   end
 
-  newproperty(:iam_role) do
+  newproperty(:iam_instance_profile) do
   end
 
 

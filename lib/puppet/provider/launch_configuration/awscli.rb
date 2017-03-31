@@ -78,7 +78,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     }
     @property_hash[:userdata] = Base64.decode64(launch_config["UserData"])
     @property_hash[:ssh_key_name] = launch_config["KeyName"]
-    @property_hash[:iam_role] = launch_config["IamInstanceProfile"]
+    @property_hash[:iam_instance_profile] = launch_config["IamInstanceProfile"]
 
     # print "launch_config = #{launch_config}\n"
     true
@@ -137,14 +137,11 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
         ]
       end
 
-  #    if (value(:iam_role).nil? == false) and (value(:iam_role).length > 0)
-  #      role_data = PuppetX::IntechWIFI::AwsCmds.find_iam_role_by_name(value(:iam_role)){ | *arg | awscli(*arg) }
-  #      arn = role_data["Arn"]
-
-  #    args << [
-  #          "--iam-instance-profile", value(:iam_role)
-  #      ]
-  #    end
+      if (value(:iam_instance_profile).nil? == false) and (value(:iam_instance_profile).length > 0)
+        args << [
+            "--iam-instance-profile", value(:iam_instance_profile)
+        ]
+      end
 
 
       #  Ensure we have a flat array...
@@ -210,8 +207,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_flush[:keep_versions] = value
   end
 
-  def iam_role=(value)
-    @property_flush[:iam_role] = value
+  def iam_instance_profile=(value)
+    @property_flush[:iam_instance_profile] = value
   end
 
 
