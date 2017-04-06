@@ -15,31 +15,128 @@
 #
 
 define doatools::environment (
+  $ensure = present,
+  $region = 'us-east-1',
   $vpc = $name,
-  $l_vpc = $vpc,
-  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
-  $network=lookup('environment::network', Data, 'first', { }),
-  $roles=lookup('environment::roles', Data, 'first', {}),
-  $ensure=lookup('environment::ensure', Data, 'first', present)
-)  {
 
-  $network_data = {
-    $name => {
-      'region' => $region,
-      'ensure' => $ensure
+  $network = {
+    cidr => "192.168.0.0/24",              #  The CIDR for the VPC
+    availability => [ "a", "b", "c"],      #  The availability zones to use
+    routes => [ ],                         #  Any non standard routes in format "{cidr}|{target type}|{target-name}"
+    dns_hostnames => false,                #  Can be set to true, to enable DNS hostnames
+    dns_resolution => true,                #  Can be set to false, to disable DNS resolution
+  },
+
+  $zones = {
+    # We can have up to 3 zones defined. Zones define the routing to the outside world.
+    # Isolation between servers is handled by security groups and not zones.
+
+    # Public zone subnets have public ip addresses and route traffic via the internet gateway
+    "public" => {
+      ipaddr_weighting => 2,
+      format => "%{vpc}%{az}pub",
+      routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
+                                       # the network routes.
+      extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
+                                       # routes.
+    },
+    # NAT zone subnets only have private ip addresses, and route traffic via nat gateways.  There will be one nat
+    # gateway per IP address provided. nat subnets without their own nat gateway will be routed via another subnet
+    # EC2 instances in a nat zone cannot be given a public IP address
+    "nat" => {
+      ipaddr_weighting => 5,
+      format => "%{vpc}%{az}nat",
+      nat_ipaddr => [ ],
+      routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
+                                       # the network routes.
+      extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
+                                       # routes.
+    },
+
+    # Private zone subnets do not route traffic to the internet. However, it is possible to add routing to the internet
+    # gateway and then attach an elastic IP address to a server to gain access for a temporary fix.
+    "private" => {
+      ipaddr_weighting => 1,
+      format => "%{vpc}%{az}pri",
+      routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
+                                       # the network routes.
+      extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
+                                       # routes.
+    },
+  },
+
+  $server_roles = {
+    "role_name_1" => {
+      "scaling" => { "min" => 0, "max" => 2, "desired" => 1 },
+      "ec2" => {
+        "type" => 't2.micro',
+        "image" => 'ami...',
+      },
+      "services" => [
+      ],
     }
-  }
-  create_resources('doatools::network', $network_data, $network)
 
-  $roles.keys.each | $r| {
-    $role_data = {
-      $r => {
-        'region' => $region,
-        'ensure' => $ensure,
-        'vpc' => $name,
+  },
+
+  $services = {
+    "service_1" => {
+      "public_ports" => [
+        "{http,80}=>80",
+        "{https,443,cert_arn}=>80",
+      ],
+      "policies" => [
+      ],
+      "networking" => {
+        "in" => [ ],
+        "out" => [ ],
       }
     }
-    create_resources('doatools::role', $role_data, $roles[$r])
+  },
+
+  $db_servers = {
+    'server_name' => {
+
+    }
+
+  },
+
+  $s3 = {
+    'bucket_name_1' => {
+      'policy' => [],
+      'grants' => {},
+      'cors' => {},
+      'contents' => [
+      ]
+    }
+  },
+
+  $tags = {
+
+  }
+
+
+#  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
+#  $network=lookup('environment::network', Data, 'first', { }),
+#  $roles=lookup('environment::roles', Data, 'first', {}),
+#  $ensure=lookup('environment::ensure', Data, 'first', present)
+)  {
+
+  define_environment_resources(
+    $name,
+    $ensure,
+    $region,
+    $network,
+    $zones,
+    $server_roles,
+    $services,
+    $db_servers,
+    $s3,
+    $tags
+  ).each |$r| {
+    $rt = $r['resource_type']
+    $rts = $r['resources'].keys
+    info("declaring resources: ${rt} ${rts}")
+    create_resources($r['resource_type'], $r['resources'], {})
   }
 }
 
