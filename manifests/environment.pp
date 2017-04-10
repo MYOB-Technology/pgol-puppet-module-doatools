@@ -69,32 +69,49 @@ define doatools::environment (
     "role_name_1" => {
       "scaling" => { "min" => 0, "max" => 2, "desired" => 1 },
       "ec2" => {
-        "type" => 't2.micro',
+        "instance_type" => 't2.micro',
         "image" => 'ami...',
       },
+      "userdata" => [],
       "services" => [
+        "service_1"
       ],
+      "zone" => "nat",
     }
-
   },
 
   $services = {
     "service_1" => {
-      "public_ports" => [
+      "shared_ports" => [
         "{http,80}=>80",
         "{https,443,cert_arn}=>80",
       ],
       "policies" => [
       ],
-      "networking" => {
-        "in" => [ ],
-        "out" => [ ],
+      "network" => {
+        "in" => [
+          # Format is 'source_type|source|protocol|port
+          "tcp|80|rss|elb",    # loadbalancer for the role that hosts this service.
+          "tcp|80|service|my_other_service",    # all ec2 instances that host the 'my_other_service' service.
+          "tcp|22|cidr|0.0.0.0/0",    # A network block
+        ],
+        "out" => [
+          # Format is 'destination_type|destination|protocol|port'
+          "tcp|80|cidr|0.0.0.0/0",
+          "tcp|443|cidr|0.0.0.0/0",
+          "tcp|3306|rds|db_server_name",
+        ],
       }
     }
   },
 
   $db_servers = {
     'server_name' => {
+      'zone' => 'private',
+      'services' => [
+        # Service names that need to access this server.
+      ],
+      'engine' => 'mysql'
 
     }
 
@@ -112,7 +129,15 @@ define doatools::environment (
 
   $tags = {
 
+  },
+
+  $policies = {
+    "policy_name1" => {
+
+    }
   }
+
+
 
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),

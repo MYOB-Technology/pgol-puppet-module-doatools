@@ -12,7 +12,8 @@ Puppet::Functions.create_function('define_environment_resources') do
     services,
     db_servers,
     s3,
-    tags
+    tags,
+    policies
   )
 
     PuppetX::IntechWIFI::Declare_Environment_Resources.define_environment_resources(
@@ -25,7 +26,8 @@ Puppet::Functions.create_function('define_environment_resources') do
         services,
         db_servers,
         s3,
-        tags
+        tags,
+        policies,
     )
 
 
