@@ -62,8 +62,9 @@ module PuppetX
         scratch[:rds_default_zone] = ['private', 'nat', 'public'].select{ |zone| zones.has_key?(zone) }.first
         scratch[:rds_zones] = RdsHelpers.CalculateRdsZones(name, network, zones, db_servers)
 
-        scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, services)
-
+        scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services)
+        scratch[:loadbalancer_security_groups] = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
+        scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
 
 
         #  This is the data structure that we need to return, defining all resource types and  their properties.
@@ -77,7 +78,7 @@ module PuppetX
                         :cidr   => network['cidr'],
                         :tags => scratch[:tags_with_environment],
                         :dns_hostnames => network.has_key?('dns_hostnames') ? network['dns_hostnames'] : false,
-                        :dns_resolution => network.has_key?('dns_resolution') ? network['dns_resolution'] : false,
+                        :dns_resolution => network.has_key?('dns_resolution') ? network['dns_resolution'] : true,
                     }
                 }
             },
@@ -117,6 +118,8 @@ module PuppetX
                               :region => region,
                               :vpc => name,
                               :tags => scratch[:tags_with_environment],
+                              :description => "Service security group"
+
                           }
                       }
                     }.reduce({}){| hash, kv| hash.merge(kv)}
@@ -129,9 +132,22 @@ module PuppetX
                                :region => region,
                                :vpc => name,
                                :tags => scratch[:tags_with_environment],
+                               :description => "database security group"
                            }
                        }
                      }.reduce({}){| hash, kv| hash.merge(kv)}
+                ).merge(
+                    scratch[:loadbalancer_security_groups].map{|sg|
+                      {
+                          "#{sg}" => {
+                              :ensure => status,
+                              :region => region,
+                              :vpc => name,
+                              :tags => scratch[:tags_with_environment],
+                              :description => "load balancer security group"
+                          }
+                      }
+                    }.reduce({}){| hash, kv| hash.merge(kv)}
                 )
             },
             {
@@ -164,11 +180,24 @@ module PuppetX
                           "#{name}_#{key}" => {
                               :ensure => status,
                               :region => region,
-                              #  Need to enable all services that route to the database
-                              #  on a port appropriate for this database...
                               :in =>  RdsHelpers::CalculateNetworkRules(name, services, key, value["engine"]),
                               :out => [],
                           }
+                      }
+                    }.reduce({}){| hash, kv| hash.merge(kv)}
+                ).merge(
+                    scratch[:loadbalancer_role_service_hash].map{|role_name, service_array|
+                      {
+                          "#{name}_#{role_name}_elb" => {
+                              :ensure => status,
+                              :region => region,
+                              :in => service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{LoadBalancerHelper.ParseSharedPort(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"},
+                              :out => service_array.map{|service|
+                                service['loadbalanced_ports'].map { |port|
+                                  "tcp|#{LoadBalancerHelper.ParseSharedPort(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service["service_name"])}"
+                                }
+                              }.flatten.uniq,
+                            }
                       }
                     }.reduce({}){| hash, kv| hash.merge(kv)}
                 )
@@ -215,9 +244,7 @@ module PuppetX
             },
             {
                 'resource_type' => "load_balancer",
-                'resources' => {
-
-                }
+                'resources' => LoadBalancerHelper.GenerateLoadbalancerResources(name, status, region, server_roles, services, scratch)
             },
             {
                 'resource_type' => "rds_subnet_group",
@@ -266,8 +293,7 @@ module PuppetX
                               'ensure' => status,
                               'region' => region,
                               'security_groups' => [
-                                  #!TODO:  We need to add in the security groups
-
+                                  "#{name}_#{db}"
                               ],
                               'rds_subnet_group' => db_servers[db].has_key?('zone') ? "#{name}-#{db_servers[db]['zone']}"  :  "#{name}-#{scratch[:rds_default_zone]}",
                           }
@@ -304,9 +330,9 @@ module PuppetX
                                  scratch[:service_security_groups].has_key?(sg)
                                },
                                'iam_instance_profile' => [
-                                   #!TODO:  We need to add in the iam instance profiles
-
+                                   IAMHelper.GenerateInstanceProfileName(name, role[0])
                                ],
+                               'public_ip' => role[1]['zone'] == 'public' ? :enabled : :disabled
                            }
                       )
                   }
@@ -314,45 +340,26 @@ module PuppetX
             },
             {
                 'resource_type' => "autoscaling_group",
-                'resources' => server_roles.to_a.map{|role|
-                  serverrole = {}.update(role[1])
+                'resources' => server_roles.map{|role_name, role_data|
+
                   {
-                      "#{name}_#{role[0]}" => {
-                          # Defaults
-                          'min' => 0,
-                          'max' => 2,
-                          'desired' => 2,
-                      }.merge(
-                          serverrole.keep_if{|key, value|
-                            ["min", "max", "desired"].include?(key)
-                          }.map{ | hash|
-                            {
-                                'minimum_instances' => hash['min'],
-                                'maximum_instances' => hash['max'],
-                                'desired_instances' => hash['desired'],
-                            }
-                          }.reduce({}){|hash, kv| hash.merge(kv)}
-                      ).merge(
-                          # Forced values
-                          {
-                              'ensure' => status,
-                              'region' => region,
-                              'launch_configuration' => "#{name}_#{role[0]}",
-                              'subnets' => scratch[:subnet_data].select{|sn|
-                                sn[:zone] == role[1]['zone']
-                              }.map{|sn|
-                                sn[:name]
-                              },
-                              #TODO: We need to set the internet gateway
-                              #'internet_gateway' => nil,
-                              #TODO: We need to set the nat gateway
-                              #'nat_gateway' => nil,
-
-
-                          }
-                      )
+                      "#{name}_#{role_name}" => {
+                          'ensure' => status,
+                          'region' => region,
+                          'launch_configuration' => "#{name}_#{role_name}",
+                          'subnets' => scratch[:subnet_data].select{|sn|
+                            sn[:zone] == role_data['zone']
+                          }.map{|sn| sn[:name] },
+                          #TODO: We need to set the internet gateway
+                          #'internet_gateway' => nil,
+                          #TODO: We need to set the nat gateway
+                          #'nat_gateway' => nil,
+                      }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
+                          AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
+                      ))
                   }
                 }.reduce({}){|hash, kv| hash.merge(kv)}
+
             },
             {
                 'resource_type' => "iam_role",
@@ -402,10 +409,155 @@ module PuppetX
 
 
 
+      module LoadBalancerHelper
+        def self.GenerateLoadbalancerResources(name, status, region, roles, services, scratch)
+          GetRoleNamesWithLoadBalancers(roles, services).map{|role_name|
+            GenerateLoadBalancer(name, status, region, role_name, services, scratch)
+          }.reduce({}){|hash, kv| hash.merge(kv) }
+        end
+
+        def self.GenerateLoadBalancer(name, status, region, role_name, services, scratch)
+          print ("#{scratch[:loadbalancer_role_service_hash][role_name]}\n")
+          {
+              "#{GenerateLoadBalancerName(name, role_name)}" => {
+                  :ensure => status,
+                  :region => region,
+                  :subnets => scratch[:subnet_data].select{|data| data[:zone] == 'public' }.map{|data| data[:name] },
+                  :listeners => scratch[:loadbalancer_role_service_hash][role_name].map{|service|
+                    service['loadbalanced_ports'].map{|port| ParseSharedPort(port)}
+                  }.flatten.map{|porthash|
+                    print("porthash=#{porthash}\n")
+                    (porthash.has_key?(:certificate) and porthash.has_key?(:protocol) and porthash[:protocol] == 'https') ?
+                        "https://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
+                        "#{porthash[:protocol]}://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}"
+                  }.uniq,
+                  :targets => [ GenerateLoadBalancerTarget(name, role_name) ],
+                  :security_groups => [ "#{name}_#{role_name}_elb" ],
+                  # :internet_gateway => ;
+              }
+          }
+        end
+
+        def self.GenerateLoadBalancerTarget(name, role_name)
+          {
+              "name" => "#{GenerateLoadBalancerTargetName(name, role_name)}",
+              "port" => 80,
+              "check_interval" => 30,
+              "timeout" => 5,
+              "healthy" => 5,
+              "failed" => 2,
+              "vpc" => name
+          }
+        end
+
+        def self.GenerateLoadBalancerName(name, role_name)
+          "#{name}-#{role_name}"
+        end
+
+        def self.GenerateLoadBalancerTargetName(name, role_name)
+          "#{name}-#{role_name}"
+        end
+
+        def self.DoesServiceHaveLoadbalancedPorts(services, service_name)
+          return false if !services.has_key?(service_name)
+          return false if !services[service_name].has_key?('loadbalanced_ports')
+          return false if services[service_name]['loadbalanced_ports'].length == 0
+          true
+        end
+
+        def self.GetRoleLoadBalancedPorts(role, services)
+          return [] if !role.has_key?('services')
+
+          role['services'].map{ |service_name|
+            services[service_name].select{|service|
+              service.has_key?('loadbalanced_ports') and service['loadbalanced_ports'].length > 0
+            }.map{|service|
+              service['loadbalanced_ports']
+            }
+          }
+        end
 
 
 
+        def self.GetRoleNamesWithLoadBalancers(server_roles, services)
+          server_roles.select {|role_name, role_data|
+            role_data.has_key?('services') and role_data['services'].any?{|service_name| DoesServiceHaveLoadbalancedPorts(services, service_name)}
+          }.map{|role_name, role_data| role_name }
+        end
 
+        def self.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
+          server_roles.select {|role_name, role_data|
+            role_data.has_key?('services') and role_data['services'].any?{|service_name| DoesServiceHaveLoadbalancedPorts(services, service_name)}
+          }.map{|role_name, role_data|
+            {
+                role_name => role_data['services'].select{|service_name|
+                  DoesServiceHaveLoadbalancedPorts(services, service_name)
+                }.map{|service_name| services[service_name].merge({'service_name' => service_name})}
+            }
+          }.reduce({}){|hash, kv| hash.merge(kv)}
+        end
+
+        def self.CalculateSecurityGroups(name, server_roles, services)
+          GetRoleNamesWithLoadBalancers(server_roles, services).map{|role_name| "#{name}_#{role_name}_elb"}
+        end
+
+        def self.ParseSharedPort(shared_port)
+          source_target_split = /^(.+)=>([0-9]{1,5})$/.match(shared_port)
+
+          # no =>
+          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_target_split.nil?
+          # Destination port a number?
+          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, source_target_split[2] if /^[0-9]{1,5}$/.match(source_target_split[2]).nil?
+
+          source_split = source_target_split[1].split('|')
+
+          # Was it properly split?
+          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_target_split.nil?
+          # too few segments?
+          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_split.length < 2
+          # too many segments?
+          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_split.length > 3
+
+          # Is the source port a number?
+          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if /^[0-9]{1,5}$/.match(source_split[1]).nil?
+
+          {
+              :protocol => source_split[0],
+              :listen_port => source_split[1],
+              :target_port => source_target_split[2]
+          }.merge(source_split.length == 3 ? {
+              :certificate => source_split[2]
+          } : {})
+
+        end
+
+      end
+
+
+      module AutoScalerHelper
+        def self.GetDefaultScaling()
+          {
+              # Defaults
+              'min' => 0,
+              'max' => 2,
+              'desired' => 2,
+          }
+        end
+
+        def self.CopyScalingValues(src)
+          {}.merge(src).keep_if{|key, value|
+            ["min", "max", "desired"].include?(key)
+          }
+        end
+
+        def self.ConvertScalingToAutoScaleValues(src)
+          {
+              'minimum_instances' => src['min'],
+              'desired_instances' => src['desired'],
+              'maximum_instances' => src['max'],
+          }
+        end
+      end
 
 
 
@@ -517,23 +669,36 @@ module PuppetX
       end
 
       module ServiceHelpers
-        def self.CalculateServiceSecurityGroups(name, services)
+        def self.CalculateServiceSecurityGroups(name, roles, services)
           services.map{|key, value|
             {
                 CalculateServiceSecurityGroupName(name, key) => {
                     :service => key,
-                    :in => value["network"]["in"].map{|rule| TranscodeRule(name, key, rule)},
-                    :out => value["network"]["out"].map{|rule| TranscodeRule(name, key, rule)}
+                    :in => GetPathValue(value, ["network", "in"], []).map{|rule|
+                      TranscodeRule(name, roles, key, rule)
+                    }.flatten,
+                    :out => GetPathValue(value, ["network", "out"], []).map{|rule| TranscodeRule(name, roles, key, rule)}.flatten
                 }
             }
           }.reduce({}){|hash,kv| hash.merge(kv)}
+        end
+
+        def self.GetPathValue(data, path, nodata)
+          path = [path] if !path.kind_of?(Array)
+          if !data.has_key?(path[0])
+            nodata
+          elsif path.length > 1
+            GetPathValue(data[path[0]], path[1..-1], nodata)
+          else
+            data[path[0]]
+          end
         end
 
         def self.CalculateServiceSecurityGroupName(name, service_name)
           sprintf("%{name}_%{service}", { :name => name, :service => service_name})
         end
 
-        def self.TranscodeRule(name, service, env_format)
+        def self.TranscodeRule(name, roles, service, env_format)
           segments = env_format.split('|')
 
           case segments[2]
@@ -542,21 +707,28 @@ module PuppetX
 
               case segments[3]
                 when 'elb'
-                  location_ident = "#{name}_#{service}_elb"
+                  # This is the fun one!
+                  location_ident = roles.select{|role_name, role_data|
+                    role_data['services'].include?(service)
+                  }.map{|role_name, role_data|
+                    "#{name}_#{role_name}_elb"
+                  }
+
+
               end
 
             when 'service'
               location_type = 'sg'
-              location_ident = CalculateServiceSecurityGroupName(name, segments[3])
+              location_ident = [CalculateServiceSecurityGroupName(name, segments[3])]
             when 'rds'
               location_type = 'sg'
-              location_ident = "#{name}_#{segments[3]}"
+              location_ident = ["#{name}_#{segments[3]}"]
             else
               location_type = segments[2]
-              location_ident = segments[3]
+              location_ident = [segments[3]]
           end
 
-          "#{segments[0]}|#{segments[1]}|#{location_type}|#{location_ident}"
+          location_ident.map{|loc_ident|  "#{segments[0]}|#{segments[1]}|#{location_type}|#{loc_ident}" }
         end
 
         def self.Services(role)

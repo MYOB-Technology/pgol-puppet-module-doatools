@@ -20,8 +20,8 @@ define doatools::environment (
   $vpc = $name,
 
   $network = {
-    cidr => "192.168.0.0/24",              #  The CIDR for the VPC
-    availability => [ "a", "b", "c"],      #  The availability zones to use
+    cidr => '192.168.0.0/24',              #  The CIDR for the VPC
+    availability => [ 'a', 'b', 'c'],      #  The availability zones to use
     routes => [ ],                         #  Any non standard routes in format "{cidr}|{target type}|{target-name}"
     dns_hostnames => false,                #  Can be set to true, to enable DNS hostnames
     dns_resolution => true,                #  Can be set to false, to disable DNS resolution
@@ -32,9 +32,9 @@ define doatools::environment (
     # Isolation between servers is handled by security groups and not zones.
 
     # Public zone subnets have public ip addresses and route traffic via the internet gateway
-    "public" => {
+    'public' => {
       ipaddr_weighting => 2,
-      format => "%{vpc}%{az}pub",
+      format => '%{vpc}%{az}pub',
       routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
                                        # the network routes.
       extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
@@ -43,9 +43,9 @@ define doatools::environment (
     # NAT zone subnets only have private ip addresses, and route traffic via nat gateways.  There will be one nat
     # gateway per IP address provided. nat subnets without their own nat gateway will be routed via another subnet
     # EC2 instances in a nat zone cannot be given a public IP address
-    "nat" => {
+    'nat' => {
       ipaddr_weighting => 5,
-      format => "%{vpc}%{az}nat",
+      format => '%{vpc}%{az}nat',
       nat_ipaddr => [ ],
       routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
                                        # the network routes.
@@ -55,9 +55,9 @@ define doatools::environment (
 
     # Private zone subnets do not route traffic to the internet. However, it is possible to add routing to the internet
     # gateway and then attach an elastic IP address to a server to gain access for a temporary fix.
-    "private" => {
+    'private' => {
       ipaddr_weighting => 1,
-      format => "%{vpc}%{az}pri",
+      format => '%{vpc}%{az}pri',
       routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
                                        # the network routes.
       extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
@@ -66,40 +66,40 @@ define doatools::environment (
   },
 
   $server_roles = {
-    "role_name_1" => {
-      "scaling" => { "min" => 0, "max" => 2, "desired" => 1 },
-      "ec2" => {
-        "instance_type" => 't2.micro',
-        "image" => 'ami...',
+    'role_name_1' => {
+      'scaling' => { 'min' => 0, 'max' => 2, 'desired' => 1 },
+      'ec2' => {
+        'instance_type' => 't2.micro',
+        'image' => 'ami...',
       },
-      "userdata" => [],
-      "services" => [
-        "service_1"
+      'userdata' => [],
+      'services' => [
+        'service_1'
       ],
-      "zone" => "nat",
+      'zone' => 'nat',
     }
   },
 
   $services = {
-    "service_1" => {
-      "shared_ports" => [
-        "{http,80}=>80",
-        "{https,443,cert_arn}=>80",
+    'service_1' => {
+      'loadbalanced_ports' => [
+        '{http,80}=>80',
+        '{https,443,cert_arn}=>80',
       ],
-      "policies" => [
+      'policies' => [
       ],
-      "network" => {
-        "in" => [
+      'network' => {
+        'in' => [
           # Format is 'source_type|source|protocol|port
-          "tcp|80|rss|elb",    # loadbalancer for the role that hosts this service.
-          "tcp|80|service|my_other_service",    # all ec2 instances that host the 'my_other_service' service.
-          "tcp|22|cidr|0.0.0.0/0",    # A network block
+          'tcp|80|rss|elb',    # loadbalancer for the role that hosts this service.
+          'tcp|80|service|my_other_service',    # all ec2 instances that host the 'my_other_service' service.
+          'tcp|22|cidr|0.0.0.0/0',    # A network block
         ],
-        "out" => [
+        'out' => [
           # Format is 'destination_type|destination|protocol|port'
-          "tcp|80|cidr|0.0.0.0/0",
-          "tcp|443|cidr|0.0.0.0/0",
-          "tcp|3306|rds|db_server_name",
+          'tcp|80|cidr|0.0.0.0/0',
+          'tcp|443|cidr|0.0.0.0/0',
+          'tcp|3306|rds|db_server_name',
         ],
       }
     }
@@ -132,7 +132,7 @@ define doatools::environment (
   },
 
   $policies = {
-    "policy_name1" => {
+    'policy_name1' => {
 
     }
   }
@@ -156,11 +156,13 @@ define doatools::environment (
     $services,
     $db_servers,
     $s3,
-    $tags
+    $tags,
+    $policies,
   ).each |$r| {
     $rt = $r['resource_type']
     $rts = $r['resources'].keys
     info("declaring resources: ${rt} ${rts}")
+    debug($r['resources'])
     create_resources($r['resource_type'], $r['resources'], {})
   }
 }

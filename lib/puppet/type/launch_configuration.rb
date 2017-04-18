@@ -91,5 +91,13 @@ Puppet::Type.newtype(:launch_configuration) do
   newproperty(:ssh_key_name) do
   end
 
+  newproperty(:public_ip) do
+    newvalues(:enabled, :disabled)
+    munge do |value|
+      PuppetX::IntechWIFI::Logical.logical(value)
+    end
+
+  end
+
 end
 
