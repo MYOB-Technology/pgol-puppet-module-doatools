@@ -49,7 +49,7 @@ module PuppetX
           when 'CanonicalUser'
             "acc|#{source['Grantee']['DisplayName']}|#{source['Grantee']['ID']}|#{source['Permission']}"
           when 'Group'
-            "grp|#{source['Grantee']['URI']}|#{source['Permission']}"
+            "grp|#{uri_to_user_group(source['Grantee']['URI'])}|#{source['Permission']}"
         end
       end
 
