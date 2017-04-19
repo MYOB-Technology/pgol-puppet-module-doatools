@@ -375,9 +375,17 @@ module PuppetX
             },
             {
                 'resource_type' => "s3_bucket",
-                'resources' => {
-
-                }
+                'resources' => s3.map{|bucket_name, data|
+                  {
+                      bucket_name => {
+                          :ensure => status,
+                          :region => region,
+                          :policy => data['policy'],
+                          :grants => data['grants'],
+                          :cors => data['cors'],
+                      }
+                  }
+                }.reduce({}){|hash, kv| hash.merge(kv)}
             },
             {
                 'resource_type' => "s3_key",
@@ -417,7 +425,6 @@ module PuppetX
         end
 
         def self.GenerateLoadBalancer(name, status, region, role_name, services, scratch)
-          print ("#{scratch[:loadbalancer_role_service_hash][role_name]}\n")
           {
               "#{GenerateLoadBalancerName(name, role_name)}" => {
                   :ensure => status,
@@ -426,7 +433,6 @@ module PuppetX
                   :listeners => scratch[:loadbalancer_role_service_hash][role_name].map{|service|
                     service['loadbalanced_ports'].map{|port| ParseSharedPort(port)}
                   }.flatten.map{|porthash|
-                    print("porthash=#{porthash}\n")
                     (porthash.has_key?(:certificate) and porthash.has_key?(:protocol) and porthash[:protocol] == 'https') ?
                         "https://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
                         "#{porthash[:protocol]}://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}"

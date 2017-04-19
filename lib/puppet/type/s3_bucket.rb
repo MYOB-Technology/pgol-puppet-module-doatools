@@ -30,7 +30,7 @@ Puppet::Type.newtype(:s3_bucket) do
   end
 
   #  read only properties...
-  newproperty(:region) do
+  newparam(:region) do
     defaultto 'us-east-1'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions

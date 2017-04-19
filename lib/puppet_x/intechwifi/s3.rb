@@ -20,11 +20,11 @@ module PuppetX
 
       def S3.user_group_to_uri(ug)
         case ug
-          when :authenticated
+          when 'authenticated'
             'http://acs.amazonaws.com/groups/global/AuthenticatedUsers'
-          when :public
+          when 'public'
             'http://acs.amazonaws.com/groups/global/AllUsers'
-          when :log_delivery
+          when 'log_delivery'
             'http://acs.amazonaws.com/groups/s3/LogDelivery'
           else
             raise PuppetX::IntechWIFI::Exceptions::NotFoundError ug.to_s
@@ -34,11 +34,11 @@ module PuppetX
       def S3.uri_to_user_group(uri)
         case uri
           when 'http://acs.amazonaws.com/groups/global/AuthenticatedUsers'
-            :authenticated
+            'authenticated'
           when 'http://acs.amazonaws.com/groups/global/AllUsers'
-            :public
+            'public'
           when 'http://acs.amazonaws.com/groups/s3/LogDelivery'
-            :log_delivery
+            'log_delivery'
           else
             raise PuppetX::IntechWIFI::Exceptions::NotFoundError uri
         end
@@ -49,7 +49,7 @@ module PuppetX
           when 'CanonicalUser'
             "acc|#{source['Grantee']['DisplayName']}|#{source['Grantee']['ID']}|#{source['Permission']}"
           when 'Group'
-            "grp|#{source['URI']}|#{source['Permission']}"
+            "grp|#{source['Grantee']['URI']}|#{source['Permission']}"
         end
       end
 
@@ -70,7 +70,7 @@ module PuppetX
                           when 'grp'
                             {
                                 :Type => "Group",
-                                :URI => s[1]
+                                :URI => user_group_to_uri(s[1])
                             }
                         end,
             :Permission => s[-1]
