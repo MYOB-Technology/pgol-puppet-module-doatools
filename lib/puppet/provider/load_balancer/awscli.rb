@@ -158,7 +158,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--load-balancer-arn', @arn,
         '--protocol', proto.upcase,
         '--port', port,
-        '--default-actions', "Type=forward,TargetGroupArn=#{find_target_by_name(target)}"
+        '--default-actions', "Type=forward,TargetGroupArn=#{PuppetX::IntechWIFI::AwsCmds.find_elb_target_by_name(target, @property_hash[:region]){|*args| awscli(*args)}}"
     ]
     args << ['--certificates', "CertificateArn=#{certificate}"] if proto=="https" and !certificate.nil?
     awscli(args.flatten)
@@ -272,19 +272,6 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
   def target_from_arn(target_arn)
     /^arn:aws:elasticloadbalancing:[a-z_\-0-9]+:[0-9]{12}:targetgroup\/([a-z_\-0-9]+)\/[0-9a-f]{16}$/.match(target_arn)[1]
-  end
-
-
-  def find_target_by_name(name)
-    args = [
-        'elbv2', 'describe-target-groups',
-        '--region', @property_hash[:region],
-        '--names', name
-    ]
-    JSON.parse(awscli(args.flatten))["TargetGroups"][0]["TargetGroupArn"]
-
-  rescue Puppet::ExecutionFailure => e
-    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
   end
 
   def same_target_name(a, b)

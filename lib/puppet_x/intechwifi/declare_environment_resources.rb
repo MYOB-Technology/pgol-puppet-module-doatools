@@ -354,6 +354,7 @@ module PuppetX
                           #'internet_gateway' => nil,
                           #TODO: We need to set the nat gateway
                           #'nat_gateway' => nil,
+                          'load_balancer' => LoadBalancerHelper.GenerateLoadBalancerName(name, role_name),
                       }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
                           AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
                       ))
