@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Module: PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelpers
+  
+    &mdash; Documentation by YARD 0.9.8
+  
+</title>
+
+  <link rel="stylesheet" href="../../../css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="../../../css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  pathId = "PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelpers";
+  relpath = '../../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../../puppet_class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../../_index.html">Index (S)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../../PuppetX.html" title="PuppetX (module)">PuppetX</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../../IntechWIFI.html" title="PuppetX::IntechWIFI (module)">IntechWIFI</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Declare_Environment_Resources.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources (module)">Declare_Environment_Resources</a></span></span>
+     &raquo; 
+    <span class="title">SubnetHelpers</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="puppet_class_list_link"
+        href="../../../puppet_class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Module: PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelpers
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/puppet_x/intechwifi/declare_environment_resources.rb</dd>
+  </dl>
+  
+</div>
+
+
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#CalculateSubnetData-class_method" title="CalculateSubnetData (class method)">.<strong>CalculateSubnetData</strong>(name, network, zones)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#GenerateSubnetName-class_method" title="GenerateSubnetName (class method)">.<strong>GenerateSubnetName</strong>(name, zones, zone, az, index)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#GenerateSubnetResources-class_method" title="GenerateSubnetResources (class method)">.<strong>GenerateSubnetResources</strong>(name, status, region, network, zones, scratch, tags)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="CalculateSubnetData-class_method">
+  
+    .<strong>CalculateSubnetData</strong>(name, network, zones)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+863
+864
+865
+866
+867
+868
+869
+870
+871
+872
+873
+874
+875
+876
+877
+878
+879
+880
+881
+882
+883
+884
+885
+886</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/declare_environment_resources.rb', line 863</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>CalculateSubnetData</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='id identifier rubyid_network'>network</span><span class='comma'>,</span> <span class='id identifier rubyid_zones'>zones</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_vpc_cidr_size'>vpc_cidr_size</span> <span class='op'>=</span> <span class='id identifier rubyid_network'>network</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>cidr</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_split'>split</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>/</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_to_i'>to_i</span>
+  <span class='id identifier rubyid_total_weight'>total_weight</span> <span class='op'>=</span> <span class='id identifier rubyid_zones'>zones</span><span class='period'>.</span><span class='id identifier rubyid_keys'>keys</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_x'>x</span><span class='op'>|</span> <span class='const'><span class='object_link'><a href="ZoneHelpers.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::ZoneHelpers (module)">ZoneHelpers</a></span></span><span class='period'>.</span><span class='const'>ZoneValue</span><span class='lparen'>(</span><span class='id identifier rubyid_zones'>zones</span><span class='lbracket'>[</span><span class='id identifier rubyid_x'>x</span><span class='rbracket'>]</span><span class='comma'>,</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>ipaddr_weighting</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span><span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_reduce'>reduce</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_t'>t</span><span class='comma'>,</span> <span class='id identifier rubyid_v'>v</span><span class='op'>|</span> <span class='id identifier rubyid_t'>t</span> <span class='op'>=</span> <span class='id identifier rubyid_t'>t</span> <span class='op'>+</span> <span class='id identifier rubyid_v'>v</span><span class='rbrace'>}</span>
+  <span class='id identifier rubyid_azs'>azs</span> <span class='op'>=</span> <span class='id identifier rubyid_network'>network</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>availability</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_length'>length</span>
+
+  <span class='id identifier rubyid_base_cidr'>base_cidr</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="CidrMaths.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths (module)">CidrMaths</a></span></span><span class='period'>.</span><span class='const'>CidrToLong</span><span class='lparen'>(</span><span class='id identifier rubyid_network'>network</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>cidr</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span><span class='rparen'>)</span>
+
+  <span class='id identifier rubyid_cidr_data'>cidr_data</span> <span class='op'>=</span> <span class='id identifier rubyid_zones'>zones</span><span class='period'>.</span><span class='id identifier rubyid_keys'>keys</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_x'>x</span><span class='op'>|</span>
+    <span class='comment'>#  Calculate the cidr size for each zone
+</span>    <span class='lbracket'>[</span><span class='id identifier rubyid_x'>x</span><span class='comma'>,</span> <span class='const'><span class='object_link'><a href="CidrMaths.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths (module)">CidrMaths</a></span></span><span class='period'>.</span><span class='const'>CalculateBlockSize</span><span class='lparen'>(</span><span class='id identifier rubyid_vpc_cidr_size'>vpc_cidr_size</span><span class='comma'>,</span> <span class='const'><span class='object_link'><a href="ZoneHelpers.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::ZoneHelpers (module)">ZoneHelpers</a></span></span><span class='period'>.</span><span class='const'>ZoneValue</span><span class='lparen'>(</span><span class='id identifier rubyid_zones'>zones</span><span class='lbracket'>[</span><span class='id identifier rubyid_x'>x</span><span class='rbracket'>]</span><span class='comma'>,</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>ipaddr_weighting</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span><span class='comma'>,</span> <span class='id identifier rubyid_total_weight'>total_weight</span><span class='comma'>,</span> <span class='id identifier rubyid_azs'>azs</span><span class='rparen'>)</span> <span class='rbracket'>]</span>
+  <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span><span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_x'>x</span><span class='op'>|</span>
+    <span class='comment'># validate CIDR is viable.
+</span>    <span class='id identifier rubyid_raise'>raise</span> <span class='const'><span class='object_link'><a href="CidrMaths.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths (module)">CidrMaths</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="CidrMaths/CidrSizeTooSmallForSubnet.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths::CidrSizeTooSmallForSubnet (class)">CidrSizeTooSmallForSubnet</a></span></span> <span class='kw'>if</span> <span class='id identifier rubyid_x'>x</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span> <span class='op'>&gt;</span> <span class='int'>28</span>
+  <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_sort'>sort</span><span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_a'>a</span><span class='comma'>,</span> <span class='id identifier rubyid_b'>b</span><span class='op'>|</span>
+    <span class='comment'>#  Sort the zones into decending cidr size order.
+</span>    <span class='id identifier rubyid_a'>a</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span> <span class='op'>&lt;=&gt;</span> <span class='id identifier rubyid_b'>b</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span>
+  <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_x'>x</span><span class='op'>|</span>
+    <span class='id identifier rubyid_network'>network</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>availability</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='period'>.</span><span class='id identifier rubyid_with_index'>with_index</span><span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_az'>az</span><span class='comma'>,</span> <span class='id identifier rubyid_i'>i</span><span class='op'>|</span>
+      <span class='id identifier rubyid_cidr'>cidr</span> <span class='op'>=</span> <span class='id identifier rubyid_base_cidr'>base_cidr</span>
+      <span class='id identifier rubyid_base_cidr'>base_cidr</span> <span class='op'>+=</span> <span class='const'><span class='object_link'><a href="CidrMaths.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths (module)">CidrMaths</a></span></span><span class='period'>.</span><span class='const'>IpAddrsInCidrBlock</span><span class='lparen'>(</span><span class='id identifier rubyid_x'>x</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span><span class='rparen'>)</span>
+      <span class='lbrace'>{</span> <span class='symbol'>:zone</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_x'>x</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='symbol'>:az</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_az'>az</span><span class='comma'>,</span> <span class='symbol'>:cidr</span> <span class='op'>=&gt;</span> <span class='const'><span class='object_link'><a href="CidrMaths.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths (module)">CidrMaths</a></span></span><span class='period'>.</span><span class='const'>LongToCidr</span><span class='lparen'>(</span><span class='id identifier rubyid_cidr'>cidr</span><span class='comma'>,</span> <span class='id identifier rubyid_x'>x</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span><span class='rparen'>)</span><span class='comma'>,</span> <span class='symbol'>:index</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_i'>i</span><span class='comma'>,</span> <span class='symbol'>:name</span> <span class='op'>=&gt;</span> <span class='const'><span class='object_link'><a href="" title="PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelpers (module)">SubnetHelpers</a></span></span><span class='period'>.</span><span class='const'>GenerateSubnetName</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='id identifier rubyid_zones'>zones</span><span class='comma'>,</span> <span class='id identifier rubyid_x'>x</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='id identifier rubyid_az'>az</span><span class='comma'>,</span> <span class='id identifier rubyid_i'>i</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+    <span class='rbrace'>}</span>
+  <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_flatten'>flatten</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="GenerateSubnetName-class_method">
+  
+    .<strong>GenerateSubnetName</strong>(name, zones, zone, az, index)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+888
+889
+890
+891
+892
+893
+894
+895</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/declare_environment_resources.rb', line 888</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>GenerateSubnetName</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='id identifier rubyid_zones'>zones</span><span class='comma'>,</span> <span class='id identifier rubyid_zone'>zone</span><span class='comma'>,</span> <span class='id identifier rubyid_az'>az</span><span class='comma'>,</span> <span class='id identifier rubyid_index'>index</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_sprintf'>sprintf</span><span class='lparen'>(</span><span class='const'><span class='object_link'><a href="ZoneHelpers.html" title="PuppetX::IntechWIFI::Declare_Environment_Resources::ZoneHelpers (module)">ZoneHelpers</a></span></span><span class='period'>.</span><span class='const'>ZoneValue</span><span class='lparen'>(</span><span class='id identifier rubyid_zones'>zones</span><span class='lbracket'>[</span><span class='id identifier rubyid_zone'>zone</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>format</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span><span class='comma'>,</span> <span class='lbrace'>{</span>
+      <span class='symbol'>:vpc</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_name'>name</span><span class='comma'>,</span>
+      <span class='symbol'>:az</span>  <span class='op'>=&gt;</span> <span class='id identifier rubyid_az'>az</span><span class='comma'>,</span>
+      <span class='symbol'>:index</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_index'>index</span><span class='comma'>,</span>
+      <span class='symbol'>:zone</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_zone'>zone</span><span class='comma'>,</span>
+  <span class='rbrace'>}</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="GenerateSubnetResources-class_method">
+  
+    .<strong>GenerateSubnetResources</strong>(name, status, region, network, zones, scratch, tags)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+897
+898
+899
+900
+901
+902
+903
+904
+905
+906
+907
+908
+909
+910
+911
+912
+913
+914
+915
+916
+917
+918
+919
+920
+921
+922
+923
+924
+925
+926
+927
+928
+929
+930
+931
+932
+933
+934
+935
+936
+937
+938
+939
+940
+941
+942
+943</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/declare_environment_resources.rb', line 897</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>GenerateSubnetResources</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='id identifier rubyid_status'>status</span><span class='comma'>,</span> <span class='id identifier rubyid_region'>region</span><span class='comma'>,</span> <span class='id identifier rubyid_network'>network</span><span class='comma'>,</span> <span class='id identifier rubyid_zones'>zones</span><span class='comma'>,</span> <span class='id identifier rubyid_scratch'>scratch</span><span class='comma'>,</span> <span class='id identifier rubyid_tags'>tags</span><span class='rparen'>)</span>
+  <span class='lbrace'>{</span>
+      <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>resource_type</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>subnet</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span>
+      <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>resources</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_scratch'>scratch</span><span class='lbracket'>[</span><span class='symbol'>:subnet_data</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_reduce'>reduce</span><span class='lparen'>(</span><span class='lbrace'>{</span><span class='rbrace'>}</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_subnets'>subnets</span><span class='comma'>,</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='op'>|</span>
+
+        <span class='id identifier rubyid_subnet_name'>subnet_name</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="#GenerateSubnetName-class_method" title="PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelpers.GenerateSubnetName (method)">GenerateSubnetName</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='id identifier rubyid_zones'>zones</span><span class='comma'>,</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:zone</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:index</span><span class='rbracket'>]</span><span class='rparen'>)</span>
+
+        <span class='id identifier rubyid_subnets'>subnets</span><span class='period'>.</span><span class='id identifier rubyid_merge'>merge</span><span class='lparen'>(</span>
+            <span class='lbrace'>{</span>
+                <span class='id identifier rubyid_subnet_name'>subnet_name</span> <span class='op'>=&gt;</span> <span class='lbrace'>{</span>
+                    <span class='symbol'>:ensure</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_status'>status</span><span class='comma'>,</span>
+                    <span class='symbol'>:region</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_region'>region</span><span class='comma'>,</span>
+                    <span class='symbol'>:vpc</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_name'>name</span><span class='comma'>,</span>
+                    <span class='symbol'>:availability_zone</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span><span class='comma'>,</span>
+                    <span class='symbol'>:cidr</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:cidr</span><span class='rbracket'>]</span><span class='comma'>,</span>
+                    <span class='symbol'>:tags</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_tags'>tags</span><span class='comma'>,</span>
+                    <span class='symbol'>:route_table</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_scratch'>scratch</span><span class='lbracket'>[</span><span class='symbol'>:route_table_data</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_select'>select</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_rt_data'>rt_data</span><span class='op'>|</span>
+                      <span class='comment'># Is this route table for this subnet?
+</span>                      <span class='id identifier rubyid_rt_data'>rt_data</span><span class='lbracket'>[</span><span class='symbol'>:zone</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:zone</span><span class='rbracket'>]</span>
+                    <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_reduce'>reduce</span><span class='lparen'>(</span><span class='kw'>nil</span><span class='rparen'>)</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_memo'>memo</span><span class='comma'>,</span> <span class='id identifier rubyid_rt_data'>rt_data</span><span class='op'>|</span>
+                      <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='kw'>nil</span>
+
+                      <span class='comment'># First choice, if memo matches the AZ, we ain&#39;t changing our choice
+</span>                      <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='id identifier rubyid_memo'>memo</span> <span class='kw'>if</span> <span class='op'>!</span><span class='id identifier rubyid_memo'>memo</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span> <span class='kw'>and</span> <span class='id identifier rubyid_memo'>memo</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span>
+
+                      <span class='comment'># Second choice, if the route applies to all AZ&#39;s then use it
+</span>                      <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='id identifier rubyid_rt_data'>rt_data</span> <span class='kw'>if</span> <span class='id identifier rubyid_result'>result</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span> <span class='kw'>and</span> <span class='id identifier rubyid_rt_data'>rt_data</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+
+                      <span class='comment'># Third choice, we have matching AZ&#39;s
+</span>                      <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='id identifier rubyid_rt_data'>rt_data</span> <span class='kw'>if</span> <span class='id identifier rubyid_result'>result</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span> <span class='kw'>and</span> <span class='id identifier rubyid_rt_data'>rt_data</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span>
+
+                      <span class='comment'># Last choice if rt_data matches the first AZ then we can use this.
+</span>                      <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='id identifier rubyid_rt_data'>rt_data</span> <span class='kw'>if</span> <span class='id identifier rubyid_result'>result</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span> <span class='kw'>and</span> <span class='id identifier rubyid_rt_data'>rt_data</span><span class='lbracket'>[</span><span class='symbol'>:az</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_network'>network</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>availability</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span>
+
+                      <span class='comment'># Still here? Then we keep our current choice
+</span>                      <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='id identifier rubyid_memo'>memo</span> <span class='kw'>if</span> <span class='id identifier rubyid_result'>result</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+
+                      <span class='id identifier rubyid_result'>result</span>
+
+                    <span class='rbrace'>}</span><span class='lbracket'>[</span><span class='symbol'>:name</span><span class='rbracket'>]</span><span class='comma'>,</span>
+                    <span class='symbol'>:public_ip</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_sn_data'>sn_data</span><span class='lbracket'>[</span><span class='symbol'>:zone</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>public</span><span class='tstring_end'>&quot;</span></span>
+                <span class='rbrace'>}</span>
+            <span class='rbrace'>}</span>
+        <span class='rparen'>)</span>
+      <span class='kw'>end</span>
+  <span class='rbrace'>}</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Mon Apr 24 11:16:26 2017 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.8 (ruby-2.1.9).
+</div>
+
+    </div>
+  </body>
+</html>
