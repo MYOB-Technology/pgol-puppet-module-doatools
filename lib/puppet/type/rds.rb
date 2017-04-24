@@ -17,6 +17,11 @@ require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
 
 Puppet::Type.newtype(:rds) do
+  desc <<-DESC
+  The rds resource models a single AWS RDS database in puppet.
+
+  DESC
+
   ensurable
 
   autorequire(:rds_subnet_group) do
@@ -44,20 +49,34 @@ Puppet::Type.newtype(:rds) do
   end
 
   newparam(:name, :namevar => true) do
+    desc <<-DESC
+    The RDS name must be both unique within this puppet manifest, and unique within the AWS region for this AWS account.
+    It must also only iunclude letters, numbers and hyphens.
+    DESC
     validate do |value|
       fail("RDS name `#{value}` is not allowed by AWS.") unless /^[a-z][a-z0-9\-]+$/ =~ value
     end
   end
 
   newparam(:master_username) do
+    desc <<-DESC
+    The master_username is the top level user account used to access the database engine with (near) admin permisions.
+    DESC
 
   end
 
   newparam(:master_password) do
+    desc <<-DESC
+    The master_password is the top level user account password used to access the database engine with (near) admin
+    permisions.
+    DESC
 
   end
 
   newparam(:database) do
+    desc <<-DESC
+    The database is the name of the default database that is created within the RDS Database server.
+    DESC
 
   end
 
