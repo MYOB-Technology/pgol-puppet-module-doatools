@@ -1,6 +1,6 @@
 {
   "name": "micptolshaw-doatools",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "author": "Michael Shaw / Intechnology Wifi",
   "summary": "Spin up, modify and destroy whole environments inside AWS.",
   "license": "AGPL-3.0",
