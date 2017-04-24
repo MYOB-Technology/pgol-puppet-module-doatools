@@ -44,12 +44,18 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
         '--route-table-ids', @property_hash[:rtid]
     ]
 
-    rts = JSON.parse(awscli(details_args))["RouteTables"]
+    begin
+      rts = JSON.parse(awscli(details_args))["RouteTables"]
 
-    raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if rts.length == 0
-    raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, resource[:name] if rts.length > 1
+      raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if rts.length == 0
+      raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, resource[:name] if rts.length > 1
 
-    rt = rts[0]
+    rescue Puppet::ExecutionFailure => e
+      raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
+    end
+
+
+      rt = rts[0]
     @property_hash[:vpcid] = rt["VpcId"]
     @property_hash[:routes] = rt["Routes"].select{ |x|
       x["GatewayId"] != 'local'

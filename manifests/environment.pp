@@ -33,98 +33,52 @@ define doatools::environment (
 
     # Public zone subnets have public ip addresses and route traffic via the internet gateway
     'public' => {
-      ipaddr_weighting => 2,
-      format => '%{vpc}%{az}pub',
-      routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
+      # ipaddr_weighting => 1,
+      # format => '%{vpc}%{az}pub',
+      # routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
                                        # the network routes.
-      extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
+      # extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
                                        # routes.
     },
     # NAT zone subnets only have private ip addresses, and route traffic via nat gateways.  There will be one nat
     # gateway per IP address provided. nat subnets without their own nat gateway will be routed via another subnet
     # EC2 instances in a nat zone cannot be given a public IP address
-    'nat' => {
-      ipaddr_weighting => 5,
-      format => '%{vpc}%{az}nat',
-      nat_ipaddr => [ ],
-      routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
+    # 'nat' => {
+    #  ipaddr_weighting => 1,
+    #  format => '%{vpc}%{az}nat',
+    #  nat_ipaddr => [ ],
+    #  routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
                                        # the network routes.
-      extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
+    #  extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
                                        # routes.
-    },
+    #},
 
     # Private zone subnets do not route traffic to the internet. However, it is possible to add routing to the internet
     # gateway and then attach an elastic IP address to a server to gain access for a temporary fix.
-    'private' => {
-      ipaddr_weighting => 1,
-      format => '%{vpc}%{az}pri',
-      routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
+    #'private' => {
+    #  ipaddr_weighting => 1,
+    #  format => '%{vpc}%{az}pri',
+    #  routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
                                        # the network routes.
-      extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
+    #  extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
                                        # routes.
-    },
+    #},
   },
 
   $server_roles = {
-    'role_name_1' => {
-      'scaling' => { 'min' => 0, 'max' => 2, 'desired' => 1 },
-      'ec2' => {
-        'instance_type' => 't2.micro',
-        'image' => 'ami...',
-      },
-      'userdata' => [],
-      'services' => [
-        'service_1'
-      ],
-      'zone' => 'nat',
-    }
+
   },
 
   $services = {
-    'service_1' => {
-      'loadbalanced_ports' => [
-        '{http,80}=>80',
-        '{https,443,cert_arn}=>80',
-      ],
-      'policies' => [
-      ],
-      'network' => {
-        'in' => [
-          # Format is 'source_type|source|protocol|port
-          'tcp|80|rss|elb',    # loadbalancer for the role that hosts this service.
-          'tcp|80|service|my_other_service',    # all ec2 instances that host the 'my_other_service' service.
-          'tcp|22|cidr|0.0.0.0/0',    # A network block
-        ],
-        'out' => [
-          # Format is 'destination_type|destination|protocol|port'
-          'tcp|80|cidr|0.0.0.0/0',
-          'tcp|443|cidr|0.0.0.0/0',
-          'tcp|3306|rds|db_server_name',
-        ],
-      }
-    }
+
   },
 
   $db_servers = {
-    'server_name' => {
-      'zone' => 'private',
-      'services' => [
-        # Service names that need to access this server.
-      ],
-      'engine' => 'mysql'
-
-    }
 
   },
 
   $s3 = {
-    'bucket_name_1' => {
-      'policy' => [],
-      'grants' => {},
-      'cors' => {},
-      'contents' => [
-      ]
-    }
+
   },
 
   $tags = {
@@ -132,9 +86,7 @@ define doatools::environment (
   },
 
   $policies = {
-    'policy_name1' => {
 
-    }
   }
 
 
