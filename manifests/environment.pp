@@ -35,10 +35,10 @@ define doatools::environment (
     'public' => {
       # ipaddr_weighting => 1,
       # format => '%{vpc}%{az}pub',
-      # routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
-                                       # the network routes.
-      # extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
-                                       # routes.
+      # This zone will then use these routes for this nat, instead of the routes in the network routes.
+      # routes => [],
+      # This grants extra routes to this zones routing table in addition to the network routes.
+      # extra_routes => [ ],
     },
     # NAT zone subnets only have private ip addresses, and route traffic via nat gateways.  There will be one nat
     # gateway per IP address provided. nat subnets without their own nat gateway will be routed via another subnet
@@ -47,10 +47,10 @@ define doatools::environment (
     #  ipaddr_weighting => 1,
     #  format => '%{vpc}%{az}nat',
     #  nat_ipaddr => [ ],
-    #  routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
-                                       # the network routes.
-    #  extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
-                                       # routes.
+    # This zone will then use these routes for this nat, instead of the routes in the network routes.
+    # routes => [],
+    # This grants extra routes to this zones routing table in addition to the network routes.
+    # extra_routes => [ ],
     #},
 
     # Private zone subnets do not route traffic to the internet. However, it is possible to add routing to the internet
@@ -58,10 +58,10 @@ define doatools::environment (
     #'private' => {
     #  ipaddr_weighting => 1,
     #  format => '%{vpc}%{az}pri',
-    #  routes => [],                    # This zone will then use these routes for this nat, instead of the routes in
-                                       # the network routes.
-    #  extra_routes => [ ],             # This grants extra routes to this zones routing table in addition to the network
-                                       # routes.
+    # This zone will then use these routes for this nat, instead of the routes in the network routes.
+    # routes => [],
+    # This grants extra routes to this zones routing table in addition to the network routes.
+    # extra_routes => [ ],
     #},
   },
 
