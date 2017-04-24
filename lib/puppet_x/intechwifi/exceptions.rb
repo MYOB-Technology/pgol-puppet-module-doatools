@@ -50,6 +50,11 @@ module PuppetX
         end
       end
 
+      class SharedPortFormatError < StandardError
+        def initialize(data)
+          super("SharedPort format is 'protocol|listening_port[|cert arn]=>target_port', not '#{data}'.")
+        end
+      end
 
     end
   end

@@ -34,6 +34,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     self.userdata = resource[:userdata]
     self.ssh_key_name = resource[:ssh_key_name]
     self.iam_instance_profile = resource[:iam_instance_profile]
+    self.public_ip = resource[:public_ip]
 
     @property_hash[:region] = resource[:region]
 
@@ -79,6 +80,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:userdata] = Base64.decode64(launch_config["UserData"])
     @property_hash[:ssh_key_name] = launch_config["KeyName"]
     @property_hash[:iam_instance_profile] = launch_config["IamInstanceProfile"]
+    @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(launch_config["AssociatePublicIpAddress"])
 
     # print "launch_config = #{launch_config}\n"
     true
@@ -211,5 +213,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_flush[:iam_instance_profile] = value
   end
 
+  def public_ip=(value)
+    @property_flush[:public_ip] = value
+  end
 
 end

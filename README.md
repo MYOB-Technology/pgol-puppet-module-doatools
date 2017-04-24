@@ -378,68 +378,38 @@ The iam\_policy component manages the lifecycle of the IAM policy, and the AWS p
 
 These puppet components coordinate multiple AWS components to provide a higher level block of functionality.
 
-#### network
-
-The network component manages a VPC and its subnets with an optional internet gateway.
-
-* **region** - The AWS region that hosts this VPC.
-* **vpc_cidr** - The CIDR for the entire VPC
-* **environment** - The name of the environment that is hosted within this VPC.
-* **availability** - The list of the availability zone letters that are to be used by this VPC.
-* **zones** - The list of zones to create within this VPC.
-* **internet\_access** - Does this VPC have an internet access gateway?
-* **default\_access** - The access rules for the default security group.
-
-zones are an abstraction of subnets within the AWS environment. Rather than requiring the configuration to define each subnet in detail, the configuration defines one or more zones, and each zone has a subnet created in each availability zone automatically.  The internal CIDR space for each zone is shared equally across each subnet.
-
-Each zone entry is a hash of the following keys:
-
-* label - The name of the zone, used as part of the name of the underlying subnets.
-* cidr - The cidr for the whole zone.
-* public_ip - Sets whether the subnets grant public IP addresses by default.
-
-
-#### role
-
-The role component creates an scalable application stack that may optionally include database and load balancers.
-
-* **region** - The AWS region that hosts this role.
-* **vpc** - The name of the VPC to use to host this role.
-* **instance\_type** - The EC2 instance type to use as compute resources for this role.
-* **image** - The AMI image id to use as the base image for this role.
-* **min** - The minimum number of EC2 instances for this role.
-* **max** - The maximum number of EC2 instances for this role.
-* **desired** - The desired number of EC2 instances for this role.
-* **availability** - The list of availability zone letters to use for this role.
-* **zone_label** - The name of the network zone to use for hosting this roles EC2 instances.
-* **listeners** - The list of listeners for the elastic load balancer. Set to undef to not have a load balancer.
-* **target** - The Load balancer target properties that can contain [port|check_interval|timeout|healthy|failed]
-* **database** - A hash of properties to define the RDS instance (or undef for no RDS instance).
-
-
 #### environment
 
-The environment component manages a network containing multiple roles.
+The environment component manages a single VPC running multiple autoscaling groups and databases.
+To ensure the correct provision of security group rules and load balancers, the configuration includes
+details about the services and their network connectivity.
 
-* **region** - The AWS region that hosts this role
-* **network** - A hash map of properties for the network component. The environment region property is used as the network region value.
-* **roles** - A hash map of role properties, containing the non default properties for each role that is formed as part of this environment. 
+* **region** - The AWS region used to host this environment.
 
-A simple example of the roles property declaring two seperate roles:
+* **vpc** - By default, the VPC name is the title of the environment resource, but you can set it
+here if you need to.
 
-```
-roles => {
-      test1 => {
-        image => 'ami-6d1c2007',
-        desired => 3
-      },
-      test2 => {
-        image => 'ami-6d1c2007',
-        desired => 5
-      }
+* **network** - The network property is a hash containing the following keys
+    * **cidr**  - the IP address range to assign to the VPC.
+    * **availability** - The list of AWS availability zones to use within this environment.
+    * **routes** - Any nonstandard routes that need adding in "{cidr}|{target type}|{target-name}" format
+    * **dns_hostnames** - Allow DNS to resolve the VPC hostnames to IP addresses.
+    * **dns_resolution** - Allow EC2 instances within the VPC to resolve internet hostnames.
 
-```
+* **zones** - A hashmap that may contain the following keys **public**, **nat** and **private**.  Each
+key contains a hash map providing non standard settings for each zone, enabling puppet to generate the
+subnets and appropriate routing tables for the environment.  The keys that may be defined within a
+zone are:
+    * **ipaddr\_weighting** - The higher the relative weighting, the more IP addresses will be assigned
+    to this zone's subnets. 
+    * **format** - The format string that is used to generate names for subnets in this zone.
+    * **routes** - If this property is defnied, these routes will be used as the basis for the route table for this
+    zones subnets instead of the routes defined in the network section.
+    * **extra\_routes** If this property is defined, these routes are added as extra routes to this zones route table.
 
+* **server_roles** - A hashmap that define the servers and their roles within this environment. This is a combination
+of the EC2 instance properties that define the base image and instance size, the properties that control the scaling
+settings for this role and lastly, the list of services that are to run on this role. 
 
 
 ---
@@ -448,7 +418,7 @@ The simplest viable manifest is just:
 
 ```$puppet
 require doatools
-doatools::network { 'demo_env': 
+doatools::environment { 'demo_env': 
 }
 ```
 
@@ -456,69 +426,157 @@ This will ensure that a VPC named demo_env is present, with 3 public subnets,
 and the default route table is also called demo_env.
 
 
-
-
 ```$puppet
 require doatools
-doatools::network { 'demo_env': 
-  cidr         => "192.168.1.0/24"   # Any valid CIDR range
-  region       => "us-west-2"        # Create the VPC in the us-west-2 region
-  availability => [ 'a', 'b', 'c' ]  # Use these availabilty zones
-  zones        => []                 # Network Zones - defines a network space
-}                                    # that shares common settings, bit spans
-                                     # multiple avaliability zones.
+doatools::environment { 'demo_env': 
+  region  => "us-west-2"        # Create the VPC in the us-west-2 region
+  network => {
+    cidr => "192.168.1.0/24"   # Any valid CIDR range
+  }
+}
 ```
 
 
-This more complex example creates a single VPC with 5 subnets.
+This more complex example creates a single VPC with 6 subnets.
 
 
 ```
 require doatools
-doatools::network { 'demo_env': 
-  vpc_cidr => "192.168.128.0/24",
-  region => "us-east-1",
-  tags => { environment => "demonstration" },
-  availability => [ 'a', 'b', 'c'],
-  $zones = [
-  {
-   label => "%{vpc}%{az}",
-    cidr => "192.168.128.0/25",
-    public_ip => true,
-    availability => [ 'a', 'b', 'c' ],
+doatools::environment { 'demo_env': 
+  region  => "us-east-1",
+  network => {
+    cidr => "192.168.128.0/22",
+    availability => [ 'a', 'b', 'c'],
   },
-  {
-    label => "%{vpc}%{az}p",
-    cidr => "192.168.128.128/25",
-    public_ip => false,
-    availability => [ 'a', 'c' ],
-  }]
+  zones   => {
+    'public' => {
+      format => '%{vpc}_pub%{az}'
+    },
+    'private' => {
+      format => '%{vpc}_pri%{az}'
+    }
+  },
+  tags => { role => "demonstration" },
 }
 ```
 
 An example that creates servers, load balancers and a database would look more like this:
 
 ```
-require doatools
-doatools::network{ 'test':
-  region => 'us-west-2'
-} -> doatools::role{ 'test':
-  region => 'us-west-2',
-  image => 'ami-f173cc91',
-  desired => 2,
-  min => 0,
-  max => 4,
-  listeners => [
-    'http',
-    'arn:aws:acm:us-west-2:309595426446:certificate/29aab77f-898b-4188-a37b-945b81d4cc07'
-  ],
-  target => {
-    name => 'mytest2',
-    port => 80,
-    check_interval => 30,
-    timeout => 10,
-    healthy => 3,
-    failed => 2,
-  },
+node 'default' {
+  require doatools;
+
+  doatools::environment { 'demo1':
+    ensure => present,
+    region => us-east-1,
+    network => {
+      cidr => '192.168.0.0/22',
+      availability => [ 'a', 'b', 'c', 'd', 'e' ]
+    },
+    zones => {
+      'public' => { },
+    },
+    server_roles => {
+      "role_1" => {
+        "scaling" => {
+          "min" => 0,
+          "max" => 2,
+          "desired" => 1,
+        },
+        "ec2" => {
+          "instance_type" => "t2.medium",
+          "image" => "ami-7abd0209",
+        },
+        "services" => [
+          "service_1",
+          "service_2",
+          "splunk_forwarder",
+        ],
+        "zone" => "public",
+        "userdata" => '#!/bin/bash
+
+role="role_1"
+script_version="0.0.0.1"
+
+curl https://s3-us-east-1.amazonaws.com/bucket/ec2_setup/ec2_setup-${script_version}.sh  | /bin/bash -s ${role}
+'
+      }
+    },
+    services => {
+      "service_1" => {
+        "loadbalanced_ports" => [
+          "https|443|arn:aws:acm:eu-west-1:017642142348:certificate/920264c9-98c8-4261-ac5c-73eb5c5f393f=>80",
+        ],
+        "network" => {
+          "in" => [
+            "tcp|80|rss|elb",
+          ],
+          "out" => [
+            "tcp|80|cidr|0.0.0.0/0",
+            "tcp|443|cidr|0.0.0.0/0",
+            "tcp|3306|rds|rds-db",
+          ]
+        },
+        "policies" => [
+          "access_s3_bucket",
+        ],
+      },
+      "splunk_forwarder" => {
+        "network" => {
+          "out" => [
+            "tcp|9997|cidr|192.168.254.254/32"
+          ]
+        },
+      },
+      "service_2" => {
+        "network" => {
+        },
+        "policies" => [
+        ],
+      }
+    },
+    db_servers => {
+      "rds-db" => {
+        master_password => 'mydbpassword'
+      }
+    },
+    s3 => {
+      'bucket' => {
+        'policy' => [],
+        'grants' => [
+          "grp|public|READ"
+        ],
+        'cors' => [
+          {
+            "verbs" => ["get"],
+            "origins"=>[
+              "https://demo1.oursite.com"
+            ]
+          }
+        ],
+        'contents' => [
+        ]  
+      }
+    },
+    tags => {
+    },
+    policies => {
+      "access_s3_bucket" =>[
+        {
+            "Effect" => "Allow",
+            "Action" => [
+                "s3:Get*",
+                "s3:ListBucket",
+                "s3:Put*",
+                "s3:DeleteObject"
+            ],
+            "Resource" => [
+                "arn:aws:s3:::bucket/*",
+                "arn:aws:s3:::bucket"
+            ]
+        }
+      ],
+    }    
+  }
 }
 ```

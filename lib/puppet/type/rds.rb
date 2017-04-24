@@ -77,6 +77,7 @@ Puppet::Type.newtype(:rds) do
   end
 
   newparam(:engine) do
+    defaultto 'mysql'
     validate do |value|
       engines = PuppetX::IntechWIFI::Constants.RDS_Engines
       fail("Unsupported AWS RDS Engine #{value} we support the following engines #{engines}") unless engines.include? value

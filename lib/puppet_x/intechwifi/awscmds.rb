@@ -121,6 +121,20 @@ module PuppetX
         result[0]
       end
 
+      def AwsCmds.find_elb_target_by_name(name, region, &aws_command)
+        args = [
+            'elbv2', 'describe-target-groups',
+            '--region', region,
+            '--names', name
+        ]
+        JSON.parse(aws_command.call(args.flatten))["TargetGroups"][0]["TargetGroupArn"]
+
+      rescue Puppet::ExecutionFailure => e
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
+      end
+
+
+
       def AwsCmds.find_iam_profile_policy(arn, &aws_command)
         version_id = JSON.parse(aws_command.call('iam', 'list-policy-versions', "--policy-arn", arn))["Versions"].select{|p|
           p["IsDefaultVersion"]

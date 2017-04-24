@@ -101,6 +101,9 @@ Puppet::Type.newtype(:autoscaling_group) do
   newproperty(:launch_configuration) do
   end
 
+  newproperty(:load_balancer) do
+  end
+
   newproperty(:subnets, :array_matching => :all) do
     def insync?(is)
       is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}

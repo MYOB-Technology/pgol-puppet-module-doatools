@@ -59,6 +59,8 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
     awscli(args.flatten)
 
+    add_loadbalancer(resource[:region], resource[:name], resource[:load_balancer]) if resource.has_key?(load_balancer)
+
     @property_hash[:region] = resource[:region]
     @property_hash[:desired_instances] = resource[:desired_instances]
     @property_hash[:minimum_instances] = resource[:minimum_instances]
@@ -110,6 +112,8 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     }
     @property_hash[:healthcheck_grace] = Integer(data["HealthCheckGracePeriod"])
     @property_hash[:healthcheck_type] = data["HealthCheckType"]
+    @property_hash[:load_balancer] = PuppetX::IntechWIFI::Autoscaling_Rules.get_load_balancer(@property_hash[:name], @property_hash[:region]){|*arg| awscli(*arg)}
+
 
     # Do we need to update the launch_configuration?
     if PuppetX::IntechWIFI::AwsCmds.find_launch_configuration_by_name([@property_hash[:region]], @property_hash[:launch_configuration]){|*arg| awscli(*arg)}["LaunchConfigurationName"] != data["LaunchConfigurationName"]
@@ -149,8 +153,40 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
       args << ["--health-check-type", @property_flush[:healthcheck_type]] unless @property_flush[:healthcheck_type].nil?
 
       awscli(args.flatten)
+
+      update_loadbalancer(@property_hash[:region], @property_hash[:name], @property_hash[:load_balancer], @property_flush[:load_balancer]) if @property_flush.has_key?(:load_balancer)
     end
   end
+
+  def update_loadbalancer(region, autoscaling_name, from, to)
+    remove_loadbalancer(region, autoscaling_name, from) if !from.nil?
+    add_loadbalancer(region, autoscaling_name, to) if !to.nil?
+  end
+
+  def add_loadbalancer(region, autoscaling_name, target_group)
+    args = [
+        'autoscaling', 'attach-load-balancer-target-groups',
+        '--region', region,
+        '--auto-scaling-group-name', autoscaling_name,
+        '--target-group-arns', PuppetX::IntechWIFI::AwsCmds.find_elb_target_by_name(target_group, region){|*arg| awscli(*arg)}
+    ]
+
+    awscli(args.flatten)
+
+  end
+
+  def remove_loadbalancer(region, autoscaling_name, target_group)
+    args = [
+        'autoscaling', 'detach-load-balancer-target-groups',
+        '--region', region,
+        '--auto-scaling-group-name', autoscaling_name,
+        '--target-group-arns', PuppetX::IntechWIFI::AwsCmds.find_elb_target_by_name(target_group, region){|*arg| awscli(*arg)}
+    ]
+
+    awscli(args.flatten)
+
+  end
+
 
   def initialize(value={})
     super(value)
@@ -176,6 +212,9 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
   def subnets=(value)
     @property_flush[:subnets] = value
+  end
+  def load_balancer=(value)
+    @property_flush[:load_balancer] = value
   end
   def healthcheck_grace=(value)
     @property_flush[:healthcheck_grace] = value
