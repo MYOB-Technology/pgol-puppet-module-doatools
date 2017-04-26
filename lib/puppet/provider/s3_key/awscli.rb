@@ -19,6 +19,7 @@ require 'tempfile'
 require 'puppet_x/intechwifi/s3'
 
 Puppet::Type.type(:s3_key).provide(:awscli) do
+  desc "Using the aws command line python application to implement changes"
   commands :awscli => "aws"
 
   def create
