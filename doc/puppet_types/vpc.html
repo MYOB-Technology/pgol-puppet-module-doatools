@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Resource Type: vpc
+  
+    &mdash; Documentation by YARD 0.9.8
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  pathId = "puppet_types::vpc";
+  relpath = '../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../puppet_type_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../_index.html">Index (v)</a> &raquo;
+    <span class='title'><span class='object_link'>Resource Types</span></span>
+     &raquo; 
+    <span class="title">vpc</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="puppet_class_list_link"
+        href="../puppet_class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Resource Type: vpc</h1>
+<div class="box_info">
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>
+      lib/puppet/type/vpc.rb
+    </dd>
+  </dl>
+  
+  <dl>
+    <dt>Providers:</dt>
+    <dd>
+      
+        <span class='object_link'><a href="../puppet_providers_vpc/awscli.html" title="puppet_providers_vpc::awscli (puppet_provider)">awscli</a></span><br/>
+      
+    </dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2>
+<div class="docstring">
+  <div class="discussion">
+    
+<p>The vpc resource models a single AWS VPC in puppet. Creating a new VPC also
+brings into existance the default route table and security_group, both
+tagged with the same name as the VPC.</p>
+
+<p>Other networking components that combine to make up the VPC need to
+declared as seperate resources.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <p class="tag_title">Examples:</p>
+    
+      
+        <p class="example_title"><div class='inline'>
+<p>Create a simple VPC</p>
+</div></p>
+      
+      <pre class="example code"><code>vpc {&#39;example&#39;:
+  region =&gt; &#39;us-east-1&#39;
+}</code></pre>
+    
+      
+        <p class="example_title"><div class='inline'>
+<p>Destroy a VPC</p>
+</div></p>
+      
+      <pre class="example code"><code>vpc {&#39;example&#39;:
+  ensure =&gt; absent,
+  region =&gt; &#39;us-east-1&#39;
+}</code></pre>
+    
+      
+        <p class="example_title"><div class='inline'>
+<p>Typical VPC declaration</p>
+</div></p>
+      
+      <pre class="example code"><code>vpc {&#39;typical_vpc&#39;:
+  region        =&gt; &#39;eu-west-1&#39;,
+  cidr          =&gt; &#39;192.168.182.0/23&#39;,
+  dns_hostnames =&gt; enabled,
+  is_default    =&gt; enabled,
+  tags          =&gt; {
+    owner =&gt; &#39;Marketing&#39;,
+    role  =&gt; &#39;Keeping the marketing department infrastructure seperate from the developers systems&#39;
+  }
+}</code></pre>
+    
+      
+        <p class="example_title"><div class='inline'>
+<p>JSON tags declaration</p>
+</div></p>
+      
+      <pre class="example code"><code>vpc {&#39;complex&#39;:
+  ensure =&gt; present,
+  region =&gt; &#39;eu-west-1&#39;,
+  cidr   =&gt; &#39;10.0.1.0/26&#39;,
+  dns_hostnames =&gt; enabled,
+  dns_resolution =&gt; enabled,
+  is_default =&gt; false,
+  tags =&gt; {
+    roles =&gt; [
+      &#39;authenticator&#39;,
+      &#39;sessions&#39;
+    ],
+    change_history =&gt; [
+      {
+         date    =&gt; &#39;20170328&#39;,
+         version =&gt; &#39;1.4.1&#39;,
+         notes   =&gt; &#39;patch for issue: EXAP-1043&#39;
+      },
+      {
+         date    =&gt; &#39;20170326&#39;,
+         version =&gt; &#39;1.4.0&#39;,
+         notes   =&gt; &#39;Release 1.4.0&#39;
+      }
+    ]
+  }
+}</code></pre>
+    
+  </div>
+
+
+</div>
+<div class="tags">
+  <p class="tag_title">Properties</p>
+  <ul>
+    
+    <li>
+      <span class="name">dns_hostnames</span>
+      
+      <span class="default"> (defaults to: <em>disabled</em>)</span>
+      
+      
+      <div class="docstring">
+        <div class="discussion">
+          
+<p>Enabling dns_hostnames will mean that it becomes possible to refere to
+specific EC2 instances using their hostname, and for DNS to resolve this.
+However, this does not solve the problem of identifying newly created
+instances, as they will be created with a new name based on their IP
+address, so their DNS entry is only predictable if you already know their
+IP address.</p>
+
+<p>If you have a situation where this is useful, you can enable this VPC
+feature.</p>
+
+        </div>
+      </div>
+      
+      
+      <div>
+        Supported values:
+        <ul>
+          
+          <li>
+            
+            enabled
+          </li>
+          
+          <li>
+            
+            disabled
+          </li>
+          
+        </ul>
+      </div>
+      
+    </li>
+    
+    <li>
+      <span class="name">dns_resolution</span>
+      
+      <span class="default"> (defaults to: <em>enabled</em>)</span>
+      
+      
+      <div class="docstring">
+        <div class="discussion">
+          
+<p>Enabling dns_resolution ensures that local EC2 instances have a DNS server
+available on their local network, and that new instances are configured to
+use this DNS server for DNS lookups.</p>
+
+        </div>
+      </div>
+      
+      
+      <div>
+        Supported values:
+        <ul>
+          
+          <li>
+            
+            enabled
+          </li>
+          
+          <li>
+            
+            disabled
+          </li>
+          
+        </ul>
+      </div>
+      
+    </li>
+    
+    <li>
+      <span class="name">ensure</span>
+      
+      <span class="default"> (defaults to: <em>present</em>)</span>
+      
+      
+      <div class="docstring">
+        <div class="discussion">
+          
+<p>The basic property that the resource should be in.</p>
+
+        </div>
+      </div>
+      
+      
+      <div>
+        Supported values:
+        <ul>
+          
+          <li>
+            
+            present
+          </li>
+          
+          <li>
+            
+            absent
+          </li>
+          
+        </ul>
+      </div>
+      
+    </li>
+    
+    <li>
+      <span class="name">tags</span>
+      
+      
+      <div class="docstring">
+        <div class="discussion">
+          
+<p>The tags property is presented as a hash containing key / value pairs.
+Values can be strings, hashes or arrays. Hashes and arrays are stored in
+AWS as JSON strings.</p>
+
+        </div>
+      </div>
+      
+      
+    </li>
+    
+  </ul>
+</div>
+
+
+<div class="tags">
+  <p class="tag_title">Parameters</p>
+  <ul>
+    
+    <li>
+      <span class="name">cidr</span>
+      
+      <span class="default"> (defaults to: <em>192.168.0.0/24</em>)</span>
+      
+      
+      <div class="docstring">
+        <div class="discussion">
+          
+<p>The virtual private cloud&#39;s VPC defines the IP address space that can
+be contained within this VPC. Subnets will only be able to be created using
+partial address ranges within the scope of this CIDR.</p>
+
+        </div>
+      </div>
+      
+      
+    </li>
+    
+    <li>
+      <span class="name">name (namevar)</span>
+      
+      
+      <div class="docstring">
+        <div class="discussion">
+          
+<p>The VPC name must be both unique within this puppet manifest, and unique
+within the AWS region for this AWS account.</p>
+
+        </div>
+      </div>
+      
+      
+    </li>
+    
+    <li>
+      <span class="name">region</span>
+      
+      <span class="default"> (defaults to: <em>us-east-1</em>)</span>
+      
+      
+      <div class="docstring">
+        <div class="discussion">
+          
+<p>The region parameter is required for all puppet actions on this resource.
+It needs to follow the &#39;us-east-1&#39; style, and not the &#39;N.
+Virginia&#39; format. Changing this paramter does not move the resource
+from one region to another, but it may create a new resource in the new
+region, and will completely ignore the existing resource in the old region</p>
+
+        </div>
+      </div>
+      
+      
+    </li>
+    
+  </ul>
+</div>
+
+
+</div>
+
+      <div id="footer">
+  Generated on Mon Apr 24 11:16:27 2017 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.8 (ruby-2.1.9).
+</div>
+
+    </div>
+  </body>
+</html>

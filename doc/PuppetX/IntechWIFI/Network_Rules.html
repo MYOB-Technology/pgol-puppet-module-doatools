@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Module: PuppetX::IntechWIFI::Network_Rules
+  
+    &mdash; Documentation by YARD 0.9.8
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  pathId = "PuppetX::IntechWIFI::Network_Rules";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../puppet_class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (N)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../PuppetX.html" title="PuppetX (module)">PuppetX</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../IntechWIFI.html" title="PuppetX::IntechWIFI (module)">IntechWIFI</a></span></span>
+     &raquo; 
+    <span class="title">Network_Rules</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="puppet_class_list_link"
+        href="../../puppet_class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Module: PuppetX::IntechWIFI::Network_Rules
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/puppet_x/intechwifi/network_rules.rb</dd>
+  </dl>
+  
+</div>
+
+
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#AwsToPuppetString-class_method" title="AwsToPuppetString (class method)">.<strong>AwsToPuppetString</strong>(data, region, &amp;awscmd)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#FormatLocation-class_method" title="FormatLocation (class method)">.<strong>FormatLocation</strong>(data, region, &amp;awscmd)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#FormatLocationFromGroupPairs-class_method" title="FormatLocationFromGroupPairs (class method)">.<strong>FormatLocationFromGroupPairs</strong>(source, region, &amp;awscmd)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#FormatLocationFromIpRanges-class_method" title="FormatLocationFromIpRanges (class method)">.<strong>FormatLocationFromIpRanges</strong>(source)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#FormatPorts-class_method" title="FormatPorts (class method)">.<strong>FormatPorts</strong>(data)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#IpProtocolToString-class_method" title="IpProtocolToString (class method)">.<strong>IpProtocolToString</strong>(source)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#MakeCidr-class_method" title="MakeCidr (class method)">.<strong>MakeCidr</strong>(cidr, index, total)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#RouteRuleMatch-class_method" title="RouteRuleMatch (class method)">.<strong>RouteRuleMatch</strong>(declared, detected)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="AwsToPuppetString-class_method">
+  
+    .<strong>AwsToPuppetString</strong>(data, region, &amp;awscmd)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 24</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>AwsToPuppetString</span><span class='lparen'>(</span><span class='id identifier rubyid_data'>data</span><span class='comma'>,</span> <span class='id identifier rubyid_region'>region</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_awscmd'>awscmd</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='id identifier rubyid_data'>data</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_gress'>gress</span><span class='op'>|</span>
+      <span class='comment'># Convert the protocol.
+</span>      <span class='id identifier rubyid_protocol'>protocol</span> <span class='op'>=</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'><span class='object_link'><a href="#IpProtocolToString-class_method" title="PuppetX::IntechWIFI::Network_Rules.IpProtocolToString (method)">IpProtocolToString</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_gress'>gress</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>IpProtocol</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='rparen'>)</span>
+
+      <span class='comment'>#  Convert the location.
+</span>      <span class='id identifier rubyid_locations'>locations</span> <span class='op'>=</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'><span class='object_link'><a href="#FormatLocation-class_method" title="PuppetX::IntechWIFI::Network_Rules.FormatLocation (method)">FormatLocation</a></span></span> <span class='id identifier rubyid_gress'>gress</span><span class='comma'>,</span> <span class='id identifier rubyid_region'>region</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_awscmd'>awscmd</span>
+
+      <span class='comment'>#  Convert the ports.
+</span>      <span class='id identifier rubyid_ports'>ports</span> <span class='op'>=</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'><span class='object_link'><a href="#FormatPorts-class_method" title="PuppetX::IntechWIFI::Network_Rules.FormatPorts (method)">FormatPorts</a></span></span> <span class='id identifier rubyid_gress'>gress</span>
+
+      <span class='id identifier rubyid_locations'>locations</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_location'>location</span><span class='op'>|</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_protocol'>protocol</span><span class='embexpr_end'>}</span><span class='tstring_content'>|</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_ports'>ports</span><span class='embexpr_end'>}</span><span class='tstring_content'>|</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_location'>location</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span><span class='rbrace'>}</span>
+  <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_flatten'>flatten</span><span class='lparen'>(</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_sort'>sort</span><span class='lparen'>(</span><span class='rparen'>)</span>
+  <span class='kw'>return</span> <span class='id identifier rubyid_result'>result</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="FormatLocation-class_method">
+  
+    .<strong>FormatLocation</strong>(data, region, &amp;awscmd)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+51
+52
+53
+54
+55
+56</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 51</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>FormatLocation</span> <span class='id identifier rubyid_data'>data</span><span class='comma'>,</span> <span class='id identifier rubyid_region'>region</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_awscmd'>awscmd</span>
+  <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='lbracket'>[</span><span class='rbracket'>]</span>
+  <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'><span class='object_link'><a href="#FormatLocationFromIpRanges-class_method" title="PuppetX::IntechWIFI::Network_Rules.FormatLocationFromIpRanges (method)">FormatLocationFromIpRanges</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_data'>data</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>IpRanges</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='id identifier rubyid_data'>data</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>IpRanges</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_length'>length</span> <span class='op'>&gt;</span> <span class='int'>0</span>
+  <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'><span class='object_link'><a href="#FormatLocationFromGroupPairs-class_method" title="PuppetX::IntechWIFI::Network_Rules.FormatLocationFromGroupPairs (method)">FormatLocationFromGroupPairs</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_data'>data</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>UserIdGroupPairs</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='id identifier rubyid_region'>region</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_awscmd'>awscmd</span><span class='rparen'>)</span>  <span class='kw'>if</span> <span class='id identifier rubyid_data'>data</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>UserIdGroupPairs</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_length'>length</span> <span class='op'>&gt;</span> <span class='int'>0</span>
+  <span class='id identifier rubyid_result'>result</span><span class='period'>.</span><span class='id identifier rubyid_flatten'>flatten</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="FormatLocationFromGroupPairs-class_method">
+  
+    .<strong>FormatLocationFromGroupPairs</strong>(source, region, &amp;awscmd)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+76
+77
+78
+79
+80
+81
+82
+83</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 76</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>FormatLocationFromGroupPairs</span> <span class='id identifier rubyid_source'>source</span><span class='comma'>,</span> <span class='id identifier rubyid_region'>region</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_awscmd'>awscmd</span>
+  <span class='comment'>#  Yeah, nice weather isnt it?  Lets solve this problem later.
+</span>  <span class='id identifier rubyid_source'>source</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_location'>location</span><span class='op'>|</span>
+    <span class='id identifier rubyid_location_sgid'>location_sgid</span> <span class='op'>=</span> <span class='id identifier rubyid_location'>location</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>GroupId</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span>
+    <span class='id identifier rubyid_sg_name'>sg_name</span> <span class='op'>=</span>  <span class='const'><span class='object_link'><a href="../../PuppetX.html" title="PuppetX (module)">PuppetX</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="../IntechWIFI.html" title="PuppetX::IntechWIFI (module)">IntechWIFI</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="AwsCmds.html" title="PuppetX::IntechWIFI::AwsCmds (module)">AwsCmds</a></span></span><span class='period'>.</span><span class='id identifier rubyid_find_name_by_id'><span class='object_link'><a href="AwsCmds.html#find_name_by_id-class_method" title="PuppetX::IntechWIFI::AwsCmds.find_name_by_id (method)">find_name_by_id</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_region'>region</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>security-group</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='id identifier rubyid_location_sgid'>location_sgid</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_awscmd'>awscmd</span><span class='rparen'>)</span>
+    <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>sg|</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_sg_name'>sg_name</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span>
+  <span class='rbrace'>}</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="FormatLocationFromIpRanges-class_method">
+  
+    .<strong>FormatLocationFromIpRanges</strong>(source)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+71
+72
+73
+74</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 71</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>FormatLocationFromIpRanges</span> <span class='id identifier rubyid_source'>source</span>
+  <span class='comment'>#  Take the contents of the IPRanges array and convert into a string fragment.
+</span>  <span class='id identifier rubyid_source'>source</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_cidr'>cidr</span><span class='op'>|</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>cidr|</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_cidr'>cidr</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>CidrIp</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span><span class='rbrace'>}</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="FormatPorts-class_method">
+  
+    .<strong>FormatPorts</strong>(data)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 58</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>FormatPorts</span> <span class='id identifier rubyid_data'>data</span>
+  <span class='id identifier rubyid_from'>from</span> <span class='op'>=</span> <span class='id identifier rubyid_data'>data</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>FromPort</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span>
+  <span class='id identifier rubyid_to'>to</span> <span class='op'>=</span> <span class='id identifier rubyid_data'>data</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>ToPort</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span>
+
+  <span class='kw'>if</span> <span class='id identifier rubyid_from'>from</span> <span class='kw'>and</span> <span class='id identifier rubyid_to'>to</span> <span class='kw'>and</span> <span class='id identifier rubyid_from'>from</span> <span class='op'>!=</span> <span class='id identifier rubyid_to'>to</span>
+    <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_from'>from</span><span class='embexpr_end'>}</span><span class='tstring_content'>-</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_to'>to</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>elsif</span> <span class='id identifier rubyid_from'>from</span> <span class='kw'>and</span> <span class='id identifier rubyid_to'>to</span>
+    <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_from'>from</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>else</span>
+    <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="IpProtocolToString-class_method">
+  
+    .<strong>IpProtocolToString</strong>(source)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+41
+42
+43
+44
+45
+46
+47</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 41</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>IpProtocolToString</span> <span class='id identifier rubyid_source'>source</span>
+  <span class='kw'>if</span> <span class='id identifier rubyid_source'>source</span> <span class='op'>==</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>-1</span><span class='tstring_end'>&quot;</span></span>
+    <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>all</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>else</span>
+    <span class='id identifier rubyid_source'>source</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="MakeCidr-class_method">
+  
+    .<strong>MakeCidr</strong>(cidr, index, total)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 85</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>MakeCidr</span><span class='lparen'>(</span><span class='id identifier rubyid_cidr'>cidr</span><span class='comma'>,</span> <span class='id identifier rubyid_index'>index</span><span class='comma'>,</span> <span class='id identifier rubyid_total'>total</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_cidr_array'>cidr_array</span> <span class='op'>=</span> <span class='id identifier rubyid_cidr'>cidr</span><span class='period'>.</span><span class='id identifier rubyid_split'>split</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_cidr_base'>cidr_base</span> <span class='op'>=</span> <span class='id identifier rubyid_cidr_array'>cidr_array</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span>
+  <span class='id identifier rubyid_cidr_range'>cidr_range</span> <span class='op'>=</span> <span class='id identifier rubyid_cidr_array'>cidr_array</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span>
+
+  <span class='comment'># Convert the cidr_base into a number.
+</span>  <span class='id identifier rubyid_cidr_integer'>cidr_integer</span> <span class='op'>=</span> <span class='id identifier rubyid_cidr_base'>cidr_base</span><span class='period'>.</span><span class='id identifier rubyid_split'>split</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>.</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:to_i</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_reduce'>reduce</span><span class='lparen'>(</span><span class='int'>0</span><span class='rparen'>)</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_sum'>sum</span><span class='comma'>,</span> <span class='id identifier rubyid_num'>num</span><span class='op'>|</span> <span class='lparen'>(</span><span class='id identifier rubyid_sum'>sum</span> <span class='op'>&lt;&lt;</span> <span class='int'>8</span><span class='rparen'>)</span> <span class='op'>+</span> <span class='id identifier rubyid_num'>num</span> <span class='rbrace'>}</span>
+
+  <span class='comment'># Calculate the size of each cidr.
+</span>  <span class='id identifier rubyid_bitshift'>bitshift</span> <span class='op'>=</span> <span class='int'>0</span>
+  <span class='id identifier rubyid_loop'>loop</span> <span class='kw'>do</span>
+    <span class='id identifier rubyid_offset'>offset</span> <span class='op'>=</span> <span class='int'>1</span> <span class='op'>&lt;&lt;</span> <span class='id identifier rubyid_bitshift'>bitshift</span>
+    <span class='kw'>break</span> <span class='kw'>unless</span> <span class='id identifier rubyid_offset'>offset</span> <span class='op'>&lt;</span> <span class='id identifier rubyid_total'>total</span>
+    <span class='id identifier rubyid_bitshift'>bitshift</span> <span class='op'>+=</span> <span class='int'>1</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_new_cidr_size'>new_cidr_size</span> <span class='op'>=</span> <span class='id identifier rubyid_cidr_range'>cidr_range</span><span class='period'>.</span><span class='id identifier rubyid_to_i'>to_i</span> <span class='op'>+</span> <span class='id identifier rubyid_bitshift'>bitshift</span>
+  <span class='id identifier rubyid_new_base'>new_base</span> <span class='op'>=</span> <span class='id identifier rubyid_cidr_integer'>cidr_integer</span> <span class='op'>+</span> <span class='lparen'>(</span><span class='id identifier rubyid_index'>index</span> <span class='op'>&lt;&lt;</span> <span class='lparen'>(</span><span class='int'>32</span> <span class='op'>-</span> <span class='id identifier rubyid_new_cidr_size'>new_cidr_size</span><span class='rparen'>)</span><span class='rparen'>)</span>
+
+  <span class='lparen'>(</span><span class='id identifier rubyid_new_base'>new_base</span> <span class='op'>&gt;&gt;</span> <span class='int'>24</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span> <span class='op'>+</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>.</span><span class='tstring_end'>&quot;</span></span> <span class='op'>+</span> <span class='lparen'>(</span><span class='id identifier rubyid_new_base'>new_base</span> <span class='op'>&gt;&gt;</span> <span class='int'>16</span> <span class='op'>&amp;</span> <span class='int'>0xFF</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span> <span class='op'>+</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>.</span><span class='tstring_end'>&quot;</span></span> <span class='op'>+</span> <span class='lparen'>(</span><span class='id identifier rubyid_new_base'>new_base</span> <span class='op'>&gt;&gt;</span> <span class='int'>8</span> <span class='op'>&amp;</span> <span class='int'>0xFF</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span> <span class='op'>+</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>.</span><span class='tstring_end'>&quot;</span></span> <span class='op'>+</span> <span class='lparen'>(</span><span class='id identifier rubyid_new_base'>new_base</span> <span class='op'>&amp;</span> <span class='int'>0xFF</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span> <span class='op'>+</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/</span><span class='tstring_end'>&quot;</span></span> <span class='op'>+</span> <span class='id identifier rubyid_new_cidr_size'>new_cidr_size</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="RouteRuleMatch-class_method">
+  
+    .<strong>RouteRuleMatch</strong>(declared, detected)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+107
+108
+109
+110
+111
+112
+113
+114
+115</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/puppet_x/intechwifi/network_rules.rb', line 107</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='const'>RouteRuleMatch</span><span class='lparen'>(</span><span class='id identifier rubyid_declared'>declared</span><span class='comma'>,</span> <span class='id identifier rubyid_detected'>detected</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_should'>should</span> <span class='op'>=</span> <span class='id identifier rubyid_declared'>declared</span><span class='period'>.</span><span class='id identifier rubyid_split'>split</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>|</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_is'>is</span> <span class='op'>=</span> <span class='id identifier rubyid_detected'>detected</span><span class='period'>.</span><span class='id identifier rubyid_split'>split</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>|</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
+
+  <span class='id identifier rubyid_cidr_match'>cidr_match</span> <span class='op'>=</span> <span class='lparen'>(</span><span class='id identifier rubyid_should'>should</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_is'>is</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_target_match'>target_match</span> <span class='op'>=</span> <span class='lparen'>(</span><span class='lparen'>(</span><span class='id identifier rubyid_should'>should</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_is'>is</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span><span class='rparen'>)</span> <span class='kw'>and</span> <span class='lparen'>(</span><span class='id identifier rubyid_should'>should</span><span class='lbracket'>[</span><span class='int'>2</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_is'>is</span><span class='lbracket'>[</span><span class='int'>2</span><span class='rbracket'>]</span><span class='rparen'>)</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_blackhole'>blackhole</span> <span class='op'>=</span> <span class='id identifier rubyid_should'>should</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>blackhole</span><span class='tstring_end'>&#39;</span></span>
+  <span class='id identifier rubyid_cidr_match'>cidr_match</span> <span class='kw'>and</span> <span class='lparen'>(</span><span class='id identifier rubyid_target_match'>target_match</span> <span class='kw'>or</span> <span class='id identifier rubyid_blackhole'>blackhole</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Mon Apr 24 11:16:25 2017 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.8 (ruby-2.1.9).
+</div>
+
+    </div>
+  </body>
+</html>

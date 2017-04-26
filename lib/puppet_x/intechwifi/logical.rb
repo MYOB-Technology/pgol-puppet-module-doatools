@@ -46,15 +46,15 @@ module PuppetX
 
 
       def Logical.array_of_hashes_equal?(a, b)
-        a.all? { |a_hash|
-          b_hash = b.select{|b_hash| a_hash["name"] == b_hash["name"]}
-          false if b_hash.length != 1
-          true if a_hash.keys.all? { |a_key| b_hash[0][a_key] == a_hash[a_key] }
-        } and b.all? { |b_hash|
-          a_hash = a.select{|a_hash| b_hash["name"] == a_hash["name"]}
-          false if a_hash.length != 1
-          true if b_hash.keys.all? { |b_key| a_hash[0][b_key] == b_hash[b_key]}
-        }
+        # Some quick answers....
+        return true if  a.nil? and b.nil?
+        return false if !a.kind_of?(Array) or !b.kind_of?(Array)
+        return false if a.length != b.length
+
+
+        a.all? {|val| b.include? val}
+        b.all? {|val| a.include? val}
+
       end
     end
   end

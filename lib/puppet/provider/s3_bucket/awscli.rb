@@ -23,8 +23,8 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
   def create
     args = [
       's3api', 'create-bucket',
-      '--bucket', @resource[:name],
-      '--region', @resource[:region]
+      '--create-bucket-configuration', { 'LocationConstraint' => @resource[:region]}.to_json,
+      '--bucket', @resource[:name]
     ]
 
     awscli(args.flatten)
@@ -143,10 +143,6 @@ Puppet::Type.type(:s3_bucket).provide(:awscli) do
   end
 
   mk_resource_methods
-
-  def region=(value)
-    @property_flush[:region] = value
-  end
 
   def grants=(value)
     @property_flush[:grants] = value

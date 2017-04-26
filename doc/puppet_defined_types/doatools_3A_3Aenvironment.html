@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Defined Type: doatools::environment
+  
+    &mdash; Documentation by YARD 0.9.8
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  pathId = "puppet_defined_types::doatools::environment";
+  relpath = '../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../puppet_defined_type_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../_index.html">Index (d)</a> &raquo;
+    <span class='title'><span class='object_link'>Defined Types</span></span>
+     &raquo; 
+    <span class="title">doatools::environment</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="puppet_class_list_link"
+        href="../puppet_class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Defined Type: doatools::environment</h1>
+<div class="box_info">
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>
+      manifests/environment.pp
+    </dd>
+  </dl>
+</div>
+
+<h2>Overview</h2>
+<div class="docstring">
+  <div class="discussion">
+    
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>ensure</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>present</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>region</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>&#39;us-east-1&#39;</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>vpc</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>$name</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>network</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+    cidr =&gt; &#39;192.168.0.0/24&#39;,              #  The CIDR for the VPC
+    availability =&gt; [ &#39;a&#39;, &#39;b&#39;, &#39;c&#39;],      #  The availability zones to use
+    routes =&gt; [ ],                         #  Any non standard routes in format &quot;{cidr}|{target type}|{target-name}&quot;
+    dns_hostnames =&gt; false,                #  Can be set to true, to enable DNS hostnames
+    dns_resolution =&gt; true,                #  Can be set to false, to disable DNS resolution
+  }</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>zones</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+    # We can have up to 3 zones defined. Zones define the routing to the outside world.
+    # Isolation between servers is handled by security groups and not zones.
+
+    # Public zone subnets have public ip addresses and route traffic via the internet gateway
+    &#39;public&#39; =&gt; {
+      # ipaddr_weighting =&gt; 1,
+      # format =&gt; &#39;%{vpc}%{az}pub&#39;,
+      # This zone will then use these routes for this nat, instead of the routes in the network routes.
+      # routes =&gt; [],
+      # This grants extra routes to this zones routing table in addition to the network routes.
+      # extra_routes =&gt; [ ],
+    },
+    # NAT zone subnets only have private ip addresses, and route traffic via nat gateways.  There will be one nat
+    # gateway per IP address provided. nat subnets without their own nat gateway will be routed via another subnet
+    # EC2 instances in a nat zone cannot be given a public IP address
+    # &#39;nat&#39; =&gt; {
+    #  ipaddr_weighting =&gt; 1,
+    #  format =&gt; &#39;%{vpc}%{az}nat&#39;,
+    #  nat_ipaddr =&gt; [ ],
+    # This zone will then use these routes for this nat, instead of the routes in the network routes.
+    # routes =&gt; [],
+    # This grants extra routes to this zones routing table in addition to the network routes.
+    # extra_routes =&gt; [ ],
+    #},
+
+    # Private zone subnets do not route traffic to the internet. However, it is possible to add routing to the internet
+    # gateway and then attach an elastic IP address to a server to gain access for a temporary fix.
+    #&#39;private&#39; =&gt; {
+    #  ipaddr_weighting =&gt; 1,
+    #  format =&gt; &#39;%{vpc}%{az}pri&#39;,
+    # This zone will then use these routes for this nat, instead of the routes in the network routes.
+    # routes =&gt; [],
+    # This grants extra routes to this zones routing table in addition to the network routes.
+    # extra_routes =&gt; [ ],
+    #},
+  }</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>server_roles</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+
+  }</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>services</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+
+  }</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>db_servers</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+
+  }</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>s3</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+
+  }</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>tags</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+
+  }</tt>)</em>
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>policies</span>
+      
+      
+        <span class='type'>(<tt>Any</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>{
+
+  }</tt>)</em>
+      
+      
+    </li>
+  
+</ul>
+
+
+</div><div class="method_details_list">
+  <table class="source_code">
+    <tr>
+      <td>
+        <pre class="lines">
+
+
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120</pre>
+      </td>
+      <td>
+        <pre class="code"><span class="info file"># File 'manifests/environment.pp', line 17</span>
+
+define doatools::environment (
+  $ensure = present,
+  $region = &#39;us-east-1&#39;,
+  $vpc = $name,
+
+  $network = {
+    cidr =&gt; &#39;192.168.0.0/24&#39;,              #  The CIDR for the VPC
+    availability =&gt; [ &#39;a&#39;, &#39;b&#39;, &#39;c&#39;],      #  The availability zones to use
+    routes =&gt; [ ],                         #  Any non standard routes in format &quot;{cidr}|{target type}|{target-name}&quot;
+    dns_hostnames =&gt; false,                #  Can be set to true, to enable DNS hostnames
+    dns_resolution =&gt; true,                #  Can be set to false, to disable DNS resolution
+  },
+
+  $zones = {
+    # We can have up to 3 zones defined. Zones define the routing to the outside world.
+    # Isolation between servers is handled by security groups and not zones.
+
+    # Public zone subnets have public ip addresses and route traffic via the internet gateway
+    &#39;public&#39; =&gt; {
+      # ipaddr_weighting =&gt; 1,
+      # format =&gt; &#39;%{vpc}%{az}pub&#39;,
+      # This zone will then use these routes for this nat, instead of the routes in the network routes.
+      # routes =&gt; [],
+      # This grants extra routes to this zones routing table in addition to the network routes.
+      # extra_routes =&gt; [ ],
+    },
+    # NAT zone subnets only have private ip addresses, and route traffic via nat gateways.  There will be one nat
+    # gateway per IP address provided. nat subnets without their own nat gateway will be routed via another subnet
+    # EC2 instances in a nat zone cannot be given a public IP address
+    # &#39;nat&#39; =&gt; {
+    #  ipaddr_weighting =&gt; 1,
+    #  format =&gt; &#39;%{vpc}%{az}nat&#39;,
+    #  nat_ipaddr =&gt; [ ],
+    # This zone will then use these routes for this nat, instead of the routes in the network routes.
+    # routes =&gt; [],
+    # This grants extra routes to this zones routing table in addition to the network routes.
+    # extra_routes =&gt; [ ],
+    #},
+
+    # Private zone subnets do not route traffic to the internet. However, it is possible to add routing to the internet
+    # gateway and then attach an elastic IP address to a server to gain access for a temporary fix.
+    #&#39;private&#39; =&gt; {
+    #  ipaddr_weighting =&gt; 1,
+    #  format =&gt; &#39;%{vpc}%{az}pri&#39;,
+    # This zone will then use these routes for this nat, instead of the routes in the network routes.
+    # routes =&gt; [],
+    # This grants extra routes to this zones routing table in addition to the network routes.
+    # extra_routes =&gt; [ ],
+    #},
+  },
+
+  $server_roles = {
+
+  },
+
+  $services = {
+
+  },
+
+  $db_servers = {
+
+  },
+
+  $s3 = {
+
+  },
+
+  $tags = {
+
+  },
+
+  $policies = {
+
+  }
+
+
+
+
+#  $region=lookup(&#39;environment::region&#39;, Data, &#39;first&#39;, &#39;us-east-1&#39;),
+#  $network=lookup(&#39;environment::network&#39;, Data, &#39;first&#39;, { }),
+#  $roles=lookup(&#39;environment::roles&#39;, Data, &#39;first&#39;, {}),
+#  $ensure=lookup(&#39;environment::ensure&#39;, Data, &#39;first&#39;, present)
+)  {
+
+  define_environment_resources(
+    $name,
+    $ensure,
+    $region,
+    $network,
+    $zones,
+    $server_roles,
+    $services,
+    $db_servers,
+    $s3,
+    $tags,
+    $policies,
+  ).each |$r| {
+    $rt = $r[&#39;resource_type&#39;]
+    $rts = $r[&#39;resources&#39;].keys
+    info(&quot;declaring resources: ${rt} ${rts}&quot;)
+    debug($r[&#39;resources&#39;])
+    create_resources($r[&#39;resource_type&#39;], $r[&#39;resources&#39;], {})
+  }
+}</pre>
+      </td>
+    </tr>
+  </table>
+</div>
+</div>
+
+      <div id="footer">
+  Generated on Mon Apr 24 11:16:26 2017 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.8 (ruby-2.1.9).
+</div>
+
+    </div>
+  </body>
+</html>

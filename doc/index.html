@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: README
+  
+    &mdash; Documentation by YARD 0.9.8
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  pathId = "";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="puppet_class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: README</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="puppet_class_list_link"
+        href="puppet_class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'>
+<h1 id="label-Doatools">Doatools</h1>
+
+<h4 id="label-Table+of+Contents">Table of Contents</h4>
+<ol><li>
+<p><a href="#a-devops-aws-/-puppet-toolkit">A devops AWS / Puppet toolkit</a></p>
+</li><li>
+<p><a href="#setup">Setup</a></p>
+</li><li>
+<p><a href="#usage">Useage</a></p>
+</li><li>
+<p><a href="#reference">Reference</a></p>
+</li></ol>
+
+<h2 id="label-A+devops+AWS+%2F+Puppet+toolkit">A devops AWS / Puppet toolkit</h2>
+
+<h3 id="label-Why+create+yet+another+puppet+AWS+component%3F">Why create yet another puppet AWS component?</h3>
+
+<p>This module was created out of a frustration of existing methods for
+managing AWS infrastructure in a programatic way. Creating stacks with
+significant flexibility using Cloud Formation is painful - and easily
+broken by people making changes using the AWS Console. The supported
+puppetlabs AWS components literal implementation around launch
+configuration / autoscaling groups makes maintaining configurations over
+time difficult - and cannot manage default routes / security groups on
+VPC&#39;s didnt fit in with my vision on how I would like to use puppet to
+manage AWS.</p>
+
+<h3 id="label-The+Vision">The Vision</h3>
+
+<p>Imagine you have to manage a large complex application based around a
+service orientated architecture within the AWS infrastructure? You need to
+support multiple server roles - each needing different network access, IAM
+permisions and software installations. In addition you need to dynamically
+scale based on the time of day, manage multiple broadly simular deployments
+for the development processes (each using software at different stages of
+the development pipeline) and you have the makings of a complex problem.</p>
+
+<p>The long term vision of this module is to incrementally provide the
+building blocks to solve this challenge.</p>
+
+<h3 id="label-The+Current+Feature+set">The Current Feature set</h3>
+
+<p>This release will enable you to:</p>
+<ol><li>
+<p>Declare an AWS VPC with multiple subnets, default routing and an internet
+gatway to host your application.</p>
+</li><li>
+<p>Declare multiple server roles, with each server role potentially using RDS
+databases and elastic load balancers as part of its application stack</p>
+</li><li>
+<p>Set the userdata script to configure and install the software onto the
+servers at first boot.</p>
+</li></ol>
+
+<h3 id="label-Should+I+use+this+module%3F">Should I use this module?</h3>
+
+<p>If this module&#39;s vision is close to the vision you have for your
+application, that the current feature set meets enough of your immediate
+needs, and the fact that <strong>this module is still in early development,
+should be considered beta code and is likely to change significantly as it
+matures</strong> does not scare you off, then by all means use it.</p>
+
+<p>As a final warning, <strong>at this stage, there is no guarantee of long
+term resources being applied to this module</strong></p>
+
+<h2 id="label-Setup">Setup</h2>
+
+<p>This module uses Amazons AWS command line tool to interact with the AWS
+infrastructure. You will need the following:</p>
+<ul><li>
+<p>python2 version 2.6.5+, or python3 version 3.3+</p>
+</li><li>
+<p>pip</p>
+</li><li>
+<p>awscli 1.11.45</p>
+</li></ul>
+
+<pre class="code ruby"><code class="ruby">pip install --upgrade --user awscli==1.11.45</code></pre>
+
+<p>The doatools module written and tested using AWS 1.11.45, later versions
+are highly likely to work, albeit with increasing risk of Amazon
+introducing a breaking change.</p>
+
+<p>The installation of the module from Puppet Forge is as simple as</p>
+
+<pre class="code ruby"><code class="ruby">puppet module install iwifi-doatools
+</code></pre>
+
+<p>This should automatically include the installation of the ruby gems
+required by this module.</p>
+
+<p>The AWS authentication is handled by the AWS command line application. It
+assumes that the aws command line can authenticate with AWS without the
+need for any parameters. The simplest way to authenticate is to set up your
+default credentials in the ~/.aws/credentials file.</p>
+
+<h2 id="label-Usage">Usage</h2>
+
+<h3 id="label-Creating+AWS+resources+directly">Creating AWS resources directly</h3>
+
+<p>This module allows you to manage AWS resources directly using the puppet
+DSL. This example will ensure that a VPC called &#39;doatools_vpc&#39;
+exists in the Ohio region.</p>
+
+<pre class="code ruby"><code class="ruby">vpc { &#39;doatools_vpc&#39;:
+  region =&gt; us-east-2
+}
+</code></pre>
+
+<p>and by setting ensure to absent, we can make sure it does not exist</p>
+
+<pre class="code ruby"><code class="ruby">vpc { &#39;doatools_vpc&#39;:
+  ensure =&gt; absent,
+  region =&gt; us-east-2
+}
+</code></pre>
+
+<p><em>Notice that we have included the region even in the deletion. This is
+important. without specifying the region, puppet will have used the default
+value for region property (us-east-1), decided that the VPC did not exist
+and left the vpc in the us-east-2 region still active.</em></p>
+
+<p>It is possible to manage all supported AWS components directly at this
+level.</p>
+
+<h3 id="label-Using+Higher+level+resources">Using Higher level resources</h3>
+
+<p>This module includes higher level resources that abstract away some of the
+details (and some control) to make provisioning whole environments quicker
+and easier to implement.</p>
+
+<p>This example creates a AWS VPC with a functional network and internet
+connectivity in the ohio region</p>
+
+<pre class="code ruby"><code class="ruby">network { &#39;doatools&#39;:
+  region =&gt; us-east-2
+}
+</code></pre>
+
+<p><em>This example creates a VPC, 3 subnets and an internet gateway for the
+same effort.</em></p>
+
+<p>This example changes the default security group to only allows HTTP and
+MySQL traffic between instances</p>
+
+<pre class="code ruby"><code class="ruby">network { &#39;doatools&#39;:
+  region         =&gt; us-east-2,
+  default_access =&gt; {
+    ingress =&gt; [ &#39;tcp|80|sg|doatools&#39;, &#39;tcp|3306|sg|doatools&#39; ],
+    egress  =&gt; [ &#39;tcp|80|sg|doatools&#39;, &#39;tcp|3306|sg|doatools&#39; ],
+  }
+}
+</code></pre>
+
+<p>and to delete the entire network</p>
+
+<pre class="code ruby"><code class="ruby">network { &#39;doatools&#39;:
+  ensure =&gt; absent,
+  region =&gt; us-east-2
+}
+</code></pre>
+
+<h3 id="label-Supported+AWS+Network+Components">Supported AWS Network Components</h3>
+<ul><li>
+<p>vpc</p>
+</li><li>
+<p>subnet</p>
+</li><li>
+<p>internet_gateway</p>
+</li><li>
+<p>security_group</p>
+</li><li>
+<p>security_group_rules</p>
+</li><li>
+<p>route_table</p>
+</li><li>
+<p>route_table_rules</p>
+</li></ul>
+
+<h3 id="label-Supported+AWS+EC2+Components">Supported AWS EC2 Components</h3>
+<ul><li>
+<p>elastic load balancer</p>
+</li><li>
+<p>launch_config</p>
+</li><li>
+<p>autoscaling_group</p>
+</li></ul>
+
+<h3 id="label-Supported+AWS+Storage+Components">Supported AWS Storage Components</h3>
+<ul><li>
+<p>rds</p>
+</li><li>
+<p>s3_bucket</p>
+</li><li>
+<p>s3_key</p>
+</li></ul>
+
+<h3 id="label-Supported+AWS+IAM+Components">Supported AWS IAM Components</h3>
+<ul><li>
+<p>iam_role</p>
+</li><li>
+<p>iam_policy</p>
+</li></ul>
+
+<h3 id="label-Application+Infrastructure+Components">Application Infrastructure Components</h3>
+<ul><li>
+<p><strong>network</strong> - a AWS VPC, subnets, route table and internet
+gateway.</p>
+</li><li>
+<p><strong>role</strong> - An application stack consisting of a launch
+configuration, autoscaling group and optional load balancers and database
+servers.</p>
+</li><li>
+<p><strong>environment</strong> - a complete environment containing a network
+component and a set of role components.</p>
+</li></ul>
+
+<h2 id="label-Reference">Reference</h2>
+
+<p>These components are modelled to provide a puppet style representation of
+the key AWS components. To achieve this there are a hand full of
+abstractions and compromises which are needed to model AWS components as a
+puppet component</p>
+
+<p>devops engineers will need to bare in mind when implementing systems using
+these components. They effect the following AWS components:</p>
+<ul><li>
+<p>launch configuration</p>
+</li><li>
+<p>load balancer</p>
+</li></ul>
+
+<h4 id="label-vpc">vpc</h4>
+
+<p>The vpc component manages the lifecycle of an AWS vpc in a region. The
+other networking components associated with the vpc (such as subnets and
+route tables) are managed seperately.</p>
+<ul><li>
+<p><strong>region</strong> - The AWS region which hosts this component. This
+property should not be changed after the VPC has been created.</p>
+</li><li>
+<p><strong>cidr</strong> - The CIDR property will be used to set the CIDR in
+the creation of a new VPC. It is not possible to change the CIDR of an
+existing VPC.</p>
+</li><li>
+<p><strong>dns_hostnames</strong> - The dns_hostnames property controls
+whether the VPC creates DNS hostname entries for EC2 instances hosted
+within the VPC.</p>
+</li><li>
+<p><strong>dns_resolution</strong> - the dns_resolution property controls
+whether the VPC contains a DNS resolution service. Disabling dns resolution
+includes disabling DNS resolution for external systems on the wider
+internet (<em>e.g. <a href="www.google.com">www.google.com</a></em>).</p>
+</li><li>
+<p><strong>tags</strong> - a hash of tag key and values. Values can be
+strings, hashes and arrays. Non string data stored in json format.</p>
+</li></ul>
+
+<h4 id="label-subnet">subnet</h4>
+
+<p>The subnet component manages the lifecycle of an AWS subnet, within a vpc
+in an AWS region.</p>
+<ul><li>
+<p><strong>vpc</strong> - The name of the VPC that hosts this subnet. Changing
+this property is not supported.</p>
+</li><li>
+<p><strong>region</strong> - The AWS region which hosts this component. This
+property should not be changed after it has been created.</p>
+</li><li>
+<p><strong>availability_zone</strong> - The AWS availability zone that hosts
+this subnet, This property should not be changed after it has been created.</p>
+</li><li>
+<p><strong>cidr</strong> - The CIDR for this subnet. This property cannot be
+changed after the subnet has been created.</p>
+</li><li>
+<p><strong>public_ip</strong> - Do new EC2 instances in this subnet obtain IP
+addresses by default?</p>
+</li><li>
+<p><strong>routetable</strong> - The name of the AWS route table associated
+with this subnet.</p>
+</li><li>
+<p><strong>tags</strong> - a hash of tag key and values. Values can be
+strings, hashes and arrays. Non string data stored in json format.</p>
+</li></ul>
+
+<h4 id="label-internet_gateway">internet_gateway</h4>
+
+<p>The internet_gateway component manages the lifecycle of an AWS internet
+gateway within an AWS region.</p>
+<ul><li>
+<p><strong>environment</strong> - The name of the environment that this
+internet gateway is logically contained.</p>
+</li><li>
+<p><strong>vpc</strong> - The name of the VPC that is attached to this
+internet gateway.</p>
+</li><li>
+<p><strong>region</strong> - The name of the AWS region which hosts this AWS
+internet gateway component.</p>
+</li></ul>
+
+<h4 id="label-launch_configuration">launch_configuration</h4>
+
+<p>The launch_configuration component provides an abstraction of the AWS
+launch configuration feature, which abstracts away the imutable aspect of
+AWS launch configurations to present a puppet style resource with
+modifyable properties.</p>
+<ul><li>
+<p><strong>region</strong> - The name of the AWS region which hosts this AWS
+launch configuration.</p>
+</li><li>
+<p><strong>image</strong> - The ami id of the AWS image used as the base image
+when starting new EC2 instances.</p>
+</li><li>
+<p><strong>instance_type</strong> - The AWS instance type that will be created
+using this launch configuration</p>
+</li><li>
+<p><strong>security_groups</strong> - An array of security group names from
+the same AWS region that should be attached to new instances.</p>
+</li><li>
+<p><strong>user_data</strong> - The userdata script that is used to configure
+and install the software onto the EC2 instance at start up.</p>
+</li><li>
+<p><strong>ssh_key_name</strong> - The name of the AWS SSH registered key that
+should be used to obtain access to the new instance.</p>
+</li></ul>
+
+<p><em>The puppet model for launch configurations is updateable despite the
+AWS implementation following a copy on write model. When looking at the AWS
+console, launch configuration names will be appended with versioning data
+in the form <a href="0-9a-zA-Z">_=</a>3.3..3=. When a change happens in the
+puppet configuration, a new AWS configuration is created, and any puppet
+AutoScaling configurations referencing the modified launch configuration
+are updated to use the new launch configuration. The launch configuration
+history older than the previous 4 revisions is also deleted. This should be
+largely transparent.</em></p>
+
+<p><em>There is currently no implementation to rotate existing instances into
+new instances using the new launch configuration settings.</em></p>
+
+<h4 id="label-autoscaling_group">autoscaling_group</h4>
+
+<p>The autoscaling_group component manages the lifecycle of an AWS autoscaling
+group within an AWS region.</p>
+<ul><li>
+<p><strong>region</strong> - The name of the AWS region which hos ts this AWS
+launch configuration.</p>
+</li><li>
+<p><strong>desired-instances</strong> - The number of EC2 instances that it is
+desirable to maintain within this autoscaling group.</p>
+</li><li>
+<p><strong>minimum_instances</strong> - The minimum number of EC2 instances
+that is acceptable to form part of this autoscaling group.</p>
+</li><li>
+<p><strong>maximum_instances</strong> - The maximum number of EC2 instances
+that is acceptable to form part of this autoscaling group.</p>
+</li><li>
+<p><strong>launch_configuration</strong> - The name of the puppet launch
+configuration to use in the creation of new EC2 instances. This property is
+always updated on the AWS component to use the latest AWS version of the
+named launch configuration.</p>
+</li><li>
+<p><strong>subnets</strong> - The array of subnet names that may be used to
+launch new EC2 instances within this autoscaling group.</p>
+</li><li>
+<p><strong>healthcheck_grace</strong> - The time in seconds after a new EC2
+instance has been created, before it becomes subject to termination on
+failing a health check</p>
+</li><li>
+<p><strong>healthcheck_type</strong> - Determines if the health check is
+performed by using load balancer health checks, or by the EC2 status
+checks.</p>
+</li></ul>
+
+<h4 id="label-security_group">security_group</h4>
+
+<p>The security_group component manages the identity aspect of the AWS
+security group, enabling association of security groups with AWS networked
+resources.</p>
+<ul><li>
+<p><strong>vpc</strong> - The name of the puppet VPC that is associated with
+this security group. This cannot be changed after creation.</p>
+</li><li>
+<p><strong>region</strong> - The name of the AWS region that hosts this
+security group.</p>
+</li><li>
+<p><strong>description</strong> - The description of the purpose of this
+security group. This cannot be changed after creation.</p>
+</li><li>
+<p><strong>tags</strong> - a hash of tag key and values. Values can be
+strings, hashes and arrays. Non string data stored in json format.</p>
+</li></ul>
+
+<h4 id="label-security_group_rules">security_group_rules</h4>
+
+<p>The security_group_rules component manages the ingress and egress rules for
+a security group. By seperating out the rules from the group enables puppet
+to create AWS security groups with circular references in the access rules.</p>
+<ul><li>
+<p><strong>region</strong> - The name of the AWS region that hosts this
+security group.</p>
+</li><li>
+<p><strong>security_group</strong> - The name of the security group that
+implements these rules.</p>
+</li><li>
+<p><strong>in</strong> - The rules to apply to inbound network traffic.</p>
+</li><li>
+<p><strong>out</strong> - The rules to apply to outbound network traffic.</p>
+</li></ul>
+
+<h4 id="label-load_balancer">load_balancer</h4>
+
+<p>The load_balancer puppet component manages a subset of the functionality of
+the AWS elastic load balancer. It allows basic listener and target setting
+of the AWS application load balancer.</p>
+<ul><li>
+<p><strong>region</strong> - The name of the AWS region that hosts this load
+balancer.</p>
+</li><li>
+<p><strong>subnets</strong> - The list of subnets that the load balancer will
+use to host the load balancer.</p>
+</li><li>
+<p><strong>listeners</strong> - The list of ports, protocols (and with HTTPS,
+certificates) that the load balancer accepts incomming connections.</p>
+</li><li>
+<p><strong>targets</strong> - The set of properties that the load balancer
+uses to connect and health check the upstream web servers.</p>
+</li></ul>
+
+<p>listeners is an array of strings following these formats:</p>
+
+<pre class="code ruby"><code class="ruby">http://[target-name]:[port]
+https://[target-name]:[port]?certificate=[certificate-arn]</code></pre>
+
+<p>targets is a single entry in an array defining the target port, vpc and
+health check parameters</p>
+
+<p>e.g.</p>
+
+<pre class="code ruby"><code class="ruby"><span class='lbracket'>[</span><span class='lbrace'>{</span>
+  <span class='id identifier rubyid_name'>name</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>mytarget</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+  <span class='id identifier rubyid_port'>port</span> <span class='op'>=&gt;</span> <span class='int'>80</span><span class='comma'>,</span>
+  <span class='id identifier rubyid_check_interval'>check_interval</span> <span class='op'>=&gt;</span> <span class='int'>30</span><span class='comma'>,</span>
+  <span class='id identifier rubyid_timeout'>timeout</span> <span class='op'>=&gt;</span> <span class='int'>10</span><span class='comma'>,</span>
+  <span class='id identifier rubyid_healthy'>healthy</span> <span class='op'>=&gt;</span> <span class='int'>3</span><span class='comma'>,</span>
+  <span class='id identifier rubyid_failed'>failed</span> <span class='op'>=&gt;</span> <span class='int'>2</span><span class='comma'>,</span>
+  <span class='id identifier rubyid_vpc'>vpc</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>example</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+<span class='rbrace'>}</span><span class='rbracket'>]</span>
+</code></pre>
+
+<h4 id="label-rds">rds</h4>
+
+<p>The rds puppet component manages the lifecycle of the AWS RDS component.
+This component blocks during creation, modifications and deletions until
+AWS has processed the change. All changes start immediately and are not
+delayed to the next maintanence window.</p>
+<ul><li>
+<p><strong>region</strong> - The AWS region that hosts this RDS instance.</p>
+</li><li>
+<p><strong>engine</strong> - the RDS engine to use on the RDS instance.</p>
+</li><li>
+<p><strong>engine_version</strong> - The software version of the database
+engine.</p>
+</li><li>
+<p><strong>master_username</strong> - The AWS admin username for the RDS
+instance.</p>
+</li><li>
+<p><strong>master_password</strong> - The AWS admin users password for the RDS
+instance.</p>
+</li><li>
+<p><strong>database</strong> - The default database to create in the RDS
+instance at creation.</p>
+</li><li>
+<p><strong>db_subnet_group</strong> - The RDS Subnet group name used to define
+possible subnets for the RDS instance.</p>
+</li><li>
+<p><strong>maintenance_window</strong> - The time range that AWS can use for
+automated actions on the RDS instance. This may involve the RDS instance
+being unavailable during this time frame.</p>
+</li><li>
+<p><strong>backup_window</strong> - The time range that AWS uses to run the
+backup of the RDS instance.</p>
+</li><li>
+<p><strong>backup_retention_count</strong> - The numnber of historic backups
+for AWS to store.</p>
+</li><li>
+<p><strong>instance_type</strong> - The RDS instance type to use.</p>
+</li><li>
+<p><strong>security_groups</strong> - This list of security groups that manage
+network traffic to this instance</p>
+</li><li>
+<p><strong>multi_az</strong> - a boolean flag controlling whether this RDS
+instance is multi-az or single az.</p>
+</li><li>
+<p><strong>storage_type</strong> - The type of disk storage media to use on
+this RDS instance.</p>
+</li><li>
+<p><strong>storage_size</strong> - The size of disk space available on the RDS
+instance.</p>
+</li><li>
+<p><strong>license_model</strong> - The licensing model to use. The default
+model varies by engine type.</p>
+</li><li>
+<p><strong>public_access</strong> - Does the RDS instance need a public IP
+address?</p>
+</li><li>
+<p><strong>iops</strong> - With the SSD storage type, you can request higher
+IO bandwidth for the RDS instance.</p>
+</li></ul>
+
+<p>Valid engine settings are:</p>
+<ul><li>
+<p>mysql</p>
+</li><li>
+<p>mariadb</p>
+</li><li>
+<p>oracle-se1</p>
+</li><li>
+<p>oracle-se2</p>
+</li><li>
+<p>oracle-se</p>
+</li><li>
+<p>oracle-ee</p>
+</li><li>
+<p>sqlserver-ee</p>
+</li><li>
+<p>sqlserver-se</p>
+</li><li>
+<p>sqlserver-ex</p>
+</li><li>
+<p>sqlserver-web</p>
+</li><li>
+<p>postgres</p>
+</li><li>
+<p>aurora</p>
+</li></ul>
+
+<p>Valid license models are:</p>
+<ul><li>
+<p>license-included</p>
+</li><li>
+<p>bring-your-own-license</p>
+</li><li>
+<p>general-public-license</p>
+</li></ul>
+
+<h4 id="label-rds_subnet_group">rds_subnet_group</h4>
+
+<p>The rds_subnet component manages the lifecycle of the AWS RDS subnet
+component. Its principle role is to define which subnets may be used to
+host the RDS instance(s), taking into account that multi-az RDS instances
+will have multiple servers running in seperate availability zones to
+improve resiliance.</p>
+<ul><li>
+<p><strong>region</strong> - The AWS region that hosts the RDS subnet group.</p>
+</li><li>
+<p><strong>subnets</strong> - The array of subnet names that are part of this
+subnet group.</p>
+</li><li>
+<p><strong>description</strong> - The description of the RDS subnet group.</p>
+</li></ul>
+
+<h4 id="label-s3_bucket">s3_bucket</h4>
+
+<p>The s3_bucket component manages the lifecycle and properties of an AWS S3
+bucket.</p>
+<ul><li>
+<p><strong>region</strong> - The AWS region that hosts the S3 bucket.</p>
+</li><li>
+<p><strong>policy</strong> - The array of S3 bucket access policy statements.</p>
+</li><li>
+<p><strong>grants</strong> - The array of S3 bucket access grants.</p>
+</li><li>
+<p><strong>cors</strong> - The permisions for web browser scripted access to
+public S3 components within this bucket.</p>
+</li></ul>
+
+<h4 id="label-s3_key">s3_key</h4>
+
+<p>The s3_key component manages the lifecycle and properties of an AWS S3 key.</p>
+<ul><li>
+<p><strong>name</strong> - An S3 path specifying the bucket and full path for
+this S3 key.</p>
+</li><li>
+<p><strong>content</strong> - The content of the S3 key.</p>
+</li><li>
+<p><strong>grants</strong> - Grant AWS account / public permisions for a
+specific key.</p>
+</li><li>
+<p><strong>owner</strong> - a string of the format <a
+href="name">acc|</a>|[aws id] to create the key as owned by a different AWS
+account.</p>
+</li><li>
+<p><strong>metadata</strong> - A JSON hash containing key/value pairs for the
+metadata associated with this s3 key.</p>
+</li></ul>
+
+<h4 id="label-iam_role">iam_role</h4>
+
+<p>The iam_role component manages the lifecycle of AWS IAM roles, and which
+IAM policies are associated with the role.</p>
+<ul><li>
+<p><strong>policies</strong> - The list of AWS IAM policies that are granted
+by this IAM role.</p>
+</li><li>
+<p><strong>tust</strong> - The list of AWS services that can assume this role.</p>
+</li></ul>
+
+<h4 id="label-iam_policy">iam_policy</h4>
+
+<p>The iam_policy component manages the lifecycle of the IAM policy, and the
+AWS policy permisions granted / denied by the policy.</p>
+<ul><li>
+<p><strong>policy</strong> - A list of policy statements that form the set of
+permisions associated with this IAM policy.</p>
+</li></ul>
+
+<h3 id="label-Composite+Component+Reference">Composite Component Reference</h3>
+
+<p>These puppet components coordinate multiple AWS components to provide a
+higher level block of functionality.</p>
+
+<h4 id="label-environment">environment</h4>
+
+<p>The environment component manages a single VPC running multiple autoscaling
+groups and databases. To ensure the correct provision of security group
+rules and load balancers, the configuration includes details about the
+services and their network connectivity.</p>
+<ul><li>
+<p><strong>region</strong> - The AWS region used to host this environment.</p>
+</li><li>
+<p><strong>vpc</strong> - By default, the VPC name is the title of the
+environment resource, but you can set it here if you need to.</p>
+</li><li>
+<p><strong>network</strong> - The network property is a hash containing the
+following keys</p>
+<ul><li>
+<p><strong>cidr</strong> - the IP address range to assign to the VPC.</p>
+</li><li>
+<p><strong>availability</strong> - The list of AWS availability zones to use
+within this environment.</p>
+</li><li>
+<p><strong>routes</strong> - Any nonstandard routes that need adding in
+“cidr|type|target-name” format</p>
+</li><li>
+<p><strong>dns_hostnames</strong> - Allow DNS to resolve the VPC hostnames to
+IP addresses.</p>
+</li><li>
+<p><strong>dns_resolution</strong> - Allow EC2 instances within the VPC to
+resolve internet hostnames.</p>
+</li></ul>
+</li><li>
+<p><strong>zones</strong> - A hashmap that may contain the following keys
+<strong>public</strong>, <strong>nat</strong> and <strong>private</strong>.
+Each key contains a hash map providing non standard settings for each zone,
+enabling puppet to generate the subnets and appropriate routing tables for
+the environment. The keys that may be defined within a zone are:</p>
+<ul><li>
+<p><strong>ipaddr_weighting</strong> - The higher the relative weighting, the
+more IP addresses will be assigned to this zone&#39;s subnets.</p>
+</li><li>
+<p><strong>format</strong> - The format string that is used to generate names
+for subnets in this zone.</p>
+</li><li>
+<p><strong>routes</strong> - If this property is defnied, these routes will be
+used as the basis for the route table for this zones subnets instead of the
+routes defined in the network section.</p>
+</li><li>
+<p><strong>extra_routes</strong> If this property is defined, these routes are
+added as extra routes to this zones route table.</p>
+</li></ul>
+</li><li>
+<p><strong>server_roles</strong> - A hashmap that define the servers and their
+roles within this environment. This is a combination of the EC2 instance
+properties that define the base image and instance size, the properties
+that control the scaling settings for this role and lastly, the list of
+services that are to run on this role.</p>
+</li></ul>
+
+<p>—</p>
+
+<h3 id="label-Examples">Examples</h3>
+
+<p>The simplest viable manifest is just:</p>
+
+<pre class="code ruby"><code class="ruby">require doatools
+doatools::environment { &#39;demo_env&#39;: 
+}
+</code></pre>
+
+<p>This will ensure that a VPC named demo_env is present, with 3 public
+subnets, and the default route table is also called demo_env.</p>
+
+<pre class="code ruby"><code class="ruby">require doatools
+doatools::environment { &#39;demo_env&#39;: 
+  region  =&gt; &quot;us-west-2&quot;        # Create the VPC in the us-west-2 region
+  network =&gt; {
+    cidr =&gt; &quot;192.168.1.0/24&quot;   # Any valid CIDR range
+  }
+}
+</code></pre>
+
+<p>This more complex example creates a single VPC with 6 subnets.</p>
+
+<pre class="code ruby"><code class="ruby">require doatools
+doatools::environment { &#39;demo_env&#39;: 
+  region  =&gt; &quot;us-east-1&quot;,
+  network =&gt; {
+    cidr =&gt; &quot;192.168.128.0/22&quot;,
+    availability =&gt; [ &#39;a&#39;, &#39;b&#39;, &#39;c&#39;],
+  },
+  zones   =&gt; {
+    &#39;public&#39; =&gt; {
+      format =&gt; &#39;%{vpc}_pub%{az}&#39;
+    },
+    &#39;private&#39; =&gt; {
+      format =&gt; &#39;%{vpc}_pri%{az}&#39;
+    }
+  },
+  tags =&gt; { role =&gt; &quot;demonstration&quot; },
+}
+</code></pre>
+
+<p>An example that creates servers, load balancers and a database would look
+more like this:</p>
+
+<pre class="code ruby"><code class="ruby">node &#39;default&#39; {
+  require doatools;
+
+  doatools::environment { &#39;demo1&#39;:
+    ensure =&gt; present,
+    region =&gt; us-east-1,
+    network =&gt; {
+      cidr =&gt; &#39;192.168.0.0/22&#39;,
+      availability =&gt; [ &#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;e&#39; ]
+    },
+    zones =&gt; {
+      &#39;public&#39; =&gt; { },
+    },
+    server_roles =&gt; {
+      &quot;role_1&quot; =&gt; {
+        &quot;scaling&quot; =&gt; {
+          &quot;min&quot; =&gt; 0,
+          &quot;max&quot; =&gt; 2,
+          &quot;desired&quot; =&gt; 1,
+        },
+        &quot;ec2&quot; =&gt; {
+          &quot;instance_type&quot; =&gt; &quot;t2.medium&quot;,
+          &quot;image&quot; =&gt; &quot;ami-7abd0209&quot;,
+        },
+        &quot;services&quot; =&gt; [
+          &quot;service_1&quot;,
+          &quot;service_2&quot;,
+          &quot;splunk_forwarder&quot;,
+        ],
+        &quot;zone&quot; =&gt; &quot;public&quot;,
+        &quot;userdata&quot; =&gt; &#39;#!/bin/bash
+
+role=&quot;role_1&quot;
+script_version=&quot;0.0.0.1&quot;
+
+curl https://s3-us-east-1.amazonaws.com/bucket/ec2_setup/ec2_setup-${script_version}.sh  | /bin/bash -s ${role}
+&#39;
+      }
+    },
+    services =&gt; {
+      &quot;service_1&quot; =&gt; {
+        &quot;loadbalanced_ports&quot; =&gt; [
+          &quot;https|443|arn:aws:acm:eu-west-1:017642142348:certificate/920264c9-98c8-4261-ac5c-73eb5c5f393f=&gt;80&quot;,
+        ],
+        &quot;network&quot; =&gt; {
+          &quot;in&quot; =&gt; [
+            &quot;tcp|80|rss|elb&quot;,
+          ],
+          &quot;out&quot; =&gt; [
+            &quot;tcp|80|cidr|0.0.0.0/0&quot;,
+            &quot;tcp|443|cidr|0.0.0.0/0&quot;,
+            &quot;tcp|3306|rds|rds-db&quot;,
+          ]
+        },
+        &quot;policies&quot; =&gt; [
+          &quot;access_s3_bucket&quot;,
+        ],
+      },
+      &quot;splunk_forwarder&quot; =&gt; {
+        &quot;network&quot; =&gt; {
+          &quot;out&quot; =&gt; [
+            &quot;tcp|9997|cidr|192.168.254.254/32&quot;
+          ]
+        },
+      },
+      &quot;service_2&quot; =&gt; {
+        &quot;network&quot; =&gt; {
+        },
+        &quot;policies&quot; =&gt; [
+        ],
+      }
+    },
+    db_servers =&gt; {
+      &quot;rds-db&quot; =&gt; {
+        master_password =&gt; &#39;mydbpassword&#39;
+      }
+    },
+    s3 =&gt; {
+      &#39;bucket&#39; =&gt; {
+        &#39;policy&#39; =&gt; [],
+        &#39;grants&#39; =&gt; [
+          &quot;grp|public|READ&quot;
+        ],
+        &#39;cors&#39; =&gt; [
+          {
+            &quot;verbs&quot; =&gt; [&quot;get&quot;],
+            &quot;origins&quot;=&gt;[
+              &quot;https://demo1.oursite.com&quot;
+            ]
+          }
+        ],
+        &#39;contents&#39; =&gt; [
+        ]  
+      }
+    },
+    tags =&gt; {
+    },
+    policies =&gt; {
+      &quot;access_s3_bucket&quot; =&gt;[
+        {
+            &quot;Effect&quot; =&gt; &quot;Allow&quot;,
+            &quot;Action&quot; =&gt; [
+                &quot;s3:Get*&quot;,
+                &quot;s3:ListBucket&quot;,
+                &quot;s3:Put*&quot;,
+                &quot;s3:DeleteObject&quot;
+            ],
+            &quot;Resource&quot; =&gt; [
+                &quot;arn:aws:s3:::bucket/*&quot;,
+                &quot;arn:aws:s3:::bucket&quot;
+            ]
+        }
+      ],
+    }    
+  }
+}
+</code></pre>
+</div></div>
+
+      <div id="footer">
+  Generated on Mon Apr 24 11:16:21 2017 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.8 (ruby-2.1.9).
+</div>
+
+    </div>
+  </body>
+</html>
