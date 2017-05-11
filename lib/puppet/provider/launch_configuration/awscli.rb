@@ -145,6 +145,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
         ]
       end
 
+      args << [ '--associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_true(value(:public_ip))
+      args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
+
 
       #  Ensure we have a flat array...
       args.flatten

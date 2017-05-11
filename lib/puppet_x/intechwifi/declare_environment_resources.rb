@@ -317,7 +317,7 @@ module PuppetX
                           serverrole['ec2']
                       ).merge(
                           serverrole.keep_if{|key, value|
-                            ["userdata"].include?(key)
+                            ["ssh_key_name", "userdata"].include?(key)
                           }
                       ).merge(
                            # Forced values
@@ -354,10 +354,13 @@ module PuppetX
                           #'internet_gateway' => nil,
                           #TODO: We need to set the nat gateway
                           #'nat_gateway' => nil,
-                          'load_balancer' => LoadBalancerHelper.GenerateLoadBalancerName(name, role_name),
                       }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
                           AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
-                      ))
+                      )).merge(
+                          scratch[:loadbalancer_role_service_hash].has_key?(role_name) ? {
+                              'load_balancer' => LoadBalancerHelper.GenerateLoadBalancerName(name, role_name)
+                          } : {}
+                      )
                   }
                 }.reduce({}){|hash, kv| hash.merge(kv)}
 

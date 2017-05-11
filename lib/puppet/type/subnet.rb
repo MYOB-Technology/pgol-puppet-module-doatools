@@ -20,20 +20,20 @@ Puppet::Type.newtype(:subnet) do
   ensurable
 
   autorequire(:vpc) do
-    if self[:ensure] == :present
+    if self[:ensure] == :present  or self[:ensure] == 'present'
       self[:vpc]
     end
   end
 
   autorequire(:route_table) do
-    if self[:ensure] == :present
+    if self[:ensure] == :present  or self[:ensure] == 'present'
       self[:route_table]
     end
   end
 
 
   autobefore(:vpc) do
-    if self[:ensure] == :absent
+    if self[:ensure] == :absent or self[:ensure] == 'absent'
       self[:vpc]
     end
   end
