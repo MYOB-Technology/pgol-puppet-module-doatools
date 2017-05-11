@@ -838,7 +838,6 @@ describe 'define_environment_resources' do
                   "demopublicb",
                   "demopublicc",
               ],
-              "load_balancer"=>'demo-testrole',
               "minimum_instances"=>0,
               "maximum_instances"=>2,
               "desired_instances"=>2,

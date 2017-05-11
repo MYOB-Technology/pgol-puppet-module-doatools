@@ -49,5 +49,15 @@
 #      servers => [ 'pool.ntp.org', 'ntp.local.company.com' ],
 #    }
 #
-class doatools {
+class doatools (
+  $environment_list = [],
+  $status = enable
+) {
+  debug("doatools is initialised with status=${status} and environment_list=${environment_list}")
+  $environment_list.each |$env| {
+    doatools::environment { $env:
+      ensure => $status,
+      region => lookup('doatools::environment::region', Data, 'first', 'us-east-1')
+    }
+  }
 }

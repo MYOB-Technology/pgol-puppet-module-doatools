@@ -59,7 +59,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
     awscli(args.flatten)
 
-    add_loadbalancer(resource[:region], resource[:name], resource[:load_balancer]) if resource.has_key?(load_balancer)
+    add_loadbalancer(resource[:region], resource[:name], resource[:load_balancer]) unless resource[:load_balancer].nil?
 
     @property_hash[:region] = resource[:region]
     @property_hash[:desired_instances] = resource[:desired_instances]

@@ -18,16 +18,17 @@ define doatools::environment (
   $ensure = present,
   $region = 'us-east-1',
   $vpc = $name,
+  $env = $name,
 
-  $network = {
+  $network = lookup('doatools::environment::network', Data, 'first', {
     cidr => '192.168.0.0/24',              #  The CIDR for the VPC
     availability => [ 'a', 'b', 'c'],      #  The availability zones to use
     routes => [ ],                         #  Any non standard routes in format "{cidr}|{target type}|{target-name}"
     dns_hostnames => false,                #  Can be set to true, to enable DNS hostnames
     dns_resolution => true,                #  Can be set to false, to disable DNS resolution
-  },
+  }),
 
-  $zones = {
+  $zones = lookup('doatools::environment::zones', Data, 'first', {
     # We can have up to 3 zones defined. Zones define the routing to the outside world.
     # Isolation between servers is handled by security groups and not zones.
 
@@ -63,15 +64,15 @@ define doatools::environment (
     # This grants extra routes to this zones routing table in addition to the network routes.
     # extra_routes => [ ],
     #},
-  },
+  }),
 
-  $server_roles = {
+  $server_roles = lookup('doatools::environment::server_roles', Data, 'deep', {
 
-  },
+  }),
 
-  $services = {
+  $services = lookup('doatools::environment::services', Data, 'deep', {
 
-  },
+  }),
 
   $db_servers = {
 
@@ -85,9 +86,9 @@ define doatools::environment (
 
   },
 
-  $policies = {
+  $policies = lookup('doatools::environment::policies', Data, 'deep', {
 
-  }
+  })
 
 
 
@@ -97,6 +98,7 @@ define doatools::environment (
 #  $roles=lookup('environment::roles', Data, 'first', {}),
 #  $ensure=lookup('environment::ensure', Data, 'first', present)
 )  {
+  info("declaring environment ${env} in region ${region}.")
 
   define_environment_resources(
     $name,
