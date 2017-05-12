@@ -66,6 +66,7 @@ Puppet::Type.type(:iam_instance_profile).provide(:awscli) do
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     debug(e)
+    debug(e.cause) if e.cause
     false
 
   end
