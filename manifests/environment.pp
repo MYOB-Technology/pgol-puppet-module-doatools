@@ -74,9 +74,9 @@ define doatools::environment (
 
   }),
 
-  $db_servers = {
+  $db_servers = lookup('doatools::environment::db_servers', Data, 'deep', {
 
-  },
+  }),
 
   $s3 = {
 
