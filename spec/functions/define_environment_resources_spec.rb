@@ -818,6 +818,27 @@ describe 'define_environment_resources' do
       }
   }
 
+  launch_configuration3 = {
+      "resource_type" => "launch_configuration",
+      "resources" => {
+          "demo_testrole" => {
+              "instance_type"=>"t2.micro",
+              "image"=>"ami-6d1c2007",
+              "ensure"=>"present",
+              "region"=>"us-east-1",
+              "security_groups"=>[
+                  "demo_my_srv",
+                  "demo_my_other_srv"
+              ],
+              "iam_instance_profile"=>[
+                  "demo_testrole"
+              ],
+              "public_ip"=> :enabled
+          }
+      }
+  }
+
+
 
   autoscaling_group1 = {
       "resource_type" => "autoscaling_group",
@@ -1314,6 +1335,95 @@ describe 'define_environment_resources' do
         ])
     }
   end
+
+  context 'creating an environment with a public zone, a role and some more complex networking rules' do
+    it { is_expected.to run.with_params(
+        'demo', 'present', 'us-east-1',
+        {
+            'cidr' => "192.168.0.0/24",
+            'availability' => [ "a", "b", "c"]
+        },
+        {
+            'public' => { }
+        },
+        {
+            "testrole" => {
+                "ec2" => {
+                    "instance_type" => 't2.micro',
+                    "image" => 'ami-6d1c2007',
+                },
+                "zone" => 'public',
+                "services" => [
+                    "my_srv",
+                    "my_other_srv"
+                ],
+            }
+        },
+        {
+            "my_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                        "tcp|80|rss|elb"
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                        "tcp|3306|rds|testdb"
+                    ]
+                }
+            },
+            "my_other_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                        "tcp|8000|service|my_other_srv"
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                        "tcp|8000|service|my_other_srv"
+                    ]
+                }
+            }
+        },
+        {
+            'testdb' => {
+                'zone' => 'public',
+                'master_password' => 'fred'
+            },
+        },
+        {},
+        {
+            'Environment' => 'demo'
+        },
+        {
+
+        }
+    ).and_return(
+        [
+            vpc1,
+            routetable1,
+            subnets1,
+            security_group3,
+            security_group_rules3,
+            internet_gateway1,
+            nat_gateway1,
+            route_table_routes1,
+            load_balancers1,
+            rds_subnet_group6,
+            rds3,
+            launch_configuration3,
+            autoscaling_group2,
+            iam_role2,
+            iam_policies_1,
+            iam_instance_profile2,
+            s3_bucket1,
+            s3_key1
+        ])
+    }
+  end
+
 
 
 end
