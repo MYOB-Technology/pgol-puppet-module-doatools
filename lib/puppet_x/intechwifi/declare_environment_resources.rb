@@ -461,11 +461,15 @@ module PuppetX
         end
 
         def self.GenerateLoadBalancerName(name, role_name)
-          "#{name}-#{role_name}"
+          TranscodeLoadBalancerName("#{name}-#{role_name}")
         end
 
         def self.GenerateLoadBalancerTargetName(name, role_name)
-          "#{name}-#{role_name}"
+          TranscodeLoadBalancerName("#{name}-#{role_name}")
+        end
+
+        def self.TranscodeLoadBalancerName(name)
+          name.map{|ch| ['_'].include?(ch) ? '-' : ch }
         end
 
         def self.DoesServiceHaveLoadbalancedPorts(services, service_name)
