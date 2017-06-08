@@ -469,7 +469,7 @@ module PuppetX
         end
 
         def self.TranscodeLoadBalancerName(name)
-          name.map{|ch| ['_'].include?(ch) ? '-' : ch }
+          name.chars.map{|ch| ['_'].include?(ch) ? '-' : ch }.join
         end
 
         def self.DoesServiceHaveLoadbalancedPorts(services, service_name)
