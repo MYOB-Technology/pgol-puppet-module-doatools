@@ -41,7 +41,6 @@ Puppet::Type.newtype(:vpc) do
       region        => 'eu-west-1',
       cidr          => '192.168.182.0/23',
       dns_hostnames => enabled,
-      is_default    => enabled,
       tags          => {
         owner => 'Marketing',
         role  => 'Keeping the marketing department infrastructure seperate from the developers systems'
@@ -55,7 +54,6 @@ Puppet::Type.newtype(:vpc) do
       cidr   => '10.0.1.0/26',
       dns_hostnames => enabled,
       dns_resolution => enabled,
-      is_default => false,
       tags => {
         roles => [
           'authenticator',
