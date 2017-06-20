@@ -23,7 +23,6 @@ node 'default' {
     cidr           => '192.168.74.0/23',
     dns_hostnames  => true,
     dns_resolution => true,
-    is_default     => false,
     tags           => {
       'Environment' => 'doatools by tags',
       'Demo'        => 'test_string',

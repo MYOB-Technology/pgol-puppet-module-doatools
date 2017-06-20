@@ -33,6 +33,7 @@ Puppet::Type.type(:subnet).provide(:awscli) do
       fail("We cannot created this subnet, unless the vpc=>#{resource[:vpc]} already exists.")
     end
 
+    print("region=#{resource[:region]}\n")
 
     subnet = JSON.parse(awscli('ec2', 'create-subnet', '--region', resource[:region], '--availability-zone', PuppetX::IntechWIFI::Constants.AvailabilityZone(resource[:region], resource[:availability_zone]), '--vpc-id', @property_hash[:vpcid], '--cidr-block', resource[:cidr]))
     @property_hash[:subnetid] = subnet["Subnet"]["SubnetId"]
@@ -42,7 +43,7 @@ Puppet::Type.type(:subnet).provide(:awscli) do
 
     awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:subnetid], '--tags', "Key=Name,Value=#{resource[:name]}")
 
-    @property_hash[:tags] = resource[:tags]
+    @property_hash[:tags] = resource[:tags].nil? ? {} : resource[:tags]
     PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:subnetid], {}, @property_hash[:tags]){| *arg | awscli(*arg)}
 
     if resource[:public_ip] then
