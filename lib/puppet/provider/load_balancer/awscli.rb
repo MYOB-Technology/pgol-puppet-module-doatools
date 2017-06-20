@@ -199,7 +199,16 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--unhealthy-threshold-count', source["failed"].nil? ? 3 :source["failed"]
     ]
 
-    awscli(args.flatten)
+    JSON.parse(awscli(args.flatten))['TargetGroups'].each{ | tg|
+      awscli(
+          [
+              'elbv2', 'modify-target-group-attributes',
+              '--region', region,
+              '--target-group-arn', tg['TargetGroupArn'],
+              '--attributes', 'Key=deregistration_delay.timeout_seconds,Value=30'
+          ]
+      )
+    }
 
   end
 

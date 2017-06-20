@@ -23,11 +23,8 @@
 # Parameters
 # ----------
 #
-# Document parameters here.
-#
-# * `sample parameter`
-# Explanation of what this parameter affects and what it defaults to.
-# e.g. "Specify one or more upstream ntp servers as an array."
+# @param environment_list
+# @param status
 #
 # Variables
 # ----------
@@ -46,7 +43,7 @@
 #
 # @example
 #    class { 'doatools':
-#      servers => [ 'pool.ntp.org', 'ntp.local.company.com' ],
+#      environment_list => [ 'dev', 'qa', 'prod' ]
 #    }
 #
 class doatools (
