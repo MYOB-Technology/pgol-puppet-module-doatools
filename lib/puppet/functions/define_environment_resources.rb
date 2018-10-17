@@ -13,6 +13,7 @@ Puppet::Functions.create_function('define_environment_resources') do
     db_servers,
     s3,
     tags,
+    tags_vpc,
     policies
   )
 
@@ -27,6 +28,7 @@ Puppet::Functions.create_function('define_environment_resources') do
         db_servers,
         s3,
         tags,
+        tags_vpc,
         policies,
     )
 
