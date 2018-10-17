@@ -789,7 +789,6 @@ module PuppetX
           {
               'ipaddr_weighting' => 1,
               'format' => "%{vpc}%{zone}%{az}",
-              'ipaddr_weighting' => 1,
               'routes' => [],
               'extra_routes' => [],
           }
