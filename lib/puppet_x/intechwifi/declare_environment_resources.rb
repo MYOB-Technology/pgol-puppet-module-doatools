@@ -39,7 +39,7 @@ module PuppetX
 
         # Validation of inputs.
         puts(label_formats)
-        puts(type(label_formats))
+        puts(label_formats.class)
 
         # Generate
 
