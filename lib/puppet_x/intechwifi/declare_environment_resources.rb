@@ -38,9 +38,6 @@ module PuppetX
       )
 
         # Validation of inputs.
-        puts(label_formats)
-        puts(label_formats.class)
-
         # Generate
 
         # Our scratch pad for storing and passing all our dynamically generated data.
@@ -53,15 +50,20 @@ module PuppetX
         scratch[:tags_with_environment] = tags.merge({'Environment' => name})
         scratch[:label_subnet] = label_formats.has_key?('subnet') ? label_formats['subnet'] : '%{vpc}%{zone}%{az}'
 
-        puts("assigned this to scratch:")
+        puts("1 - assigned this to scratch:")
         puts(scratch[:label_subnet])
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
 
+        puts("2 - assigned this to scratch:")
+        puts(scratch[:label_subnet])
 
 
         scratch[:nat_list] = NatHelpers.CalculateNatDetails(name, network, zones, scratch)
         scratch[:route_table_data] = RouteTableHelpers.CalculateRouteTablesRequired(name, network, zones, scratch)
+
+        puts("3 - assigned this to scratch:")
+        puts(scratch[:label_subnet])
 
 
         # The array of rds_zones needed...
@@ -71,6 +73,9 @@ module PuppetX
         scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services)
         scratch[:loadbalancer_security_groups] = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
         scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
+
+        puts("4 - assigned this to scratch:")
+        puts(scratch[:label_subnet])
 
 
         #  This is the data structure that we need to return, defining all resource types and  their properties.
