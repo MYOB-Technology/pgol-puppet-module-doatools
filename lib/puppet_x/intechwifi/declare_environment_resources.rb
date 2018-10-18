@@ -800,7 +800,7 @@ module PuppetX
         end
 
         def self.GetDefaultZoneValue(value, scratch)
-          self.DefaltZoneValues.merge(scratch[:label_subnet])[value]
+          self.DefaltZoneValues.merge({'format' => scratch[:label_subnet] })[value]
         end
       end
 
