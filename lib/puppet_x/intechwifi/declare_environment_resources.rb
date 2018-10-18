@@ -842,20 +842,20 @@ module PuppetX
             when 'public'
               [
                   "0.0.0.0/0|igw|#{name}",
-                  ZoneHelpers.ZoneValue(zone, 'routes', network['routes'], scratch),
+                  ZoneHelpers.ZoneValue(zone, 'routes', scratch, network['routes']),
                   ZoneHelpers.ZoneValue(zone, 'extra_routes', scratch)
               ].flatten
 
             when 'nat'
               [
                   "0.0.0.0/0|nat|#{rt_data[:name]}",
-                  ZoneHelpers.ZoneValue(zone, 'routes', network['routes'], scaratch),
+                  ZoneHelpers.ZoneValue(zone, 'routes', scratch, network['routes']),
                   ZoneHelpers.ZoneValue(zone, 'extra_routes', scratch)
               ].flatten
 
             when 'private'
               [
-                  ZoneHelpers.ZoneValue(zone, 'routes', network['routes'], scratch),
+                  ZoneHelpers.ZoneValue(zone, 'routes', scratch, network['routes']),
                   ZoneHelpers.ZoneValue(zone, 'extra_routes', scratch)
               ].flatten
             else
