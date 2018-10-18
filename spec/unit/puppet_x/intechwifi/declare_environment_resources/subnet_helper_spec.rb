@@ -177,6 +177,37 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
       }
     }
 
+    let (:scratch2) {
+      {
+          :public_zone? => true,
+          :nat_zone? => true,
+          :private_zone? => false,
+          :nat_list =>[ '148.88.8.1', '148.88.8.2' ],
+          :subnet_data => [
+              { :zone=>"nat", :az=>"a", :cidr=>"192.168.0.0/26", :index=>0},
+              { :zone=>"nat", :az=>"b", :cidr=>"192.168.0.64/26", :index=>1},
+              { :zone=>"public", :az=>"a", :cidr=>"192.168.0.128/28", :index=>0},
+              { :zone=>"public", :az=>"b", :cidr=>"192.168.0.144/28", :index=>1},
+          ],
+          :route_table_data => [
+              {
+                  :name => 'demo',
+                  :zone => 'public',
+                  :az => nil
+              }, {
+                 :name => 'demonata',
+                 :zone => 'nat',
+                 :az => 'a'
+              }, {
+                 :name => 'demonatb',
+                 :zone => 'nat',
+                 :az => 'b'
+              }],
+          :label_subnet => '%{az}%{zone}%{vpc}'
+      }
+    }
+
+
     it 'validate subnets' do
       expect(subnet_helpers.GenerateSubnetResources('demo', 'ensure', 'us-east-1', network1, zones1, scratch1, { 'Environment' => "demo" }))
       .to eq({
@@ -223,6 +254,54 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
                      }
                  }
              })
+
+      expect(subnet_helpers.GenerateSubnetResources('demo', 'ensure', 'us-east-1', network1, zones1, scratch2, { 'Environment' => "demo" }))
+      .to eq({
+                 'resource_type' => "subnet",
+                 'resources' => {
+                     "anatdemo" => {
+                         :ensure => "ensure",
+                         :region => "us-east-1",
+                         :vpc => "demo",
+                         :availability_zone => "a",
+                         :cidr => "192.168.0.0/26",
+                         :tags => { 'Environment' => "demo" },
+                         :route_table => "demonata",
+                         :public_ip => false
+                     },
+                     "bnatdemo"=>{
+                         :ensure => "ensure",
+                         :region => "us-east-1",
+                         :vpc => "demo",
+                         :availability_zone => "b",
+                         :cidr => "192.168.0.64/26",
+                         :tags => { 'Environment' => "demo" },
+                         :route_table => "demonatb",
+                         :public_ip => false
+                     },
+                     "apublicdemo" => {
+                         :ensure => "ensure",
+                         :region => "us-east-1",
+                         :vpc => "demo",
+                         :availability_zone => "a",
+                         :cidr => "192.168.0.128/28",
+                         :tags => { 'Environment' => "demo" },
+                         :route_table => "demo",
+                         :public_ip => true
+                     }, "bpublicdemo" => {
+                         :ensure => "ensure",
+                         :region => "us-east-1",
+                         :vpc => "demo",
+                         :availability_zone => "b",
+                         :cidr => "192.168.0.144/28",
+                         :tags => { 'Environment' => "demo" },
+                         :route_table => "demo",
+                         :public_ip => true
+                     }
+                 }
+             })
+
+
     end
   end
 
