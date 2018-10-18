@@ -94,12 +94,9 @@ define doatools::environment (
 
   }),
 
-  #$label_formats = lookup('doatools::environment::label_formats', Hash, 'deep', {
-  #
-  #}),
-  Hash $label_formats = lookup('doatools::environment::label_formats')
+  $label_formats = lookup('doatools::environment::label_formats', Hash, 'deep', {
 
-
+  }),
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
 #  $network=lookup('environment::network', Data, 'first', { }),
