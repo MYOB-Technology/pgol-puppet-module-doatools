@@ -914,7 +914,7 @@ module PuppetX
               'resource_type' => "subnet",
               'resources' => scratch[:subnet_data].reduce({}) do |subnets, sn_data|
 
-                subnet_name = GenerateSubnetName(name, zones, sn_data[:zone], sn_data[:az], sn_data[:index])
+                subnet_name = GenerateSubnetName(name, zones, sn_data[:zone], sn_data[:az], sn_data[:index], scratch)
 
                 subnets.merge(
                     {
