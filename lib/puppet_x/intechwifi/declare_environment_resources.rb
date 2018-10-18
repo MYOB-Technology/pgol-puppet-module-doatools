@@ -55,8 +55,6 @@ module PuppetX
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
 
-        puts("2 - assigned this to scratch:")
-        puts(scratch[:label_subnet])
 
 
         scratch[:nat_list] = NatHelpers.CalculateNatDetails(name, network, zones, scratch)
