@@ -53,6 +53,8 @@ module PuppetX
         scratch[:tags_with_environment] = tags.merge({'Environment' => name})
         scratch[:label_subnet] = label_formats.has_key?('subnet') ? label_formats['subnet'] : '%{vpc}%{zone}%{az}'
 
+        puts("assigned this to scratch:")
+        puts(scratch[:label_subnet])
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
 
