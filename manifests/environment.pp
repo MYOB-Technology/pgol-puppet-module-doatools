@@ -121,7 +121,7 @@ define doatools::environment (
     $tags,
     $tags_vpc,
     $policies,
-    $label_formats,
+    $label_formats
   ).each |$r| {
     $rt = $r['resource_type']
     $rts = $r['resources'].keys
