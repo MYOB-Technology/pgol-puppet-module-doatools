@@ -876,7 +876,7 @@ module PuppetX
 
       module SubnetHelpers
         def self.CalculateSubnetData(name, network, zones, scratch)
-          Puppet::Functions.call_function('warning', "called CalculateSubnetData")
+          function_notice(["Called function CalculateSubnetData"])
           vpc_cidr_size = network['cidr'].split('/')[1].to_i
           total_weight = zones.keys.map{|x| ZoneHelpers.ZoneValue(zones[x],'ipaddr_weighting', scratch)}.reduce{|t, v| t = t + v}
           azs = network['availability'].length
