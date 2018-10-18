@@ -38,7 +38,7 @@ module PuppetX
       )
 
         # Validation of inputs.
-
+        puts(label_formats)
 
         # Generate
 
