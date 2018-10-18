@@ -94,9 +94,10 @@ define doatools::environment (
 
   }),
 
-  $label_formats = lookup('doatools::environment::label_formats', Hash, 'deep', {
-
-  }),
+  #$label_formats = lookup('doatools::environment::label_formats', Hash, 'deep', {
+  #
+  #}),
+  $label_formats = lookup('doatools::environment::label_formats')
 
 
 
