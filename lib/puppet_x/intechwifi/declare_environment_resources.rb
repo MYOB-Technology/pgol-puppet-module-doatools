@@ -897,7 +897,7 @@ module PuppetX
             network['availability'].map.with_index{ |az, i|
               cidr = base_cidr
               base_cidr += CidrMaths.IpAddrsInCidrBlock(x[1])
-              { :zone => x[0], :az => az, :cidr => CidrMaths.LongToCidr(cidr, x[1]), :index => i, :name => SubnetHelpers.GenerateSubnetName(name, zones, x[0], az, i) }
+              { :zone => x[0], :az => az, :cidr => CidrMaths.LongToCidr(cidr, x[1]), :index => i, :name => SubnetHelpers.GenerateSubnetName(name, zones, x[0], az, i, scratch) }
             }
           }.flatten
         end
