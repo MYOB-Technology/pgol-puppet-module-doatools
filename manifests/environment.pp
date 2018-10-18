@@ -104,7 +104,7 @@ define doatools::environment (
 #  $ensure=lookup('environment::ensure', Data, 'first', present)
 )  {
   info("declaring environment ${env} in region ${region}.")
-
+  notice("label formats looks like :  ${label_formats}")
   define_environment_resources(
     $name,
     $ensure,
