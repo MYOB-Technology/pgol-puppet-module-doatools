@@ -50,8 +50,6 @@ module PuppetX
         scratch[:tags_with_environment] = tags.merge({'Environment' => name})
         scratch[:label_subnet] = label_formats.has_key?('subnet') ? label_formats['subnet'] : '%{vpc}%{zone}%{az}'
 
-        puts("1 - assigned this to scratch:")
-        puts(scratch[:label_subnet])
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
 
@@ -59,9 +57,6 @@ module PuppetX
 
         scratch[:nat_list] = NatHelpers.CalculateNatDetails(name, network, zones, scratch)
         scratch[:route_table_data] = RouteTableHelpers.CalculateRouteTablesRequired(name, network, zones, scratch)
-
-        puts("3 - assigned this to scratch:")
-        puts(scratch[:label_subnet])
 
 
         # The array of rds_zones needed...
@@ -71,9 +66,6 @@ module PuppetX
         scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services)
         scratch[:loadbalancer_security_groups] = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
         scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
-
-        puts("4 - assigned this to scratch:")
-        puts(scratch[:label_subnet])
 
 
         #  This is the data structure that we need to return, defining all resource types and  their properties.
@@ -876,7 +868,6 @@ module PuppetX
 
       module SubnetHelpers
         def self.CalculateSubnetData(name, network, zones, scratch)
-          function_notice(["Called function CalculateSubnetData"])
           vpc_cidr_size = network['cidr'].split('/')[1].to_i
           total_weight = zones.keys.map{|x| ZoneHelpers.ZoneValue(zones[x],'ipaddr_weighting', scratch)}.reduce{|t, v| t = t + v}
           azs = network['availability'].length

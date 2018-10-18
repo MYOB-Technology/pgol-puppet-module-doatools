@@ -946,6 +946,10 @@ describe 'define_environment_resources' do
         },
         {
 
+        },
+        {
+        },
+        {
         }
     ).and_return(
         [
@@ -993,6 +997,10 @@ describe 'define_environment_resources' do
         },
         {
 
+        },
+        {
+        },
+        {
         }
     ).and_return(
         [
@@ -1045,6 +1053,10 @@ describe 'define_environment_resources' do
         },
         {
 
+        },
+        {
+        },
+        {
         }
     ).and_return(
         [
@@ -1099,6 +1111,10 @@ describe 'define_environment_resources' do
         },
         {
 
+        },
+        {
+        },
+        {
         }
     ).and_return(
         [
@@ -1155,6 +1171,10 @@ describe 'define_environment_resources' do
         },
         {
 
+        },
+        {
+        },
+        {
         }
     ).and_return(
         [
@@ -1222,6 +1242,11 @@ describe 'define_environment_resources' do
         },
         {
 
+        },
+        {
+
+        },
+        {
         }
     ).and_return(
         [
@@ -1311,6 +1336,11 @@ describe 'define_environment_resources' do
         },
         {
 
+        },
+        {
+
+        },
+        {
         }
     ).and_return(
         [
@@ -1396,6 +1426,12 @@ describe 'define_environment_resources' do
         {},
         {
             'Environment' => 'demo'
+        },
+        {
+
+        },
+        {
+
         },
         {
 

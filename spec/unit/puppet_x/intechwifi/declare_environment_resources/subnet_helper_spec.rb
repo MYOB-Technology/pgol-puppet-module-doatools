@@ -56,15 +56,21 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
       }
     }
 
+    let(:scratch) {
+      {
+        :label_subnet => '%{vpc}%{zone}%{az}'
+      }
+    }
+
     it 'should handle standard block sizes' do
 
-      expect(subnet_helpers.CalculateSubnetData("unittest", network1, zones1))
+      expect(subnet_helpers.CalculateSubnetData("unittest", network1, zones1, scratch))
           .to eq([
                      { :zone=>"public", :az=>"a", :cidr=>"192.168.0.0/25", :index=>0, :name=>"unittestpublica"},
                      { :zone=>"public", :az=>"b", :cidr=>"192.168.0.128/25", :index=>1, :name=>"unittestpublicb"},
                  ])
 
-      expect(subnet_helpers.CalculateSubnetData("unittest", network1, zones2))
+      expect(subnet_helpers.CalculateSubnetData("unittest", network1, zones2, scratch))
           .to eq([
                      { :zone=>"nat", :az=>"a", :cidr=>"192.168.0.0/26", :index=>0, :name=>"unittestnata"},
                      { :zone=>"nat", :az=>"b", :cidr=>"192.168.0.64/26", :index=>1, :name=>"unittestnatb"},
@@ -72,20 +78,20 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
                      { :zone=>"public", :az=>"b", :cidr=>"192.168.0.144/28", :index=>1, :name=>"unittestpublicb"},
                  ])
 
-      expect(subnet_helpers.CalculateSubnetData("unittest", network1, zones1))
+      expect(subnet_helpers.CalculateSubnetData("unittest", network1, zones1, scratch))
           .to eq([
                      { :zone=>"public", :az=>"a", :cidr=>"192.168.0.0/25", :index=>0, :name=>"unittestpublica"},
                      { :zone=>"public", :az=>"b", :cidr=>"192.168.0.128/25", :index=>1, :name=>"unittestpublicb"},
                  ])
 
-      expect(subnet_helpers.CalculateSubnetData("unittest", network2, zones1))
+      expect(subnet_helpers.CalculateSubnetData("unittest", network2, zones1, scratch))
           .to eq([
                      { :zone=>"public", :az=>"a", :cidr=>"192.168.0.0/22", :index=>0, :name=>"unittestpublica"},
                      { :zone=>"public", :az=>"b", :cidr=>"192.168.4.0/22", :index=>1, :name=>"unittestpublicb"},
                      { :zone=>"public", :az=>"c", :cidr=>"192.168.8.0/22", :index=>2, :name=>"unittestpublicc"},
                  ])
 
-      expect(subnet_helpers.CalculateSubnetData("unittest", network2, zones2))
+      expect(subnet_helpers.CalculateSubnetData("unittest", network2, zones2, scratch))
           .to eq([
                      { :zone=>"nat", :az=>"a", :cidr=>"192.168.0.0/22", :index=>0, :name=>"unittestnata"},
                      { :zone=>"nat", :az=>"b", :cidr=>"192.168.4.0/22", :index=>1, :name=>"unittestnatb"},
@@ -95,7 +101,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
                      { :zone=>"public", :az=>"c", :cidr=>"192.168.14.0/24", :index=>2, :name=>"unittestpublicc"},
                  ])
 
-      expect(subnet_helpers.CalculateSubnetData("unittest", network2, zones3))
+      expect(subnet_helpers.CalculateSubnetData("unittest", network2, zones3, scratch))
           .to eq([
                      { :zone=>"private", :az=>"a", :cidr=>"192.168.0.0/23", :index=>0, :name=>"unittestprivatea"},
                      { :zone=>"private", :az=>"b", :cidr=>"192.168.2.0/23", :index=>1, :name=>"unittestprivateb"},
@@ -114,7 +120,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
 
     it 'should reject layouts where the subnet cidrs become too small' do
       expect {
-        subnet_helpers.CalculateSubnetData("unittest", network1, zones3)
+        subnet_helpers.CalculateSubnetData("unittest", network1, zones3, scratch)
       }.to raise_exception(PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths::CidrSizeTooSmallForSubnet)
 
 
@@ -166,7 +172,8 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
                  :name => 'demonatb',
                  :zone => 'nat',
                  :az => 'b'
-              }]
+              }],
+          :label_subnet => '%{vpc}%{zone}%{az}'
       }
     }
 
