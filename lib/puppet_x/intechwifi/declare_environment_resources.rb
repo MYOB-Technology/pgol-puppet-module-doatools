@@ -901,6 +901,9 @@ module PuppetX
               :az  => az,
               :index => index,
               :zone => zone,
+              :VPC => name.upcase,
+              :AZ  => az.upcase,
+              :ZONE => zone.upcase,
           })
         end
 
