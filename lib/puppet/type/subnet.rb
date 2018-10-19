@@ -55,6 +55,18 @@ Puppet::Type.newtype(:subnet) do
 
   end
 
+  newparam(:cidr) do
+    defaultto '10.0.0.0/8'
+    validate do |value|
+      #  Its not worth doing a lot of validation as AWS will reject invalid strings.
+
+      #  Reject any invalid characters
+      fail("Invalid CIDR #{value}") unless value =~ /^[0-9\.\/]+$/
+
+    end
+  end
+
+
   #  read only properties...
   newproperty(:region) do
     desc <<-DESC
@@ -74,17 +86,6 @@ Puppet::Type.newtype(:subnet) do
     defaultto 'a'
     validate do |value|
       fail("Invalid availability zone #{value}") unless PuppetX::IntechWIFI::Constants.AvailabilityZones.include? value
-    end
-  end
-
-  newproperty(:cidr) do
-    defaultto '10.0.0.0/8'
-    validate do |value|
-      #  Its not worth doing a lot of validation as AWS will reject invalid strings.
-
-      #  Reject any invalid characters
-      fail("Invalid CIDR #{value}") unless value =~ /^[0-9\.\/]+$/
-
     end
   end
 
