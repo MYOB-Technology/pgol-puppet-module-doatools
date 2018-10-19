@@ -49,9 +49,7 @@ module PuppetX
         scratch[:private_zone?] = zones.has_key?('private')
         scratch[:tags_with_environment] = tags.merge({'Environment' => name})
         scratch[:label_subnet] = label_formats.has_key?('subnet') ? label_formats['subnet'] : '%{vpc}%{zone}%{az}'
-
-        puts('label_subnet is:')
-        puts(scratch[:label_subnet])
+        scratch[:label_zone_literals] = label_formats.has_key?('zone_literals') ? label_formats['zone_literals'] : { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -895,15 +893,20 @@ module PuppetX
           }.flatten
         end
 
+        def self.ZoneLiteral(zone, scratch)
+            scratch[:label_zone_literals].has_key?(zone) ? scratch[:label_zone_literals][zone] : zone
+        end
+
         def self.GenerateSubnetName(name, zones, zone, az, index, scratch)
+          zone_literal = SubnetHelpers.ZoneLiteral(zone, scratch)
           sprintf(ZoneHelpers.ZoneValue(zones[zone], 'format', scratch), {
               :vpc => name,
               :az  => az,
               :index => index,
-              :zone => zone,
+              :zone => zone_literal,
               :VPC => name.upcase,
               :AZ  => az.upcase,
-              :ZONE => zone.upcase,
+              :ZONE => zone_literal.upcase,
           })
         end
 
