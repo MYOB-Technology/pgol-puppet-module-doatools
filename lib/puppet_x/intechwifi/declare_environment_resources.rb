@@ -907,6 +907,9 @@ module PuppetX
               :VPC => name.upcase,
               :AZ  => az.upcase,
               :ZONE => zone_literal.upcase,
+              :Vpc => name.capitalize,
+              :Az  => az.capitalize,
+              :Zone => zone_literal.capitalize,
           })
         end
 
