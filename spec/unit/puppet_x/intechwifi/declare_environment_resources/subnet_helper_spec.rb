@@ -59,6 +59,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
     let(:scratch) {
       {
         :label_subnet => '%{vpc}%{zone}%{az}',
+        :label_routetable => '%{vpc}%{zone}',
         :label_zone_literals => { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
       }
     }
@@ -175,6 +176,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
                  :az => 'b'
               }],
           :label_subnet => '%{vpc}%{zone}%{az}',
+          :label_routetable => '%{vpc}%{zone}',
           :label_zone_literals => { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
       }
     }
@@ -206,6 +208,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
                  :az => 'b'
               }],
           :label_subnet => '%{az}%{zone}%{vpc}',
+          :label_routetable => '%{vpc}%{zone}',
           :label_zone_literals => { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
       }
     }

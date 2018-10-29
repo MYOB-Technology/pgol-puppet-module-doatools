@@ -63,7 +63,9 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
         :nat_zone? => false,
         :private_zone? => false,
         :nat_list =>[],
-        :label_subnet => '%{vpc}%{zone}%{az}'
+        :label_subnet => '%{vpc}%{zone}%{az}',
+        :label_routetable => '%{vpc}%{zone}%{az}',
+        :label_zone_literals => { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
     }
   }
 
@@ -74,7 +76,9 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
         :nat_zone? => true,
         :private_zone? => false,
         :nat_list =>[ '148.88.8.1' ],
-        :label_subnet => '%{vpc}%{zone}%{az}'
+        :label_subnet => '%{vpc}%{zone}%{az}',
+        :label_routetable => '%{vpc}%{zone}%{az}',
+        :label_zone_literals => { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
     }
   }
 
@@ -88,7 +92,9 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
             '148.88.8.2',
             '148.88.8.3',
         ],
-        :label_subnet => '%{vpc}%{zone}%{az}'
+        :label_subnet => '%{vpc}%{zone}%{az}',
+        :label_routetable => '%{vpc}%{zone}%{az}',
+        :label_zone_literals => { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
     }
   }
 
@@ -100,13 +106,13 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
     it 'for a public only network, there should only be one route table' do
       expect(helpers.CalculateRouteTablesRequired('demo', network1, zones1, scratch1))
           .to eq([{
-                      :name => 'demo',
+                      :name => 'demopublicall',
                       :zone => 'public',
                       :az => nil
                   }])
       expect(helpers.CalculateRouteTablesRequired('demo', network2, zones1, scratch1))
           .to eq([{
-                      :name => 'demo',
+                      :name => 'demopublicall',
                       :zone => 'public',
                       :az => nil
                   }])
@@ -115,7 +121,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
     it 'for a public and nat network, we should have route tables for the nat networks' do
       expect(helpers.CalculateRouteTablesRequired('demo', network1, zones2, scratch2))
           .to eq([{
-                      :name => 'demo',
+                      :name => 'demopublicall',
                       :zone => 'public',
                       :az => nil
                   },
@@ -126,7 +132,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
                   }])
       expect(helpers.CalculateRouteTablesRequired('demo', network2, zones3, scratch3))
           .to eq([{
-                      :name => 'demo',
+                      :name => 'demopublicall',
                       :zone => 'public',
                       :az => nil
                   },
@@ -146,7 +152,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
                       :az => 'c'
                   },
                   {
-                      :name => 'demoprivate',
+                      :name => 'demoprivateall',
                       :zone => 'private',
                       :az => nil
                   }])

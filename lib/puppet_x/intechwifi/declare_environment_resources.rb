@@ -831,46 +831,46 @@ module PuppetX
 
         def self.GetDefaultZoneValue(value, scratch)
           self.DefaultZoneValues.merge({
-            'format_subnet' => scratch[:label_subnet]
+            'format_subnet' => scratch[:label_subnet],
+            'format_routetable' => scratch[:label_routetable]
           })[value]
         end
       end
 
       module RouteTableHelpers
+        def self.GenerateRouteTableName(name, zones, z, az, azi, scratch)
+          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_routetable', scratch), {
+                    :vpc => name,
+                    :zone => SubnetHelpers.ZoneLiteral(z, scratch),
+                    :az => az,
+                    :index => azi.to_s,
+                    :VPC => name.upcase,
+                    :AZ => az.upcase,
+                    :ZONE => SubnetHelpers.ZoneLiteral(z, scratch).upcase,
+                    :Vpc => name.capitalize,
+                    :Az => az.capitalize,
+                    :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize
+                })
+        end
+
         def self.CalculateRouteTablesRequired(name, network, zones, scratch)
           route_tables  = []
 
           route_tables << {
-              :name => name,
+              :name => GenerateRouteTableName(name, zones, 'public', 'all', 0, scratch),
               :zone => 'public',
               :az => nil
           } if scratch[:public_zone?]
 
           route_tables << scratch[:nat_list].map.with_index{|nat, index|
             {
-                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format', scratch), {
-                    :vpc => name,
-                    :zone => 'nat',
-                    :az => network['availability'][index],
-                    :index => index.to_s,
-                    :VPC => name.upcase,
-                    :AZ => network['availability'][index].upcase,
-                    :ZONE => 'NAT',
-                    :Vpc => name.capitalize,
-                    :Az => network['availability'][index].capitalize,
-                    :Zone => 'Nat'
-                }),
+                :name => GenerateRouteTableName(name, zones, 'nat', network['availability'][index], index, scratch),
                 :zone => 'nat',
                 :az => network['availability'][index]
             }
           } if scratch[:nat_zone?] and scratch[:nat_list].length > 0
           route_tables << {
-              :name => sprintf(ZoneHelpers.ZoneValue(zones['private'], 'format', scratch), {
-                  :vpc => name,
-                  :zone => 'private',
-                  :az => "",
-                  :index => "",
-              }),
+              :name => GenerateRouteTableName(name, zones, 'private', 'all', 0, scratch),
               :zone => 'private',
               :az => nil
           } if scratch[:private_zone?]

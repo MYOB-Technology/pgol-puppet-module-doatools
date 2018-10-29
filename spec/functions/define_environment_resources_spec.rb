@@ -18,7 +18,7 @@ describe 'define_environment_resources' do
   routetable1 = {
       "resource_type" => "route_table",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure=>"present",
               :region=>"us-east-1",
               :vpc=>"demo",
@@ -33,7 +33,7 @@ describe 'define_environment_resources' do
   routetable2 = {
       "resource_type" => "route_table",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure=>"present",
               :region=>"us-east-1",
               :vpc=>"demo",
@@ -56,7 +56,7 @@ describe 'define_environment_resources' do
   routetable3 = {
       "resource_type" => "route_table",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure=>"present",
               :region=>"us-east-1",
               :vpc=>"demo",
@@ -104,7 +104,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demopublicb"=>{
@@ -116,7 +116,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }, "demopublicc" => {
               :ensure=>"present",
@@ -127,7 +127,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }
       }
@@ -145,7 +145,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demopublicb"=>{
@@ -157,7 +157,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }, "demopublicc" => {
               :ensure=>"present",
@@ -168,7 +168,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demonata"=>{
@@ -221,7 +221,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demopublicb"=>{
@@ -233,7 +233,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }, "demopublicc" => {
               :ensure=>"present",
@@ -244,7 +244,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demonata"=>{
@@ -574,7 +574,7 @@ describe 'define_environment_resources' do
   route_table_routes1 = {
       "resource_type" => "route_table_routes",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure => "present",
               :region => "us-east-1",
               :routes => [
@@ -587,7 +587,7 @@ describe 'define_environment_resources' do
   route_table_routes2 = {
       "resource_type" => "route_table_routes",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure => "present",
               :region => "us-east-1",
               :routes => [
@@ -607,7 +607,7 @@ describe 'define_environment_resources' do
   route_table_routes3 = {
       "resource_type" => "route_table_routes",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure => "present",
               :region => "us-east-1",
               :routes => [
@@ -1463,5 +1463,6 @@ describe 'define_environment_resources' do
 
 
 end
+
 
 
