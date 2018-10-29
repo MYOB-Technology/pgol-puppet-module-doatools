@@ -781,12 +781,12 @@ describe 'define_environment_resources' do
               "public_access"=>"false",
               "instance_type"=>"db.t2.micro",
               "storage_size"=>"50",
-              "rds_subnet_group"=>"demo-public",
               "ensure"=>"present",
               "region"=>"us-east-1",
               "security_groups"=>[
                   "demo_testdb"
-              ]
+              ],
+              "rds_subnet_group"=>"demo-public"
           }
       }
   }
@@ -1463,4 +1463,5 @@ describe 'define_environment_resources' do
 
 
 end
+
 

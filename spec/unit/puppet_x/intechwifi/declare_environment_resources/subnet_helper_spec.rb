@@ -104,12 +104,12 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
 
       expect(subnet_helpers.CalculateSubnetData("unittest", network2, zones3, scratch))
           .to eq([
-                     { :zone=>"private", :az=>"a", :cidr=>"192.168.0.0/23", :index=>0, :name=>"unittestprivatea"},
-                     { :zone=>"private", :az=>"b", :cidr=>"192.168.2.0/23", :index=>1, :name=>"unittestprivateb"},
-                     { :zone=>"private", :az=>"c", :cidr=>"192.168.4.0/23", :index=>2, :name=>"unittestprivatec"},
-                     { :zone=>"nat", :az=>"a", :cidr=>"192.168.6.0/23", :index=>0, :name=>"unittestnata"},
-                     { :zone=>"nat", :az=>"b", :cidr=>"192.168.8.0/23", :index=>1, :name=>"unittestnatb"},
-                     { :zone=>"nat", :az=>"c", :cidr=>"192.168.10.0/23", :index=>2, :name=>"unittestnatc"},
+                     { :zone=>"nat", :az=>"a", :cidr=>"192.168.0.0/23", :index=>0, :name=>"unittestnata"},
+                     { :zone=>"nat", :az=>"b", :cidr=>"192.168.2.0/23", :index=>1, :name=>"unittestnatb"},
+                     { :zone=>"nat", :az=>"c", :cidr=>"192.168.4.0/23", :index=>2, :name=>"unittestnatc"},
+                     { :zone=>"private", :az=>"a", :cidr=>"192.168.6.0/23", :index=>0, :name=>"unittestprivatea"},
+                     { :zone=>"private", :az=>"b", :cidr=>"192.168.8.0/23", :index=>1, :name=>"unittestprivateb"},
+                     { :zone=>"private", :az=>"c", :cidr=>"192.168.10.0/23", :index=>2, :name=>"unittestprivatec"},
                      { :zone=>"public", :az=>"a", :cidr=>"192.168.12.0/26", :index=>0, :name=>"unittestpublica"},
                      { :zone=>"public", :az=>"b", :cidr=>"192.168.12.64/26", :index=>1, :name=>"unittestpublicb"},
                      { :zone=>"public", :az=>"c", :cidr=>"192.168.12.128/26", :index=>2, :name=>"unittestpublicc"},
