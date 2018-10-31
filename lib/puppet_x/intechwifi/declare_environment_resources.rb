@@ -51,6 +51,7 @@ module PuppetX
         scratch[:label_subnet] = label_formats.has_key?('subnet') ? label_formats['subnet'] : '%{vpc}%{zone}%{az}'
         scratch[:label_routetable] = label_formats.has_key?('routetable') ? label_formats['routetable'] : '%{vpc}%{zone}%{az}'
         scratch[:label_zone_literals] = label_formats.has_key?('zone_literals') ? label_formats['zone_literals'] : { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
+        scratch[:label_natgw] = label_formats.has_key?('nat_gateway') ? label_formats['nat_gateway'] : '%{vpc}%{zone}-natgw'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -789,7 +790,22 @@ module PuppetX
 
 
       module NatHelpers
-        def self.CalculateNatDetails(name, network, zones, scratch)
+        def self.GenerateNatName(env_name, zones, z, az, azi, scratch)
+          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_natgw', scratch), {
+                    :vpc => env_name,
+                    :zone => SubnetHelpers.ZoneLiteral(z, scratch),
+                    :az => az,
+                    :index => azi.to_s,
+                    :VPC => name.upcase,
+                    :AZ => az.upcase,
+                    :ZONE => SubnetHelpers.ZoneLiteral(z, scratch).upcase,
+                    :Vpc => name.capitalize,
+                    :Az => az.capitalize,
+                    :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize
+                })
+        end
+
+        def self.CalculateNatDetails(env_name, network, zones, scratch)
 
           #  First we ensure we have an array of nat IP addresses (that may be zero long)
           (zones.has_key?('nat') ?
@@ -801,12 +817,7 @@ module PuppetX
           }.map.with_index{|ipaddr, index|
             # Map into a hash, containing all the details of this nat.
             {
-                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format', scratch), {
-                    :vpc => name,
-                    :zone => 'nat',
-                    :az => network['availability'][index],
-                    :index => index.to_s,
-                }),
+                :name => GenerateNatName(env_name, zones, 'nat', network['availability'][index], i, scratch)
                 :az => network['availability'][index],
                 :ip_addr => ipaddr
             }
@@ -832,7 +843,8 @@ module PuppetX
         def self.GetDefaultZoneValue(value, scratch)
           self.DefaultZoneValues.merge({
             'format_subnet' => scratch[:label_subnet],
-            'format_routetable' => scratch[:label_routetable]
+            'format_routetable' => scratch[:label_routetable],
+            'format_natgw' => scratch[:label_natgw]
           })[value]
         end
       end
