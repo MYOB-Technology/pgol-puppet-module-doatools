@@ -52,6 +52,7 @@ module PuppetX
         scratch[:label_routetable] = label_formats.has_key?('routetable') ? label_formats['routetable'] : '%{vpc}%{zone}%{az}'
         scratch[:label_zone_literals] = label_formats.has_key?('zone_literals') ? label_formats['zone_literals'] : { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
         scratch[:label_natgw] = label_formats.has_key?('nat_gateway') ? label_formats['nat_gateway'] : '%{vpc}%{zone}-natgw'
+        scratch[:label_autoscaling_group] = label_formats.has_key?('autoscaling_group') ? label_formats['autoscaling_group'] : '%{vpc}%{role}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -380,7 +381,7 @@ module PuppetX
                 'resources' => server_roles.map{|role_name, role_data|
 
                   {
-                      "#{name}_#{role_name}" => {
+                      AutoScalerHelper.GenerateAutoScalerName(name, role_name, zones, z, scratch) => {
                           'ensure' => status,
                           'region' => region,
                           'launch_configuration' => "#{name}_#{role_name}",
@@ -586,6 +587,21 @@ module PuppetX
 
 
       module AutoScalerHelper
+        def self.GenerateAutoScalerName(env_name, role, zones, z, scratch)
+          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_autoscaler_group', scratch), {
+                    :vpc => env_name,
+                    :zone => SubnetHelpers.ZoneLiteral(z, scratch),
+                    :role => role,
+                    :VPC => env_name.upcase,
+                    :ZONE => SubnetHelpers.ZoneLiteral(z, scratch).upcase,
+                    :ROLE => role.upcase,
+                    :Vpc => env_name.capitalize,
+                    :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize,
+                    :Role => role.capitalize
+                })
+        end
+
+
         def self.GetDefaultScaling()
           {
               # Defaults
@@ -844,7 +860,8 @@ module PuppetX
           self.DefaultZoneValues.merge({
             'format_subnet' => scratch[:label_subnet],
             'format_routetable' => scratch[:label_routetable],
-            'format_natgw' => scratch[:label_natgw]
+            'format_natgw' => scratch[:label_natgw],
+            'format_autoscaling' => scratch[:label_autoscaling_group]
           })[value]
         end
       end
