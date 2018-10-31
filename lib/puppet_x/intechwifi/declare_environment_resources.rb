@@ -381,7 +381,7 @@ module PuppetX
                 'resources' => server_roles.map{|role_name, role_data|
 
                   {
-                      AutoScalerHelper.GenerateAutoScalerName(name, role_name, zones, z, scratch) => {
+                      AutoScalerHelper.GenerateAutoScalerName(name, role_name, zones, role_data['zone'], scratch) => {
                           'ensure' => status,
                           'region' => region,
                           'launch_configuration' => "#{name}_#{role_name}",
