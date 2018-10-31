@@ -817,7 +817,7 @@ module PuppetX
           }.map.with_index{|ipaddr, index|
             # Map into a hash, containing all the details of this nat.
             {
-                :name => GenerateNatName(env_name, zones, 'nat', network['availability'][index], i, scratch),
+                :name => GenerateNatName(env_name, zones, 'nat', network['availability'][index], index, scratch),
                 :az => network['availability'][index],
                 :ip_addr => ipaddr
             }
