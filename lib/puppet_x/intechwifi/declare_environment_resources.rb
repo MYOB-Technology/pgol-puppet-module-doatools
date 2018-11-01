@@ -588,7 +588,7 @@ module PuppetX
 
       module AutoScalerHelper
         def self.GenerateAutoScalerName(env_name, role, zones, z, scratch)
-          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_autoscaler_group', scratch), {
+          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_autoscaling', scratch), {
                     :vpc => env_name,
                     :zone => SubnetHelpers.ZoneLiteral(z, scratch),
                     :role => role,
