@@ -63,6 +63,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
         :nat_zone? => false,
         :private_zone? => false,
         :nat_list =>[],
+        :label_subnet => '%{vpc}%{zone}%{az}'
     }
   }
 
@@ -73,6 +74,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
         :nat_zone? => true,
         :private_zone? => false,
         :nat_list =>[ '148.88.8.1' ],
+        :label_subnet => '%{vpc}%{zone}%{az}'
     }
   }
 
@@ -86,6 +88,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
             '148.88.8.2',
             '148.88.8.3',
         ],
+        :label_subnet => '%{vpc}%{zone}%{az}'
     }
   }
 

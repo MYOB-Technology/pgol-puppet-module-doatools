@@ -80,7 +80,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:userdata] = Base64.decode64(launch_config["UserData"])
     @property_hash[:ssh_key_name] = launch_config["KeyName"]
     @property_hash[:iam_instance_profile] = launch_config["IamInstanceProfile"]
-    @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(launch_config["AssociatePublicIpAddress"])
+    @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(launch_config["AssociatePublicIpAddress"]) if launch_config.has_key?("AssociatePublicIpAddress")
 
     # print "launch_config = #{launch_config}\n"
     true

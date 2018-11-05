@@ -32,12 +32,12 @@ module PuppetX
           db_servers,
           s3,
           tags,
-          policies
+          tags_vpc,
+          policies,
+          label_formats
       )
 
         # Validation of inputs.
-
-
         # Generate
 
         # Our scratch pad for storing and passing all our dynamically generated data.
@@ -48,13 +48,15 @@ module PuppetX
         scratch[:nat_zone?] = zones.has_key?('nat')
         scratch[:private_zone?] = zones.has_key?('private')
         scratch[:tags_with_environment] = tags.merge({'Environment' => name})
+        scratch[:label_subnet] = label_formats.has_key?('subnet') ? label_formats['subnet'] : '%{vpc}%{zone}%{az}'
+        scratch[:label_zone_literals] = label_formats.has_key?('zone_literals') ? label_formats['zone_literals'] : { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
 
         # Get our subnet sizes
-        scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones)
+        scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
 
 
 
-        scratch[:nat_list] = NatHelpers.CalculateNatDetails(name, network, zones)
+        scratch[:nat_list] = NatHelpers.CalculateNatDetails(name, network, zones, scratch)
         scratch[:route_table_data] = RouteTableHelpers.CalculateRouteTablesRequired(name, network, zones, scratch)
 
 
@@ -76,7 +78,7 @@ module PuppetX
                         :ensure => status,
                         :region => region,
                         :cidr   => network['cidr'],
-                        :tags => scratch[:tags_with_environment],
+                        :tags => tags_vpc.merge(scratch[:tags_with_environment]),
                         :dns_hostnames => network.has_key?('dns_hostnames') ? network['dns_hostnames'] : false,
                         :dns_resolution => network.has_key?('dns_resolution') ? network['dns_resolution'] : true,
                     }
@@ -753,7 +755,7 @@ module PuppetX
 
 
       module NatHelpers
-        def self.CalculateNatDetails(name, network, zones)
+        def self.CalculateNatDetails(name, network, zones, scratch)
 
           #  First we ensure we have an array of nat IP addresses (that may be zero long)
           (zones.has_key?('nat') ?
@@ -765,7 +767,7 @@ module PuppetX
           }.map.with_index{|ipaddr, index|
             # Map into a hash, containing all the details of this nat.
             {
-                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format'), {
+                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format', scratch), {
                     :vpc => name,
                     :zone => 'nat',
                     :az => network['availability'][index],
@@ -779,23 +781,22 @@ module PuppetX
       end
 
       module ZoneHelpers
-        def self.ZoneValue(zone, value, default=nil)
+        def self.ZoneValue(zone, value, scratch, default=nil)
           #  If the zone has a value, return it, if not - return the default value.
-          zone.has_key?(value) ? zone[value] : default.nil? ? GetDefaultZoneValue(value) : default
+          zone.has_key?(value) ? zone[value] : default.nil? ? GetDefaultZoneValue(value, scratch) : default
         end
 
         def self.DefaltZoneValues
           {
               'ipaddr_weighting' => 1,
               'format' => "%{vpc}%{zone}%{az}",
-              'ipaddr_weighting' => 1,
               'routes' => [],
               'extra_routes' => [],
           }
         end
 
-        def self.GetDefaultZoneValue(value)
-          self.DefaltZoneValues[value]
+        def self.GetDefaultZoneValue(value, scratch)
+          self.DefaltZoneValues.merge({'format' => scratch[:label_subnet] })[value]
         end
       end
 
@@ -811,7 +812,7 @@ module PuppetX
 
           route_tables << scratch[:nat_list].map.with_index{|nat, index|
             {
-                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format'), {
+                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format', scratch), {
                     :vpc => name,
                     :zone => 'nat',
                     :az => network['availability'][index],
@@ -822,7 +823,7 @@ module PuppetX
             }
           } if scratch[:nat_zone?] and scratch[:nat_list].length > 0
           route_tables << {
-              :name => sprintf(ZoneHelpers.ZoneValue(zones['private'], 'format'), {
+              :name => sprintf(ZoneHelpers.ZoneValue(zones['private'], 'format', scratch), {
                   :vpc => name,
                   :zone => 'private',
                   :az => "",
@@ -842,21 +843,21 @@ module PuppetX
             when 'public'
               [
                   "0.0.0.0/0|igw|#{name}",
-                  ZoneHelpers.ZoneValue(zone, 'routes', network['routes']),
-                  ZoneHelpers.ZoneValue(zone, 'extra_routes')
+                  ZoneHelpers.ZoneValue(zone, 'routes', scratch, network['routes']),
+                  ZoneHelpers.ZoneValue(zone, 'extra_routes', scratch)
               ].flatten
 
             when 'nat'
               [
                   "0.0.0.0/0|nat|#{rt_data[:name]}",
-                  ZoneHelpers.ZoneValue(zone, 'routes', network['routes']),
-                  ZoneHelpers.ZoneValue(zone, 'extra_routes')
+                  ZoneHelpers.ZoneValue(zone, 'routes', scratch, network['routes']),
+                  ZoneHelpers.ZoneValue(zone, 'extra_routes', scratch)
               ].flatten
 
             when 'private'
               [
-                  ZoneHelpers.ZoneValue(zone, 'routes', network['routes']),
-                  ZoneHelpers.ZoneValue(zone, 'extra_routes')
+                  ZoneHelpers.ZoneValue(zone, 'routes', scratch, network['routes']),
+                  ZoneHelpers.ZoneValue(zone, 'extra_routes', scratch)
               ].flatten
             else
               []
@@ -867,16 +868,16 @@ module PuppetX
 
 
       module SubnetHelpers
-        def self.CalculateSubnetData(name, network, zones)
+        def self.CalculateSubnetData(name, network, zones, scratch)
           vpc_cidr_size = network['cidr'].split('/')[1].to_i
-          total_weight = zones.keys.map{|x| ZoneHelpers.ZoneValue(zones[x],'ipaddr_weighting')}.reduce{|t, v| t = t + v}
+          total_weight = zones.keys.map{|x| ZoneHelpers.ZoneValue(zones[x],'ipaddr_weighting', scratch)}.reduce{|t, v| t = t + v}
           azs = network['availability'].length
 
           base_cidr = CidrMaths.CidrToLong(network['cidr'])
 
           cidr_data = zones.keys.map { |x|
             #  Calculate the cidr size for each zone
-            [x, CidrMaths.CalculateBlockSize(vpc_cidr_size, ZoneHelpers.ZoneValue(zones[x],'ipaddr_weighting'), total_weight, azs) ]
+            [x, CidrMaths.CalculateBlockSize(vpc_cidr_size, ZoneHelpers.ZoneValue(zones[x],'ipaddr_weighting', scratch), total_weight, azs) ]
           }.each{ |x|
             # validate CIDR is viable.
             raise CidrMaths::CidrSizeTooSmallForSubnet if x[1] > 28
@@ -887,17 +888,28 @@ module PuppetX
             network['availability'].map.with_index{ |az, i|
               cidr = base_cidr
               base_cidr += CidrMaths.IpAddrsInCidrBlock(x[1])
-              { :zone => x[0], :az => az, :cidr => CidrMaths.LongToCidr(cidr, x[1]), :index => i, :name => SubnetHelpers.GenerateSubnetName(name, zones, x[0], az, i) }
+              { :zone => x[0], :az => az, :cidr => CidrMaths.LongToCidr(cidr, x[1]), :index => i, :name => SubnetHelpers.GenerateSubnetName(name, zones, x[0], az, i, scratch) }
             }
           }.flatten
         end
 
-        def self.GenerateSubnetName(name, zones, zone, az, index)
-          sprintf(ZoneHelpers.ZoneValue(zones[zone], 'format'), {
+        def self.ZoneLiteral(zone, scratch)
+            scratch[:label_zone_literals].has_key?(zone) ? scratch[:label_zone_literals][zone] : zone
+        end
+
+        def self.GenerateSubnetName(name, zones, zone, az, index, scratch)
+          zone_literal = SubnetHelpers.ZoneLiteral(zone, scratch)
+          sprintf(ZoneHelpers.ZoneValue(zones[zone], 'format', scratch), {
               :vpc => name,
               :az  => az,
               :index => index,
-              :zone => zone,
+              :zone => zone_literal,
+              :VPC => name.upcase,
+              :AZ  => az.upcase,
+              :ZONE => zone_literal.upcase,
+              :Vpc => name.capitalize,
+              :Az  => az.capitalize,
+              :Zone => zone_literal.capitalize,
           })
         end
 
@@ -906,7 +918,7 @@ module PuppetX
               'resource_type' => "subnet",
               'resources' => scratch[:subnet_data].reduce({}) do |subnets, sn_data|
 
-                subnet_name = GenerateSubnetName(name, zones, sn_data[:zone], sn_data[:az], sn_data[:index])
+                subnet_name = GenerateSubnetName(name, zones, sn_data[:zone], sn_data[:az], sn_data[:index], scratch)
 
                 subnets.merge(
                     {

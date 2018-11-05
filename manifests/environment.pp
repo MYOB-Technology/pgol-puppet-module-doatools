@@ -86,12 +86,17 @@ define doatools::environment (
 
   },
 
+  $tags_vpc = {
+
+  },
+
   $policies = lookup('doatools::environment::policies', Data, 'deep', {
 
-  })
+  }),
 
+  $label_formats = lookup('doatools::environment::label_formats', Hash, 'deep', {
 
-
+  }),
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
 #  $network=lookup('environment::network', Data, 'first', { }),
@@ -99,7 +104,7 @@ define doatools::environment (
 #  $ensure=lookup('environment::ensure', Data, 'first', present)
 )  {
   info("declaring environment ${env} in region ${region}.")
-
+  notice("label formats looks like :  ${label_formats}")
   define_environment_resources(
     $name,
     $ensure,
@@ -111,7 +116,9 @@ define doatools::environment (
     $db_servers,
     $s3,
     $tags,
+    $tags_vpc,
     $policies,
+    $label_formats
   ).each |$r| {
     $rt = $r['resource_type']
     $rts = $r['resources'].keys
