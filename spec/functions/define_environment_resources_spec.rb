@@ -811,7 +811,7 @@ describe 'define_environment_resources' do
                   "demo_my_srv"
               ],
               "iam_instance_profile"=>[
-                  "demo_testrole"
+                  "demotestrole"
               ],
               "public_ip"=> :enabled
           }
@@ -831,7 +831,7 @@ describe 'define_environment_resources' do
                   "demo_my_other_srv"
               ],
               "iam_instance_profile"=>[
-                  "demo_testrole"
+                  "demotestrole"
               ],
               "public_ip"=> :enabled
           }
@@ -853,7 +853,7 @@ describe 'define_environment_resources' do
           "demotestrole" => {
               "ensure"=>"present",
               "region"=>"us-east-1",
-              "launch_configuration"=>"demo_testrole",
+              "launch_configuration"=>"demotestrole",
               "subnets"=>[
                   "demopublica",
                   "demopublicb",
@@ -878,7 +878,7 @@ describe 'define_environment_resources' do
   iam_role2 = {
       "resource_type"=>"iam_role",
       "resources"=>{
-          "demo_testrole" => {
+          "demotestrole" => {
               :ensure=>"present",
               :policies=>[]
           }
@@ -904,9 +904,9 @@ describe 'define_environment_resources' do
   iam_instance_profile2 = {
       "resource_type" => "iam_instance_profile",
       "resources" => {
-          "demo_testrole"=>{
+          "demotestrole"=>{
               :ensure=>"present",
-              :iam_role=>"demo_testrole"
+              :iam_role=>"demotestrole"
           }
       }
   }
@@ -1463,6 +1463,5 @@ describe 'define_environment_resources' do
 
 
 end
-
 
 

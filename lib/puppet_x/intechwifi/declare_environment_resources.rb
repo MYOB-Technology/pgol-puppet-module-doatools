@@ -54,6 +54,9 @@ module PuppetX
         scratch[:label_natgw] = label_formats.has_key?('nat_gateway') ? label_formats['nat_gateway'] : '%{vpc}%{zone}%{az}'
         scratch[:label_autoscaling_group] = label_formats.has_key?('autoscaling_group') ? label_formats['autoscaling_group'] : '%{vpc}%{role}'
         scratch[:label_launch_configuration] = label_formats.has_key?('launch_configuration') ? label_formats['launch_configuration'] : '%{vpc}%{role}'
+        scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
+        scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
+        scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{role}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -249,7 +252,7 @@ module PuppetX
                          scratch[:service_security_groups].has_key?(sg)
                        },
                        'iam_instance_profile' => [
-                           IAMHelper.GenerateInstanceProfileName(name, role[0])
+                           IAMHelper.GenerateInstanceProfileName(name, role[0], scratch)
                        ],
                        'public_ip' => role[1]['zone'] == 'public' ? :enabled : :disabled
                    }
@@ -387,7 +390,7 @@ module PuppetX
                       AutoScalerHelper.GenerateAutoScalerName(name, role_name, zones, role_data['zone'], scratch) => {
                           'ensure' => status,
                           'region' => region,
-                          'launch_configuration' => "#{name}_#{role_name}",
+                          'launch_configuration' => AutoScalerHelper.GenerateLaunchConfigName(name, role_name, zones, role_data['zone'], scratch ),
                           'subnets' => scratch[:subnet_data].select{|sn|
                             sn[:zone] == role_data['zone']
                           }.map{|sn| sn[:name] },
@@ -408,15 +411,15 @@ module PuppetX
             },
             {
                 'resource_type' => "iam_role",
-                'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services)
+                'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services, scratch)
             },
             {
                 'resource_type' => "iam_policy",
-                'resources' => IAMHelper.CalculatePolicyResources(name, status, policies)
+                'resources' => IAMHelper.CalculatePolicyResources(name, status, policies, scratch)
             },
             {
                 'resource_type' => "iam_instance_profile",
-                'resources' => IAMHelper.CalculateInstanceProfileResources(name, status, server_roles)
+                'resources' => IAMHelper.CalculateInstanceProfileResources(name, status, server_roles, scratch)
             },
             {
                 'resource_type' => "s3_bucket",
@@ -647,10 +650,10 @@ module PuppetX
 
 
       module IAMHelper
-        def self.CalculatePolicyResources(name, status, policies)
+        def self.CalculatePolicyResources(name, status, policies, scratch)
           policies.map{|key,value|
             {
-                GeneratePolicyName(name, key) => {
+                GeneratePolicyName(name, key, scratch) => {
                     :ensure => status,
                     :policy => value.kind_of?(Array) ? value : [value]
                 }
@@ -658,45 +661,69 @@ module PuppetX
           }.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
-        def self.CalculateAllRoleResources(name, status, server_roles, services)
+        def self.CalculateAllRoleResources(name, status, server_roles, services, scratch)
           server_roles.map{|role_label, role_data|
-            CalculateSingleRoleResource(name, status, role_label, role_data, services)
+            CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
           }.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
-        def self.CalculateSingleRoleResource(name, status, role_label, role_data, services)
+        def self.CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
           {
-              GenerateRoleName(name, role_label) => {
+              GenerateRoleName(name, role_label, scratch) => {
                   :ensure => status,
                   :policies => role_data['services'].map{|service_label|
                     service  = services[service_label]
-                    service.has_key?('policies') ? service['policies'].map{|policy_label| GeneratePolicyName(name, policy_label)} : []
+                    service.has_key?('policies') ? service['policies'].map{|policy_label| GeneratePolicyName(name, policy_label, scatch)} : []
                   }.flatten.uniq
               }
           }
         end
 
-        def self.CalculateInstanceProfileResources(name, status, server_roles)
+        def self.CalculateInstanceProfileResources(name, status, server_roles, scratch)
           server_roles.map{|role_label, role_data|
             {
-                GenerateInstanceProfileName(name, role_label) => {
+                GenerateInstanceProfileName(name, role_label, scratch) => {
                     :ensure => status,
-                    :iam_role => GenerateRoleName(name, role_label)
+                    :iam_role => GenerateRoleName(name, role_label, scratch)
                 }
             }
           }.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
-        def self.GenerateRoleName(name, server_role_label)
-          "#{name}_#{server_role_label}"
+        def self.GenerateRoleName(name, role, scratch)
+          sprintf(scratch[:label_iam_role], {
+                    :vpc => name,
+                    :VPC => name.upcase,
+                    :Vpc => name.capitalize,
+                    :role => role,
+                    :ROLE => role.upcase,
+                    :Role => role.capitalize,
+                })
+
         end
 
-        def self.GeneratePolicyName(name, policy_label)
-          "#{name}_#{policy_label}"
+        def self.GeneratePolicyName(name, policy, scratch)
+          sprintf(scratch[:label_iam_policy], {
+                    :vpc => name,
+                    :VPC => name.upcase,
+                    :Vpc => name.capitalize,
+                    :policy => policy,
+                    :POLICY => policy.upcase,
+                    :Policy => policy.capitalize,
+                })
+
         end
 
-        def self.GenerateInstanceProfileName(name, instance_profile_label)
-          "#{name}_#{instance_profile_label}"
+        def self.GenerateInstanceProfileName(name, role, scratch)
+          sprintf(scratch[:label_iam_instance_profile], {
+                    :vpc => name,
+                    :VPC => name.upcase,
+                    :Vpc => name.capitalize,
+                    :role => role,
+                    :ROLE => role.upcase,
+                    :Role => role.capitalize,
+                })
+
         end
 
 
@@ -881,6 +908,9 @@ module PuppetX
             'format_natgw' => scratch[:label_natgw],
             'format_autoscaling' => scratch[:label_autoscaling_group],
             'format_launch_configuration' => scratch[:label_launch_configuration],
+            'format_iam_role' => scratch[:label_iam_role],
+            'format_iam_instance_profile' => scratch[:label_iam_instance_profile],
+            'format_iam_policy' => scratch[:label_iam_policy],
           })[value]
         end
       end
