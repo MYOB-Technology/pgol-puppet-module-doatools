@@ -802,7 +802,7 @@ describe 'define_environment_resources' do
   launch_configuration2 = {
       "resource_type" => "launch_configuration",
       "resources" => {
-          "demo_testrole" => {
+          "demotestrole" => {
               "instance_type"=>"t2.micro",
               "image"=>"ami-6d1c2007",
               "ensure"=>"present",
@@ -821,7 +821,7 @@ describe 'define_environment_resources' do
   launch_configuration3 = {
       "resource_type" => "launch_configuration",
       "resources" => {
-          "demo_testrole" => {
+          "demotestrole" => {
               "instance_type"=>"t2.micro",
               "image"=>"ami-6d1c2007",
               "ensure"=>"present",
@@ -850,7 +850,7 @@ describe 'define_environment_resources' do
   autoscaling_group2 = {
       "resource_type" => "autoscaling_group",
       "resources" => {
-          "demo_testrole" => {
+          "demotestrole" => {
               "ensure"=>"present",
               "region"=>"us-east-1",
               "launch_configuration"=>"demo_testrole",
