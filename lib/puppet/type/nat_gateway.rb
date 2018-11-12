@@ -21,7 +21,7 @@ Puppet::Type.newtype(:nat_gateway) do
 
   autorequire(:subnet) do
     if self[:ensure] == :present
-      self[:name]
+      self[:subnet]
     end
   end
 
@@ -34,7 +34,7 @@ Puppet::Type.newtype(:nat_gateway) do
 
   autobefore(:subnet) do
     if self[:ensure] == :absent
-      self[:name]
+      self[:subnet]
     end
   end
 
@@ -71,5 +71,10 @@ Puppet::Type.newtype(:nat_gateway) do
   newparam(:internet_gateway) do
 
   end
+
+  newparam(:subnet) do
+
+  end
+
 end
 

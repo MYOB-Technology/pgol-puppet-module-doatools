@@ -34,7 +34,7 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
 
     fail("No available Elastic IP address") if eips.length == 0
 
-    @property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:name]){ | *arg | awscli(*arg) }
+    @property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:subnet]){ | *arg | awscli(*arg) }
 
     cli_args = [
         'ec2', 'create-nat-gateway', '--region', @resource[:region],
@@ -47,6 +47,9 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
     @property_hash[:region] = @resource[:region]
 
     self.wait_for_state(['available'])
+
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[::ngw_id], '--tags', "Key=Name,Value=#{resource[:name]}")
+
 
   end
 
@@ -92,13 +95,13 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
   def exists?
     # Find the VPC first...
     @property_hash[:region] = resource[:region]
-    @property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:name]){ | *arg | awscli(*arg) }
+    #@property_hash[:subnetid] = PuppetX::IntechWIFI::AwsCmds.find_id_by_name(resource[:region], 'subnet', resource[:subnet]){ | *arg | awscli(*arg) }
 
     cli_args = [
-        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--filter', "Name=subnet-id,Values=#{@property_hash[:subnetid]}"
+        'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--filter', "Name=tag:Name,Values=#{@resource[:name]}"
     ]
     nats = JSON.parse(awscli(cli_args))["NatGateways"].select do |x|
-      x["SubnetId"] == @property_hash[:subnetid] and !["failed", "deleted", "deleting"].include? x["State"]
+      x["Tags"].reduce(false){ | r, t| r == True || ( t["Key"] == "Name" && t["Value"] == resource[:name])}.length == 1
     end
 
     raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if nats.length == 0
@@ -131,6 +134,11 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
   end
 
   mk_resource_methods
+
+  def trust=(subnet)
+    @property_flush[:subnet] = value
+  end
+
 
 end
 
