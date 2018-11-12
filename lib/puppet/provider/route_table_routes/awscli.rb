@@ -126,7 +126,7 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
   end
 
   def natgw_id_to_name(id)
-    PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'nat-gateway', id) { | *arg |  awscli(*arg) }
+    PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'natgateway', id) { | *arg |  awscli(*arg) }
   end
 
   def instance_id_to_name(id)
@@ -139,7 +139,7 @@ Puppet::Type.type(:route_table_routes).provide(:awscli) do
   end
 
   def natgw_name_to_id(name)
-    PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'nat-gateway', name) { | *arg |  awscli(*arg) }
+    PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'natgateway', name) { | *arg |  awscli(*arg) }
   end
 
   def update_routes current, desired
