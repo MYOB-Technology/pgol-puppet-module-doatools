@@ -101,7 +101,7 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
         'ec2', 'describe-nat-gateways', '--region', @property_hash[:region], '--filter', "Name=tag:Name,Values=#{@resource[:name]}"
     ]
     nats = JSON.parse(awscli(cli_args))["NatGateways"].select do |x|
-      x["Tags"].reduce(false){ | r, t| r || ( t["Key"] == "Name" && t["Value"] == resource[:name])}.length == 1
+      x["Tags"].reduce(false){ | r, t| r || ( t["Key"] == "Name" && t["Value"] == resource[:name])}
     end
 
     raise PuppetX::IntechWIFI::Exceptions::NotFoundError, resource[:name] if nats.length == 0
