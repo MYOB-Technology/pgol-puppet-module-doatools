@@ -48,7 +48,7 @@ Puppet::Type.type(:nat_gateway).provide(:awscli) do
 
     self.wait_for_state(['available'])
 
-    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[::ngw_id], '--tags', "Key=Name,Value=#{resource[:name]}")
+    awscli('ec2', 'create-tags', '--region', resource[:region], '--resources', @property_hash[:ngw_id], '--tags', "Key=Name,Value=#{resource[:name]}")
 
 
   end
