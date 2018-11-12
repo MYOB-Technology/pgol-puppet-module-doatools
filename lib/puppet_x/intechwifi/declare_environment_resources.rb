@@ -881,7 +881,7 @@ module PuppetX
                 :name => GenerateNatName(env_name, zones, 'nat', network['availability'][index], index, scratch),
                 :az => network['availability'][index],
                 :ip_addr => ipaddr,
-                :subnet => SubnetHelpers.GenerateSubnetName(env_name, zones, 'nat', network['availability'][index], index, scratch)
+                :subnet => SubnetHelpers.GenerateSubnetName(env_name, zones, 'public', network['availability'][index], index, scratch)
             }
           }
         end
