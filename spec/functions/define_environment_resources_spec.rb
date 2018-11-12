@@ -542,7 +542,8 @@ describe 'define_environment_resources' do
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.1",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demonata"
           }
       }
   }
@@ -554,19 +555,22 @@ describe 'define_environment_resources' do
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.1",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demonata",
           },
           "demonatb" => {
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.2",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demonatb",
           },
           "demonatc" => {
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.3",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demonatc",
           }
       }
   }

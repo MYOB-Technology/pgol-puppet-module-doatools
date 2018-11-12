@@ -298,7 +298,7 @@ module PuppetX
                           :region => region,
                           :elastic_ip => nat[:ip_addr],
                           :internet_gateway => name,
-
+                          :subnet => nat[:subnet],
                       }
                   }
                 }.reduce({}){|hash, item| hash.merge(item) }
@@ -880,7 +880,8 @@ module PuppetX
             {
                 :name => GenerateNatName(env_name, zones, 'nat', network['availability'][index], index, scratch),
                 :az => network['availability'][index],
-                :ip_addr => ipaddr
+                :ip_addr => ipaddr,
+                :subnet => SubnetHelpers.GenerateSubnetName(env_name, zones, 'nat', network['availability'][index], index, scratch)
             }
           }
         end
