@@ -680,7 +680,7 @@ module PuppetX
                     :region => region,
                     :application_name => "",
                     :service_role => "",
-                    :autoscaling_groups => roles.map{|r|  AutoScalerHelper.GenerateAutoScalerName(env_name, role, zones, role_data['zone'], scratch) }
+                    :autoscaling_groups => roles.map{|r|  AutoScalerHelper.GenerateAutoScalerName(env_name, role, zones, server_roles[role]['zone'], scratch) }
                 }
             ]
           }.reduce({}) {|m, v| m[v[0]] = v[1]; m }
