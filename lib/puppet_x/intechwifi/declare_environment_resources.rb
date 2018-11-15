@@ -674,6 +674,7 @@ module PuppetX
             puts("reduce value=#{v}")
             # if the deploy key already exists, we add the role to the array, otherwise we create it.
             m.has_key?(v[0]) ? m[v[0]] << v[1]  : m[v[0]] = v[1]
+            m
           }.map { |deploy , roles|
             puts("map deploy=#{deploy} roles=#{roles}")
             [
