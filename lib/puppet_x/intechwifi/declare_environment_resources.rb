@@ -54,7 +54,7 @@ module PuppetX
         scratch[:label_natgw] = label_formats.has_key?('nat_gateway') ? label_formats['nat_gateway'] : '%{vpc}%{zone}%{az}'
         scratch[:label_autoscaling_group] = label_formats.has_key?('autoscaling_group') ? label_formats['autoscaling_group'] : '%{vpc}%{role}'
         scratch[:label_launch_configuration] = label_formats.has_key?('launch_configuration') ? label_formats['launch_configuration'] : '%{vpc}%{role}'
-        scratch[:label_deployment_group] = label_formats.has_key?('deployment_group') ? label_formats['deployment_group'] : '%{vpc}%{deployment}'
+        scratch[:label_deployment_group] = label_formats.has_key?('deployment_group') ? label_formats['deployment_group'] : '%{vpc}%{deploy}'
         scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
         scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
         scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{role}'
@@ -665,8 +665,7 @@ module PuppetX
         end
 
         def self.GenerateDeploymentGroupResources(env_name, server_roles, status, region, zones, scratch)
-          puts("server_roles=#{server_roles}")
-          data = server_roles.select{| role_name, role_data | role_data.has_key?('deploy') }.map{ | role_name, role_data |
+          server_roles.select{| role_name, role_data | role_data.has_key?('deploy') }.map{ | role_name, role_data |
             [
               role_data['deploy'], [ role_name ]
             ]
@@ -676,20 +675,17 @@ module PuppetX
             m.has_key?(v[0]) ? m[v[0]] << v[1]  : m[v[0]] = v[1]
             m
           }.map { |deploy , roles|
-            puts("map deploy=#{deploy} roles=#{roles}")
             [
                 GenerateDeploymentGroupName(env_name, deploy, scratch),
                 {
-                    :ensure => status,
-                    :region => region,
-                    :application_name => "",
-                    :service_role => "",
-                    :autoscaling_groups => roles.map{|r|  AutoScalerHelper.GenerateAutoScalerName(env_name, role, zones, server_roles[role]['zone'], scratch) }
+                    "ensure" => status,
+                    "region" => region,
+                    "application_name" => "",
+                    "service_role" => "",
+                    "autoscaling_groups" => roles.map{|r|  AutoScalerHelper.GenerateAutoScalerName(env_name, r, zones, server_roles[r]['zone'], scratch) }
                 }
             ]
           }.reduce({}) {|m, v| m[v[0]] = v[1]; m }
-          puts("data=#{data}")
-          data
         end
 
       end

@@ -875,6 +875,22 @@ describe 'define_environment_resources' do
       "resources" => {}
   }
 
+  deployment_group2 = {
+      "resource_type" => "deployment_group",
+      "resources" => {
+        "demodeploy" => {
+            "ensure"=>"present",
+            "region"=>"us-east-1",
+            "application_name"=>"",
+            "service_role"=>"",
+            "autoscaling_groups"=>[
+              "demotestrole"
+            ],
+        }
+      }
+  }
+
+
   iam_role1 = {
       "resource_type"=>"iam_role",
       "resources"=>{
@@ -1380,7 +1396,7 @@ describe 'define_environment_resources' do
     }
   end
 
-  context 'creating an environment with a public zone, a role and some more complex networking rules' do
+  context 'creating an environment with a public zone, a role and some more complex networking rules and a deployment group' do
     it { is_expected.to run.with_params(
         'demo', 'present', 'us-east-1',
         {
@@ -1401,6 +1417,7 @@ describe 'define_environment_resources' do
                     "my_srv",
                     "my_other_srv"
                 ],
+                "deploy" => "deploy",
             }
         },
         {
@@ -1465,7 +1482,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration3,
             autoscaling_group2,
-            deployment_group1,
+            deployment_group2,
             iam_role2,
             iam_policies_1,
             iam_instance_profile2,
@@ -1474,8 +1491,6 @@ describe 'define_environment_resources' do
         ])
     }
   end
-
-
 
 end
 
