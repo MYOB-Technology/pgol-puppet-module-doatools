@@ -210,6 +210,31 @@ module PuppetX
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name
       end
 
+      def AwsCmds.find_deployment_group_by_name(regions, application_name, name, &aws_command)
+        result = regions.map{ |r|
+          {
+              :region => r,
+              :data => JSON.parse(
+                aws_command.call('deploy', 'list-deployment-groups', '--region', r, '--application-name', application_name)
+              )["deploymentGroups"].select{ | g | g == name }
+          }
+        }.select{ |a| a[:data].length != 0}.flatten
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
+
+        details = JSON.parse(aws_command.call(
+            'deploy', 'get-deployment-group',
+            '--region', result[0][:region],
+            '--application-name', application_name,
+            '--deployment-group-name', result[0][:data]))
+
+        {
+          :region => result[0][:region],
+          :data => details
+        }
+      end
 
     end
   end
