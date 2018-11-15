@@ -54,6 +54,7 @@ module PuppetX
         scratch[:label_natgw] = label_formats.has_key?('nat_gateway') ? label_formats['nat_gateway'] : '%{vpc}%{zone}%{az}'
         scratch[:label_autoscaling_group] = label_formats.has_key?('autoscaling_group') ? label_formats['autoscaling_group'] : '%{vpc}%{role}'
         scratch[:label_launch_configuration] = label_formats.has_key?('launch_configuration') ? label_formats['launch_configuration'] : '%{vpc}%{role}'
+        scratch[:label_deployment_group] = label_formats.has_key?('deployment_group') ? label_formats['deployment_group'] : '%{vpc}%{deployment}'
         scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
         scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
         scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{role}'
@@ -411,7 +412,7 @@ module PuppetX
             },
             {
               'resource_type' => "deployment_group",
-              'resources' => {}
+              'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(scratch)
             },
             {
                 'resource_type' => "iam_role",
@@ -651,7 +652,25 @@ module PuppetX
         end
       end
 
+      module DeploymentGroupHelper
+        def self.GenerateDeploymentGroupName(env_name, deploy, scratch)
+          sprintf(scratch[:label_deployment_group], {
+                    :vpc => env_name,
+                    :deploy => deploy,
+                    :VPC => env_name.upcase,
+                    :DEPLOY => deploy.upcase,
+                    :Vpc => env_name.capitalize,
+                    :Deploy => deploy.capitalize
+                })
+        end
 
+        def self.GenerateDeploymentGroupResources(scratch)
+          {
+
+          }
+        end
+
+      end
 
       module IAMHelper
         def self.CalculatePolicyResources(name, status, policies, scratch)
