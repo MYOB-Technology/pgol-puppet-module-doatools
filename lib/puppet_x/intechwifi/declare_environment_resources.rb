@@ -665,13 +665,13 @@ module PuppetX
         end
 
         def self.GenerateDeploymentGroupResources(env_name, server_roles, status, region, zones, scratch)
-          puts("server_roles=#{server_roles}"
+          puts("server_roles=#{server_roles}")
           server_roles.select{| role_name, role_data | role_data.has_key?('deploy') }.map{ | role_name, role_data |
             [
               role_data['deploy'], [ role_name ]
             ]
           }.reduce({}) {| m, v |
-            puts("reduce value=#{v}"
+            puts("reduce value=#{v}")
             # if the deploy key already exists, we add the role to the array, otherwise we create it.
             m.has_key?(v[0]) ? m[v[0]] << v[1]  : m[v[0]] = v[1]
           }.map { |deploy , roles|
