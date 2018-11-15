@@ -16,6 +16,18 @@
 Puppet::Type.newtype(:deployment_group) do
   ensurable
 
+  autorequire(:autoscaling_group) do
+    if self[:ensure] == :present
+      self[:autoscaling_groups]
+    end
+  end
+
+  autobefore(:autoscaling_group) do
+    if self[:ensure] == :absent
+      self[:autoscaling_groups]
+    end
+  end
+
   newparam(:name, :namevar => true) do
   end
 
