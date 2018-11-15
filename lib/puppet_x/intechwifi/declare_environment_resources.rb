@@ -410,6 +410,10 @@ module PuppetX
 
             },
             {
+              'resource_type' => "deployment_group",
+              'resources' => {}
+            },
+            {
                 'resource_type' => "iam_role",
                 'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services, scratch)
             },
