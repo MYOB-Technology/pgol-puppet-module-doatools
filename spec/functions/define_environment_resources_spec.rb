@@ -543,7 +543,7 @@ describe 'define_environment_resources' do
               :region => "us-east-1",
               :elastic_ip => "148.88.8.1",
               :internet_gateway => 'demo',
-              :subnet => "demonata"
+              :subnet => "demopublica"
           }
       }
   }
@@ -556,21 +556,21 @@ describe 'define_environment_resources' do
               :region => "us-east-1",
               :elastic_ip => "148.88.8.1",
               :internet_gateway => 'demo',
-              :subnet => "demonata",
+              :subnet => "demopublica",
           },
           "demonatb" => {
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.2",
               :internet_gateway => 'demo',
-              :subnet => "demonatb",
+              :subnet => "demopublicb",
           },
           "demonatc" => {
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.3",
               :internet_gateway => 'demo',
-              :subnet => "demonatc",
+              :subnet => "demopublicc",
           }
       }
   }
@@ -870,7 +870,10 @@ describe 'define_environment_resources' do
       }
   }
 
-
+  deployment_group1 = {
+      "resource_type" => "deployment_group",
+      "resources" => {}
+  }
 
   iam_role1 = {
       "resource_type"=>"iam_role",
@@ -970,6 +973,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1021,6 +1025,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1077,6 +1082,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1135,6 +1141,7 @@ describe 'define_environment_resources' do
             rds2,
             launch_configuration1,
             autoscaling_group1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1195,6 +1202,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration1,
             autoscaling_group1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1267,6 +1275,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration2,
             autoscaling_group2,
+            deployment_group1,
             iam_role2,
             iam_policies_1,
             iam_instance_profile2,
@@ -1361,6 +1370,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration2,
             autoscaling_group2,
+            deployment_group1,
             iam_role2,
             iam_policies_1,
             iam_instance_profile2,
@@ -1455,6 +1465,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration3,
             autoscaling_group2,
+            deployment_group1,
             iam_role2,
             iam_policies_1,
             iam_instance_profile2,
@@ -1467,5 +1478,4 @@ describe 'define_environment_resources' do
 
 
 end
-
 
