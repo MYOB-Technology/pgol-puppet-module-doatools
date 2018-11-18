@@ -72,6 +72,7 @@ module PuppetX
 
       @@principal_map = [
           {:key => 'ec2', :value => "ec2.amazonaws.com" },
+          {:key => 'codedeploy', :value => "codedeploy.amazonaws.com" },
       ]
 
       def self.PrincipalKey value
