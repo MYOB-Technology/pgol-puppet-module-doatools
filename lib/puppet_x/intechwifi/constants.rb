@@ -84,7 +84,7 @@ module PuppetX
       end
 
       def self.PrincipalKeys
-        @@principal_map.keys
+        @@principal_map.map{|p| p[:key]}
       end
 
 
