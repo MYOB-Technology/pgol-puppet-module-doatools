@@ -80,6 +80,7 @@ Puppet::Type.type(:deployment_group).provide(:awscli) do
 
     @property_hash[:application_name] = resource[:application_name]
     @property_hash[:region] = resource[:region]
+    @property_hash[:autoscaling_groups] = search_results[:data]['deploymentGroupInfo']['autoScalingGroups']
 
     true
 
