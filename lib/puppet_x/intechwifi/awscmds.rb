@@ -155,6 +155,14 @@ module PuppetX
         result[0]
       end
 
+      def AwsCmds.find_iam_role_by_arn(arn,  &aws_command)
+        result = JSON.parse(aws_command.call('iam', 'list-roles'))["Roles"].select{|p| p["Arn"] == arn}
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+
+        result[0]
+      end
+
       def AwsCmds.find_rds_by_name(regions, name, &aws_command)
         result = regions.map{ |r|
           {
