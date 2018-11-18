@@ -76,6 +76,8 @@ module PuppetX
         scratch[:loadbalancer_security_groups] = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
         scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
 
+        scratch[:code_deploy_service_role] = IAMHelper.GenerateRoleName(name, "codedeploy", scratch)
+
         vpc_resources = {
             name => {
                 :ensure => status,
@@ -653,36 +655,42 @@ module PuppetX
       end
 
       module DeploymentGroupHelper
-        def self.GenerateDeploymentGroupName(env_name, deploy, scratch)
+        def self.GenerateDeploymentGroupName(env_name, deploy, appname, scratch)
           sprintf(scratch[:label_deployment_group], {
                     :vpc => env_name,
                     :deploy => deploy,
+                    :app => appname,
                     :VPC => env_name.upcase,
                     :DEPLOY => deploy.upcase,
+                    :APP => appname.upcase,
                     :Vpc => env_name.capitalize,
-                    :Deploy => deploy.capitalize
+                    :Deploy => deploy.capitalize,
+                    :App => appname.capitalize,
                 })
+        end
+
+        def self.DeploymentGroups?(server_roles)
+          server_roles.any?{| role_name, role_data | role_data.has_key?('deploy') }
         end
 
         def self.GenerateDeploymentGroupResources(env_name, server_roles, status, region, zones, scratch)
           server_roles.select{| role_name, role_data | role_data.has_key?('deploy') }.map{ | role_name, role_data |
             [
-              role_data['deploy'], [ role_name ]
+              role_data['deploy']['group'], [ role_name ], role_data['deploy']['application']
             ]
           }.reduce({}) {| m, v |
-            puts("reduce value=#{v}")
             # if the deploy key already exists, we add the role to the array, otherwise we create it.
-            m.has_key?(v[0]) ? m[v[0]] << v[1]  : m[v[0]] = v[1]
+            m.has_key?(v[0]) ? m[v[0]][0] << v[1]  : m[v[0]] = [v[1], v[2]]
             m
-          }.map { |deploy , roles|
+          }.map { |deploy , data|
             [
-                GenerateDeploymentGroupName(env_name, deploy, scratch),
+                GenerateDeploymentGroupName(env_name, deploy, data[1], scratch),
                 {
                     "ensure" => status,
                     "region" => region,
-                    "application_name" => "",
-                    "service_role" => "",
-                    "autoscaling_groups" => roles.map{|r|  AutoScalerHelper.GenerateAutoScalerName(env_name, r, zones, server_roles[r]['zone'], scratch) }
+                    "application_name" => data[1],
+                    "service_role" => scratch[:code_deploy_service_role],
+                    "autoscaling_groups" => data[0].map{|r|  AutoScalerHelper.GenerateAutoScalerName(env_name, r, zones, server_roles[r]['zone'], scratch) }
                 }
             ]
           }.reduce({}) {|m, v| m[v[0]] = v[1]; m }
@@ -703,9 +711,18 @@ module PuppetX
         end
 
         def self.CalculateAllRoleResources(name, status, server_roles, services, scratch)
-          server_roles.map{|role_label, role_data|
+          roles = server_roles.map{|role_label, role_data|
             CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
-          }.reduce({}){|hash, kv| hash.merge(kv)}
+          }
+
+          roles <<  {
+             "#{scratch[:code_deploy_service_role]}" => {
+               :ensure => status,
+               :policies => []
+             }
+           } if DeploymentGroupHelper.DeploymentGroups?(server_roles)
+
+          roles.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
         def self.CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)

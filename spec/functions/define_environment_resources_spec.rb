@@ -881,8 +881,8 @@ describe 'define_environment_resources' do
         "demodeploy" => {
             "ensure"=>"present",
             "region"=>"us-east-1",
-            "application_name"=>"",
-            "service_role"=>"",
+            "application_name"=>"appname",
+            "service_role"=>"democodedeploy",
             "autoscaling_groups"=>[
               "demotestrole"
             ],
@@ -908,6 +908,19 @@ describe 'define_environment_resources' do
       }
   }
 
+  iam_role3 = {
+      "resource_type"=>"iam_role",
+      "resources"=>{
+          "demotestrole" => {
+              :ensure=>"present",
+              :policies=>[]
+          },
+          "democodedeploy" => {
+              :ensure=>"present",
+              :policies=>[]
+          }
+      }
+  }
 
 
 
@@ -1417,7 +1430,10 @@ describe 'define_environment_resources' do
                     "my_srv",
                     "my_other_srv"
                 ],
-                "deploy" => "deploy",
+                "deploy" => {
+                  "group" => "deploy",
+                  "application" => "appname",
+                },
             }
         },
         {
@@ -1483,7 +1499,7 @@ describe 'define_environment_resources' do
             launch_configuration3,
             autoscaling_group2,
             deployment_group2,
-            iam_role2,
+            iam_role3,
             iam_policies_1,
             iam_instance_profile2,
             s3_bucket1,
