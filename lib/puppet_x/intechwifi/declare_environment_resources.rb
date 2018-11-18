@@ -718,7 +718,8 @@ module PuppetX
           roles <<  {
              "#{scratch[:code_deploy_service_role]}" => {
                :ensure => status,
-               :policies => []
+               :policies => [ "AWSCodeDeployRole" ],
+               :trust => [ "codedeploy.amazonaws.com" ],
              }
            } if DeploymentGroupHelper.DeploymentGroups?(server_roles)
 

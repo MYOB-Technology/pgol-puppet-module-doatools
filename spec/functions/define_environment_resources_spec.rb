@@ -917,7 +917,8 @@ describe 'define_environment_resources' do
           },
           "democodedeploy" => {
               :ensure=>"present",
-              :policies=>[]
+              :policies=>[ "AWSCodeDeployRole"],
+              :trust=>["codedeploy.amazonaws.com"],
           }
       }
   }
