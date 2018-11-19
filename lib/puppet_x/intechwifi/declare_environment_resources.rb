@@ -841,7 +841,9 @@ module PuppetX
 
       module ServiceHelpers
         def self.CalculateServiceSecurityGroups(name, roles, services)
-          services.map{|key, value|
+          services.select{|key, value|
+            GetPathValue(value, ["network", "in"], []).length > 0 || GetPathValue(value, ["network", "out"], []).length > 0
+          }.map{|key, value|
             {
                 CalculateServiceSecurityGroupName(name, key) => {
                     :service => key,
