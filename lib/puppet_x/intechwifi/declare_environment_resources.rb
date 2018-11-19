@@ -58,6 +58,7 @@ module PuppetX
         scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
         scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
         scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{role}'
+        scratch[:label_security_group] = label_formats.has_key?('security_group') ? label_formats['security_group'] : '%{vpc}%{service}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -72,7 +73,7 @@ module PuppetX
         scratch[:rds_default_zone] = ['private', 'nat', 'public'].select{ |zone| zones.has_key?(zone) }.first
         scratch[:rds_zones] = RdsHelpers.CalculateRdsZones(name, network, zones, db_servers)
 
-        scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services)
+        scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services, scratch)
         scratch[:loadbalancer_security_groups] = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
         scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
 
@@ -187,7 +188,7 @@ module PuppetX
                   "#{name}_#{key}" => {
                       :ensure => status,
                       :region => region,
-                      :in =>  RdsHelpers::CalculateNetworkRules(name, services, key, value["engine"]),
+                      :in =>  RdsHelpers::CalculateNetworkRules(name, services, key, value["engine"], scratch),
                       :out => [],
                   }
               }
@@ -250,7 +251,7 @@ module PuppetX
                        'ensure' => status,
                        'region' => region,
                        'security_groups' => ServiceHelpers.Services(role[1]).map{|service|
-                         sg = ServiceHelpers.CalculateServiceSecurityGroupName(name, service)
+                         sg = ServiceHelpers.CalculateServiceSecurityGroupName(name, service, scratch)
                        }.select{|sg|
                          scratch[:service_security_groups].has_key?(sg)
                        },
@@ -809,7 +810,7 @@ module PuppetX
           zone_list.flatten.uniq
         end
 
-        def self.CalculateNetworkRules(name, services, db_server_name, db_server_engine)
+        def self.CalculateNetworkRules(name, services, db_server_name, db_server_engine, scratch)
           # First we need to find the port(s) to enable...
           ports = {
               'mysql' => [3306],
@@ -833,24 +834,24 @@ module PuppetX
                 segments[2] == 'rds' and segments[3] == db_server_name
               }
             }.keys.map{|service_name|
-              ports.map{|port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name)}"}
+              ports.map{|port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name, scratch)}"}
             }.flatten
 
         end
       end
 
       module ServiceHelpers
-        def self.CalculateServiceSecurityGroups(name, roles, services)
+        def self.CalculateServiceSecurityGroups(name, roles, services, scratch)
           services.select{|key, value|
             GetPathValue(value, ["network", "in"], []).length > 0 || GetPathValue(value, ["network", "out"], []).length > 0
           }.map{|key, value|
             {
-                CalculateServiceSecurityGroupName(name, key) => {
+                CalculateServiceSecurityGroupName(name, key, scratch) => {
                     :service => key,
                     :in => GetPathValue(value, ["network", "in"], []).map{|rule|
-                      TranscodeRule(name, roles, key, rule)
+                      TranscodeRule(name, roles, key, rule, scratch)
                     }.flatten,
-                    :out => GetPathValue(value, ["network", "out"], []).map{|rule| TranscodeRule(name, roles, key, rule)}.flatten
+                    :out => GetPathValue(value, ["network", "out"], []).map{|rule| TranscodeRule(name, roles, key, rule, scratch)}.flatten
                 }
             }
           }.reduce({}){|hash,kv| hash.merge(kv)}
@@ -867,11 +868,11 @@ module PuppetX
           end
         end
 
-        def self.CalculateServiceSecurityGroupName(name, service_name)
+        def self.CalculateServiceSecurityGroupName(name, service_name, scratch)
           sprintf("%{name}_%{service}", { :name => name, :service => service_name})
         end
 
-        def self.TranscodeRule(name, roles, service, env_format)
+        def self.TranscodeRule(name, roles, service, env_format, scratch)
           segments = env_format.split('|')
 
           case segments[2]
@@ -892,7 +893,7 @@ module PuppetX
 
             when 'service'
               location_type = 'sg'
-              location_ident = [CalculateServiceSecurityGroupName(name, segments[3])]
+              location_ident = [CalculateServiceSecurityGroupName(name, segments[3], scratch)]
             when 'rds'
               location_type = 'sg'
               location_ident = ["#{name}_#{segments[3]}"]
