@@ -58,7 +58,7 @@ module PuppetX
         scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
         scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
         scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{role}'
-        scratch[:label_security_group] = label_formats.has_key?('security_group') ? label_formats['security_group'] : '%{vpc}%{service}'
+        scratch[:label_security_group] = label_formats.has_key?('security_group') ? label_formats['security_group'] : '%{vpc}_%{service}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -869,7 +869,14 @@ module PuppetX
         end
 
         def self.CalculateServiceSecurityGroupName(name, service_name, scratch)
-          sprintf("%{name}_%{service}", { :name => name, :service => service_name})
+          sprintf(scratch[:label_security_group], {
+            :vpc => name,
+            :service => service_name,
+            :VPC => name.upcase,
+            :SERVICE => service_name.upcase,
+            :Vpc => name.capitalize,
+            :Service => service_name.capitalize,
+          })
         end
 
         def self.TranscodeRule(name, roles, service, env_format, scratch)
