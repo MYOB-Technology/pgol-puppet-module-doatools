@@ -99,5 +99,8 @@ Puppet::Type.newtype(:launch_configuration) do
 
   end
 
+  newproperty(:disks, :array_matching => :all) do
+  end
+
 end
 

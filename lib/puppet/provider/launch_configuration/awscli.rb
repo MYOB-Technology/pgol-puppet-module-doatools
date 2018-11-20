@@ -19,6 +19,7 @@ require 'puppet_x/intechwifi/constants'
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/awscmds'
 require 'puppet_x/intechwifi/exceptions'
+require 'puppet_x/intechwifi/ebs_volumes'
 
 Puppet::Type.type(:launch_configuration).provide(:awscli) do
   commands :awscli => "aws"
@@ -35,6 +36,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     self.ssh_key_name = resource[:ssh_key_name]
     self.iam_instance_profile = resource[:iam_instance_profile]
     self.public_ip = resource[:public_ip]
+    self.disks = resource[:disks]
 
     @property_hash[:region] = resource[:region]
 
@@ -148,6 +150,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_true(value(:public_ip))
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
+      disks = value(:disks)
+      args << ["--block-device-mappings", PuppetX::IntechWIFI::EBS_Volumes.get_block_device_mapping(disks).to_json] unless disks.nil? || disks.empty?
 
       #  Ensure we have a flat array...
       args.flatten
@@ -218,6 +222,10 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
   def public_ip=(value)
     @property_flush[:public_ip] = value
+  end
+
+  def disks=(value)
+    @property_flush[:disks] = value
   end
 
 end
