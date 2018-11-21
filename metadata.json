@@ -22,7 +22,8 @@
 
   ],
   "requirements": [
-    {"name": "puppet", "version_requirement": "4.x"}
+    {"name": "puppet", "version_requirement": "4.x"},
+    {"name": "activesupport", "version_requirement": "5.2.1"}
   ],
   "tags": ["aws", "stack", "infrastructure", "vpc", "subnet", "route_table", "security_group"],
   "data_provider": null

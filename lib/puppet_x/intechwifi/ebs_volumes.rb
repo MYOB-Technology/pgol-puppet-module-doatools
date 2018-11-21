@@ -16,12 +16,41 @@
 require 'json'
 require 'puppet_x/intechwifi/exceptions'
 require 'puppet_x/intechwifi/awscmds'
+require 'active_support/core_ext/hash'
 
 module PuppetX
   module IntechWIFI
     module EBS_Volumes
+        BASE_DEVICE_NAME = 'xvd'
+        EBS_DEVICE_NAME_LETTERS = ('f'..'z').to_a
+        REJECT_KEYS = ['DeviceName', 'Source']
+        SNAPSHOT_ID = 'SnapshotId'
+
         def self.get_block_device_mapping(volumes)
-            volumes.map { |volume| { 'DeviceName' => volume['DeviceName'], 'Ebs' => volume.reject { |key, _value| key == 'DeviceName' } } }
+            generic = volumes.select { |vol| vol['Source'].nil? || vol['Source'].empty? }
+            non_generic = volumes.reject { |vol| vol['Source'].nil? || vol['Source'].empty? }
+            ami_volumes = non_generic.select { |vol| vol['Source']['Ami'] }
+                                     .map { |vol| { 'DeviceName' => vol['Source']['Ami'], 'Ebs' => vol.reject { |key, _value| REJECT_KEYS.include? key } } }
+
+            generic_and_snapshot_vols = non_generic.select{ |vol| vol['Source']['Snapshot'] }
+                                                   .each{ |vol| vol[SNAPSHOT_ID] = vol['Source']['Snapshot']}
+                                                   .concat(generic)
+                                                   .each_with_index.map { |vol, i| { 'DeviceName' => "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}", 'Ebs' => vol.reject { |key, _val| REJECT_KEYS.include? key } } }
+
+            return ami_volumes.concat(generic_and_snapshot_vols)
+        end
+
+        def self.merge_block_device_mapping(existing_mappings, configured_mappings)
+            (existing_mappings + configured_mappings).group_by { |h| h['DeviceName'] }
+                                                     .map { |k,v| v.reduce(:deep_merge) }
+        end
+
+        def self.remove_snapshot_encrypted_flag(mappings)
+            mappings.map do | mapping |
+                (mapping['Ebs'] && mapping['Ebs'].key?(SNAPSHOT_ID)) ? 
+                { 'DeviceName' => mapping['DeviceName'], 'Ebs' => mapping['Ebs'].reject { |key, _val| key == 'Encrypted'} } :
+                mapping
+            end
         end
     end
   end

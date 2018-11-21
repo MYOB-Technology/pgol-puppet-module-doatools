@@ -150,8 +150,19 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_true(value(:public_ip))
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
-      disks = value(:disks)
-      args << ["--block-device-mappings", PuppetX::IntechWIFI::EBS_Volumes.get_block_device_mapping(disks).to_json] unless disks.nil? || disks.empty?
+      disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_block_device_mapping(value(:disks))
+      ami_block_devices = JSON.parse(awscli([
+        'ec2',
+        'describe-images',
+        '--region', value(:region),
+        '--image-ids', value(:image)
+      ]))['Images'].first['BlockDeviceMappings']
+
+      merged_mappings = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, disks_configured 
+      merged_mappings = PuppetX::IntechWIFI::EBS_Volumes.remove_snapshot_encrypted_flag merged_mappings
+
+      device_mappings = disks_configured.nil? || disks_configured.empty? ? ami_block_devices : merged_mappings
+      args << ["--block-device-mappings", device_mappings.to_json]
 
       #  Ensure we have a flat array...
       args.flatten
