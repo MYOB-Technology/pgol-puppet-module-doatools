@@ -29,11 +29,11 @@ module PuppetX
         def self.get_block_device_mapping(volumes)
             generic = volumes.select { |vol| vol['Source'].nil? || vol['Source'].empty? }
             non_generic = volumes.reject { |vol| vol['Source'].nil? || vol['Source'].empty? }
-            ami_volumes = non_generic.select { |vol| vol['Source']['Ami'] }
-                                     .map { |vol| { 'DeviceName' => vol['Source']['Ami'], 'Ebs' => vol.reject { |key, _value| REJECT_KEYS.include? key } } }
+            ami_volumes = non_generic.select { |vol| vol['Source'].start_with?('ami') }
+                                     .map { |vol| { 'DeviceName' => vol['Source'].split('|')[1], 'Ebs' => vol.reject { |key, _value| REJECT_KEYS.include? key } } }
 
-            generic_and_snapshot_vols = non_generic.select{ |vol| vol['Source']['Snapshot'] }
-                                                   .each{ |vol| vol[SNAPSHOT_ID] = vol['Source']['Snapshot']}
+            generic_and_snapshot_vols = non_generic.select{ |vol| vol['Source'].start_with?('snapshot') }
+                                                   .each{ |vol| vol[SNAPSHOT_ID] = vol['Source'].split('|')[1]}
                                                    .concat(generic)
                                                    .each_with_index.map { |vol, i| { 'DeviceName' => "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}", 'Ebs' => vol.reject { |key, _val| REJECT_KEYS.include? key } } }
 
