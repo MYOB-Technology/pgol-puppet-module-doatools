@@ -15,7 +15,8 @@ Puppet::Functions.create_function('define_environment_resources') do
     tags,
     tags_vpc,
     policies,
-    label_formats
+    label_formats,
+    options
   )
     PuppetX::IntechWIFI::Declare_Environment_Resources.define_environment_resources(
         name,
@@ -30,11 +31,9 @@ Puppet::Functions.create_function('define_environment_resources') do
         tags,
         tags_vpc,
         policies,
-        label_formats
+        label_formats,
+        options
     )
-
-
-
   end
 end
 

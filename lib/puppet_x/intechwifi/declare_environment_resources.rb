@@ -34,7 +34,8 @@ module PuppetX
           tags,
           tags_vpc,
           policies,
-          label_formats
+          label_formats,
+          options
       )
 
         # Validation of inputs.

@@ -98,6 +98,10 @@ define doatools::environment (
 
   }),
 
+  $options = lookup('doatools::environment::options', Hash, 'deep', {
+    coalesce_sg_per_role => false
+  })
+
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
 #  $network=lookup('environment::network', Data, 'first', { }),
 #  $roles=lookup('environment::roles', Data, 'first', {}),
@@ -118,7 +122,8 @@ define doatools::environment (
     $tags,
     $tags_vpc,
     $policies,
-    $label_formats
+    $label_formats,
+    $options
   ).each |$r| {
     $rt = $r['resource_type']
     $rts = $r['resources'].keys

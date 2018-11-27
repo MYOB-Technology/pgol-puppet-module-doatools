@@ -981,12 +981,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1033,12 +1032,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1090,12 +1088,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1149,12 +1146,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1210,12 +1206,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1282,13 +1277,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1377,13 +1370,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1475,14 +1466,11 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-
-        },
-        {
-
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
