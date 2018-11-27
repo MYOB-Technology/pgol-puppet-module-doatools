@@ -23,32 +23,26 @@ module PuppetX
     module EBS_Volumes
         BASE_DEVICE_NAME = 'xvd'
         EBS_DEVICE_NAME_LETTERS = ('f'..'z').to_a
-        REJECT_KEYS = ['DeviceName', 'Source']
+        DEVICE_NAME = 'DeviceName'
         SNAPSHOT_ID = 'SnapshotId'
 
-        def self.get_block_device_mapping(volumes)
-            generic = volumes.select { |vol| vol['Source'].nil? || vol['Source'].empty? }
-            non_generic = volumes.reject { |vol| vol['Source'].nil? || vol['Source'].empty? }
-            ami_volumes = non_generic.select { |vol| vol['Source'].start_with?('ami') }
-                                     .map { |vol| { 'DeviceName' => vol['Source'].split('|')[1], 'Ebs' => vol.reject { |key, _value| REJECT_KEYS.include? key } } }
+        def self.get_disks_block_device_mapping(disks)
+            disks.each_with_index.map { |disk, i| { DEVICE_NAME => "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}", 'Ebs' => disk } }
+        end
 
-            generic_and_snapshot_vols = non_generic.select{ |vol| vol['Source'].start_with?('snapshot') }
-                                                   .each{ |vol| vol[SNAPSHOT_ID] = vol['Source'].split('|')[1]}
-                                                   .concat(generic)
-                                                   .each_with_index.map { |vol, i| { 'DeviceName' => "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}", 'Ebs' => vol.reject { |key, _val| REJECT_KEYS.include? key } } }
-
-            return ami_volumes.concat(generic_and_snapshot_vols)
+        def self.get_image_block_device_mapping(disks)
+            disks.keys.map { |device_name| { DEVICE_NAME => device_name, 'Ebs' => disks[device_name] } }
         end
 
         def self.merge_block_device_mapping(existing_mappings, configured_mappings)
-            (existing_mappings + configured_mappings).group_by { |h| h['DeviceName'] }
+            (existing_mappings + configured_mappings).group_by { |h| h[DEVICE_NAME] }
                                                      .map { |k,v| v.reduce(:deep_merge) }
         end
 
         def self.remove_snapshot_encrypted_flag(mappings)
             mappings.map do | mapping |
                 (mapping['Ebs'] && mapping['Ebs'].key?(SNAPSHOT_ID)) ? 
-                { 'DeviceName' => mapping['DeviceName'], 'Ebs' => mapping['Ebs'].reject { |key, _val| key == 'Encrypted'} } :
+                { DEVICE_NAME => mapping[DEVICE_NAME], 'Ebs' => mapping['Ebs'].reject { |key, _val| key == 'Encrypted'} } :
                 mapping
             end
         end

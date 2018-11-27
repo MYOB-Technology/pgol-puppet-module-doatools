@@ -99,7 +99,10 @@ Puppet::Type.newtype(:launch_configuration) do
 
   end
 
-  newproperty(:disks, :array_matching => :all) do
+  newproperty(:image_disks) do
+  end
+
+  newproperty(:extra_disks, :array_matching => :all) do
   end
 
 end

@@ -36,7 +36,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     self.ssh_key_name = resource[:ssh_key_name]
     self.iam_instance_profile = resource[:iam_instance_profile]
     self.public_ip = resource[:public_ip]
-    self.disks = resource[:disks]
+    self.image_disks = resource[:image_disks]
+    self.extra_disks = resource[:extra_disks]
 
     @property_hash[:region] = resource[:region]
 
@@ -150,7 +151,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_true(value(:public_ip))
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
-      disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_block_device_mapping(value(:disks))
+      extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
+      ami_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
       ami_block_devices = JSON.parse(awscli([
         'ec2',
         'describe-images',
@@ -158,10 +160,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
         '--image-ids', value(:image)
       ]))['Images'].first['BlockDeviceMappings']
 
-      merged_mappings = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, disks_configured 
-      merged_mappings = PuppetX::IntechWIFI::EBS_Volumes.remove_snapshot_encrypted_flag merged_mappings
+      merged_ami_disks = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, ami_disks_configured 
+      device_mappings = PuppetX::IntechWIFI::EBS_Volumes.remove_snapshot_encrypted_flag merged_ami_disks.concat(extra_disks_configured)
 
-      device_mappings = disks_configured.nil? || disks_configured.empty? ? ami_block_devices : merged_mappings
       args << ["--block-device-mappings", device_mappings.to_json]
 
       #  Ensure we have a flat array...
@@ -235,8 +236,12 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_flush[:public_ip] = value
   end
 
-  def disks=(value)
-    @property_flush[:disks] = value
+  def image_disks=(value)
+    @property_flush[:image_disks] = value
+  end
+
+  def extra_disks=(value)
+    @property_flush[:extra_disks] = value
   end
 
 end
