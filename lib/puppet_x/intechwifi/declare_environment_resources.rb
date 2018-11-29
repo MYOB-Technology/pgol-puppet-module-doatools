@@ -16,6 +16,7 @@
 require 'json'
 require 'puppet_x/intechwifi/exceptions'
 require 'puppet_x/intechwifi/awscmds'
+require 'puppet_x/intechwifi/security_group_helper'
 
 module PuppetX
   module IntechWIFI
@@ -75,7 +76,6 @@ module PuppetX
         scratch[:rds_zones] = RdsHelpers.CalculateRdsZones(name, network, zones, db_servers)
 
         scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services, scratch)
-        scratch[:loadbalancer_security_groups] = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
         scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
 
         scratch[:code_deploy_service_role] = IAMHelper.GenerateRoleName(name, "codedeploy", scratch)
@@ -107,59 +107,10 @@ module PuppetX
 
         subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
 
+        security_group_helper = PuppetX::IntechWIFI::SecurityGroupHelper.new(options['coalesce_sg_per_role'])
 
-
-        security_group_resources = (status == 'present' ? {
-            #  We can only
-            name => {
-                :ensure => status,
-                :region => region,
-                :vpc   => name,
-                :tags => scratch[:tags_with_environment],
-            }
-        } : {}
-        ).merge(
-            # Merge in the security group declarations for the services
-            scratch[:service_security_groups].map{|key, value|
-              {
-                  key => {
-                      :ensure => status,
-                      :region => region,
-                      :vpc => name,
-                      :tags => scratch[:tags_with_environment],
-                      :description => "Service security group"
-
-                  }
-              }
-            }.reduce({}){| hash, kv| hash.merge(kv)}
-        ).merge(
-             # Merge in the security group declarations for the databases.
-             db_servers.map{|key, value|
-               {
-                   "#{name}_#{key}" => {
-                       :ensure => status,
-                       :region => region,
-                       :vpc => name,
-                       :tags => scratch[:tags_with_environment],
-                       :description => "database security group"
-                   }
-               }
-             }.reduce({}){| hash, kv| hash.merge(kv)}
-        ).merge(
-            scratch[:loadbalancer_security_groups].map{|sg|
-              {
-                  "#{sg}" => {
-                      :ensure => status,
-                      :region => region,
-                      :vpc => name,
-                      :tags => scratch[:tags_with_environment],
-                      :description => "load balancer security group"
-                  }
-              }
-            }.reduce({}){| hash, kv| hash.merge(kv)}
-        )
-
-
+        loadbalancer_sgs = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
+        security_group_resources = security_group_helper.generate_group_resources(status, name, region, scratch[:tags_with_environment], db_servers, scratch[:service_security_groups], loadbalancer_sgs)
 
         security_group_rules_resources = (status == 'present' ? {
             name => {
@@ -544,8 +495,6 @@ module PuppetX
           }
         end
 
-
-
         def self.GetRoleNamesWithLoadBalancers(server_roles, services)
           server_roles.select {|role_name, role_data|
             role_data.has_key?('services') and role_data['services'].any?{|service_name| DoesServiceHaveLoadbalancedPorts(services, service_name)}
@@ -895,7 +844,7 @@ module PuppetX
                   }.map{|role_name, role_data|
                     "#{name}_#{role_name}_elb"
                   }
-
+              
 
               end
 
