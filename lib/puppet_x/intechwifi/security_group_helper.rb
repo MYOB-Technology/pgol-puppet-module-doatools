@@ -18,8 +18,8 @@ module PuppetX
     module IntechWIFI
       class SecurityGroupHelper
         
-        def initialize(coalesce_sgs)
-            @helper = coalesce_sgs ? SgPerRoleHelper.new : SgPerServiceHelper.new
+        def initialize(label_format, coalesce_sgs)
+            @helper = coalesce_sgs ? SgPerRoleHelper.new(label_format) : SgPerServiceHelper.new(label_format)
         end
 
         def generate_group_resources(status, name, region, tags, db_sgs, service_sgs, lb_sgs)
@@ -32,6 +32,10 @@ module PuppetX
       end
 
       class SgPerServiceHelper
+        def initialize(sg_label_format)
+            @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{service}' : sg_label_format
+        end
+
         def generate_group_resources(status, name, region, tags, db_sgs, service_sgs, lb_sgs)
             (status == 'present' ? {
                 #  Default security group for a vpc
@@ -90,6 +94,10 @@ module PuppetX
       end
       
       class SgPerRoleHelper
+        def initialize(sg_label_format)
+            @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{role}' : sg_label_format
+        end
+
         def generate_group_resources
         end
 

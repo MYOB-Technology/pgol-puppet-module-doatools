@@ -107,7 +107,7 @@ module PuppetX
 
         subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
 
-        security_group_helper = PuppetX::IntechWIFI::SecurityGroupHelper.new(options['coalesce_sg_per_role'])
+        security_group_helper = PuppetX::IntechWIFI::SecurityGroupHelper.new(label_formats['security_group'], options['coalesce_sg_per_role'])
 
         loadbalancer_sgs = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
         security_group_resources = security_group_helper.generate_group_resources(status, name, region, scratch[:tags_with_environment], db_servers, scratch[:service_security_groups], loadbalancer_sgs)
