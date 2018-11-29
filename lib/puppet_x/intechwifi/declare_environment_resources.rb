@@ -65,11 +65,8 @@ module PuppetX
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
 
-
-
         scratch[:nat_list] = NatHelpers.CalculateNatDetails(name, network, zones, scratch)
         scratch[:route_table_data] = RouteTableHelpers.CalculateRouteTablesRequired(name, network, zones, scratch)
-
 
         # The array of rds_zones needed...
         scratch[:rds_default_zone] = ['private', 'nat', 'public'].select{ |zone| zones.has_key?(zone) }.first
@@ -107,10 +104,10 @@ module PuppetX
 
         subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
 
-        security_group_helper = PuppetX::IntechWIFI::SecurityGroupHelper.new(label_formats['security_group'], options['coalesce_sg_per_role'])
-
         loadbalancer_sgs = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
-        security_group_resources = security_group_helper.generate_group_resources(status, name, region, scratch[:tags_with_environment], db_servers, scratch[:service_security_groups], loadbalancer_sgs)
+        
+        security_group_helper = PuppetX::IntechWIFI::SecurityGroupHelper.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
+        security_group_resources = security_group_helper.generate_group_resources(status, region, scratch[:tags_with_environment], db_servers, loadbalancer_sgs)
 
         security_group_rules_resources = (status == 'present' ? {
             name => {
