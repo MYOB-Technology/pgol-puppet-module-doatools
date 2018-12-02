@@ -19,6 +19,7 @@ require 'puppet_x/intechwifi/awscmds'
 require 'puppet_x/intechwifi/security_group_generator'
 require 'puppet_x/intechwifi/rds_helpers'
 require 'puppet_x/intechwifi/service_helpers'
+require 'puppet_x/intechwifi/loadbalancer_helper'
 
 module PuppetX
   module IntechWIFI
@@ -139,7 +140,7 @@ module PuppetX
                   "#{name}_#{key}" => {
                       :ensure => status,
                       :region => region,
-                      :in =>  RdsHelpers::CalculateNetworkRules(name, services, key, value["engine"], scratch),
+                      :in =>  RdsHelpers.CalculateNetworkRules(name, services, key, value["engine"], scratch),
                       :out => [],
                   }
               }
@@ -402,152 +403,6 @@ module PuppetX
             }
         ]
       end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      module LoadBalancerHelper
-        def self.GenerateLoadbalancerResources(name, status, region, roles, services, scratch)
-          GetRoleNamesWithLoadBalancers(roles, services).map{|role_name|
-            GenerateLoadBalancer(name, status, region, role_name, services, scratch)
-          }.reduce({}){|hash, kv| hash.merge(kv) }
-        end
-
-        def self.GenerateLoadBalancer(name, status, region, role_name, services, scratch)
-          {
-              "#{GenerateLoadBalancerName(name, role_name)}" => {
-                  :ensure => status,
-                  :region => region,
-                  :subnets => scratch[:subnet_data].select{|data| data[:zone] == 'public' }.map{|data| data[:name] },
-                  :listeners => scratch[:loadbalancer_role_service_hash][role_name].map{|service|
-                    service['loadbalanced_ports'].map{|port| ParseSharedPort(port)}
-                  }.flatten.map{|porthash|
-                    (porthash.has_key?(:certificate) and porthash.has_key?(:protocol) and porthash[:protocol] == 'https') ?
-                        "https://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
-                        "#{porthash[:protocol]}://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}"
-                  }.uniq,
-                  :targets => [ GenerateLoadBalancerTarget(name, role_name) ],
-                  :security_groups => [ "#{name}_#{role_name}_elb" ],
-                  # :internet_gateway => ;
-              }
-          }
-        end
-
-        def self.GenerateLoadBalancerTarget(name, role_name)
-          {
-              "name" => "#{GenerateLoadBalancerTargetName(name, role_name)}",
-              "port" => 80,
-              "check_interval" => 30,
-              "timeout" => 5,
-              "healthy" => 5,
-              "failed" => 2,
-              "vpc" => name
-          }
-        end
-
-        def self.GenerateLoadBalancerName(name, role_name)
-          TranscodeLoadBalancerName("#{name}-#{role_name}")
-        end
-
-        def self.GenerateLoadBalancerTargetName(name, role_name)
-          TranscodeLoadBalancerName("#{name}-#{role_name}")
-        end
-
-        def self.TranscodeLoadBalancerName(name)
-          name.chars.map{|ch| ['_'].include?(ch) ? '-' : ch }.join
-        end
-
-        def self.DoesServiceHaveLoadbalancedPorts(services, service_name)
-          return false if !services.has_key?(service_name)
-          return false if !services[service_name].has_key?('loadbalanced_ports')
-          return false if services[service_name]['loadbalanced_ports'].length == 0
-          true
-        end
-
-        def self.GetRoleLoadBalancedPorts(role, services)
-          return [] if !role.has_key?('services')
-
-          role['services'].map{ |service_name|
-            services[service_name].select{|service|
-              service.has_key?('loadbalanced_ports') and service['loadbalanced_ports'].length > 0
-            }.map{|service|
-              service['loadbalanced_ports']
-            }
-          }
-        end
-
-        def self.GetRoleNamesWithLoadBalancers(server_roles, services)
-          server_roles.select {|role_name, role_data|
-            role_data.has_key?('services') and role_data['services'].any?{|service_name| DoesServiceHaveLoadbalancedPorts(services, service_name)}
-          }.map{|role_name, role_data| role_name }
-        end
-
-        def self.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
-          server_roles.select {|role_name, role_data|
-            role_data.has_key?('services') and role_data['services'].any?{|service_name| DoesServiceHaveLoadbalancedPorts(services, service_name)}
-          }.map{|role_name, role_data|
-            {
-                role_name => role_data['services'].select{|service_name|
-                  DoesServiceHaveLoadbalancedPorts(services, service_name)
-                }.map{|service_name| services[service_name].merge({'service_name' => service_name})}
-            }
-          }.reduce({}){|hash, kv| hash.merge(kv)}
-        end
-
-        def self.CalculateSecurityGroups(name, server_roles, services)
-          GetRoleNamesWithLoadBalancers(server_roles, services).map{|role_name| "#{name}_#{role_name}_elb"}
-        end
-
-        def self.ParseSharedPort(shared_port)
-          source_target_split = /^(.+)=>([0-9]{1,5})$/.match(shared_port)
-
-          # no =>
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_target_split.nil?
-          # Destination port a number?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, source_target_split[2] if /^[0-9]{1,5}$/.match(source_target_split[2]).nil?
-
-          source_split = source_target_split[1].split('|')
-
-          # Was it properly split?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_target_split.nil?
-          # too few segments?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_split.length < 2
-          # too many segments?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_split.length > 3
-
-          # Is the source port a number?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if /^[0-9]{1,5}$/.match(source_split[1]).nil?
-
-          {
-              :protocol => source_split[0],
-              :listen_port => source_split[1],
-              :target_port => source_target_split[2]
-          }.merge(source_split.length == 3 ? {
-              :certificate => source_split[2]
-          } : {})
-
-        end
-
-      end
-
 
       module AutoScalerHelper
         def self.GenerateAutoScalerName(env_name, role, zones, z, scratch)
