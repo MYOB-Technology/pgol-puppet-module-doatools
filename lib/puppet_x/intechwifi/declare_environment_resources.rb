@@ -20,6 +20,7 @@ require 'puppet_x/intechwifi/security_group_generator'
 require 'puppet_x/intechwifi/rds_helpers'
 require 'puppet_x/intechwifi/service_helpers'
 require 'puppet_x/intechwifi/loadbalancer_helper'
+require 'puppet_x/intechwifi/network_rules_generator'
 
 module PuppetX
   module IntechWIFI
@@ -112,61 +113,8 @@ module PuppetX
         security_group_generator = PuppetX::IntechWIFI::SecurityGroupGenerator.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
         security_group_resources = security_group_generator.generate(status, region, scratch[:tags_with_environment], db_servers, loadbalancer_sgs)
 
-        security_group_rules_resources = (status == 'present' ? {
-            name => {
-                :ensure => status,
-                :region => region,
-                :in => [],
-                :out => [],
-            }
-
-        } : {}
-        ).merge(
-            #  Need to merge in the security group rule declarations for the roles.
-            scratch[:service_security_groups].map{|key, value|
-              {
-                  key => {
-                      :ensure => status,
-                      :region => region,
-                      :in => value[:in],
-                      :out => value[:out],
-                  }
-              }
-            }.reduce({}){| hash, kv| hash.merge(kv)}
-        ).merge(
-            # Merge in the security group declarations for the databases.
-            db_servers.map{|key, value|
-              {
-                  "#{name}_#{key}" => {
-                      :ensure => status,
-                      :region => region,
-                      :in =>  RdsHelpers.CalculateNetworkRules(name, services, key, value["engine"], scratch),
-                      :out => [],
-                  }
-              }
-            }.reduce({}){| hash, kv| hash.merge(kv)}
-        ).merge(
-            scratch[:loadbalancer_role_service_hash].map{|role_name, service_array|
-              {
-                  "#{name}_#{role_name}_elb" => {
-                      :ensure => status,
-                      :region => region,
-                      :in => service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{LoadBalancerHelper.ParseSharedPort(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"},
-                      :out => service_array.map{|service|
-                        service['loadbalanced_ports'].map { |port|
-                          "tcp|#{LoadBalancerHelper.ParseSharedPort(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service["service_name"])}"
-                        }
-                      }.flatten.uniq,
-                    }
-              }
-            }.reduce({}){| hash, kv| hash.merge(kv)}
-        )
-
-        #
-        #
-        #
-        #puts("Created Security Group Rules")
-
+        security_group_rules_generator = PuppetX::IntechWIFI::NetworkRulesGenerator.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
+        security_group_rules_resources = security_group_rules_generator.generate(status, region, db_servers, scratch[:loadbalancer_role_service_hash], scratch)
 
         internet_gateway_resources = {
             name => {
