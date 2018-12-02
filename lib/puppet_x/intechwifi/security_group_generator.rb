@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+require 'puppet_x/intechwifi/service_helpers'
 
 module PuppetX
     module IntechWIFI
@@ -40,7 +41,6 @@ module PuppetX
                  .reduce({}){ | hash, kv| hash.merge(kv) }
             end
 
-
             def generate_group_resource(resource_name, status, region, vpc, tags, description)
                 { resource_name => { :ensure => status, :region => region, :vpc => vpc, :tags => tags, :description => description } }
             end
@@ -52,39 +52,11 @@ module PuppetX
             end
 
             def generate(name, roles, services, status, region, tags)
-                get_service_security_groups(name, roles, services)
+                ServiceHelpers.CalculateServiceSecurityGroups(name, roles, services, { :label_security_group => @label_format } )
                     .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Service security group') }
             end
-
-            def get_service_security_groups(name, roles, services)
-                services.select{ |service, service_details| get_path_value(service_details, ['network', 'in'], []).length > 0 || get_path_value(service_details, ['network', 'out'], []).length > 0 }
-                        .keys
-                        .map{ |service| get_security_group_name(name, service) }
-            end
-    
-            def get_path_value(data, path, nodata)
-                path = [path] unless path.kind_of?(Array)
-                if !data.has_key?(path[0])
-                    nodata
-                elsif path.length > 1
-                    get_path_value(data[path[0]], path[1..-1], nodata)
-                else
-                    data[path[0]]
-                end
-            end
-    
-            def get_security_group_name(name, service_name)
-                sprintf(@label_format, {
-                    :vpc => name,
-                    :service => service_name,
-                    :VPC => name.upcase,
-                    :SERVICE => service_name.upcase,
-                    :Vpc => name.capitalize,
-                    :Service => service_name.capitalize,
-                })
-            end
         end
-      
+
         class SgPerRoleGenerator < SecurityGroupGenerator
             def initialize(sg_label_format)
                 @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{role}' : sg_label_format
