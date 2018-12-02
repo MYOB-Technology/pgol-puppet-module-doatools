@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'puppet_x/intechwifi/declare_environment_resources'
+require 'puppet_x/intechwifi/service_helpers'
 
 module PuppetX
     module IntechWIFI
@@ -58,9 +58,8 @@ module PuppetX
                     segments[2] == 'rds' and segments[3] == db_server_name
                 }
                 }.keys.map{|service_name|
-                ports.map{|port| "tcp|#{port}|sg|#{PuppetX::IntechWIFI::Declare_Environment_Resources::ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name, scratch)}"}
+                    ports.map{|port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name, scratch)}"}
                 }.flatten
-
             end
         end
     end

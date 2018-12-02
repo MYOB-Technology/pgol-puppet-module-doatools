@@ -18,6 +18,7 @@ require 'puppet_x/intechwifi/exceptions'
 require 'puppet_x/intechwifi/awscmds'
 require 'puppet_x/intechwifi/security_group_generator'
 require 'puppet_x/intechwifi/rds_helpers'
+require 'puppet_x/intechwifi/service_helpers'
 
 module PuppetX
   module IntechWIFI
@@ -736,85 +737,6 @@ module PuppetX
 
 
       end
-
-      module ServiceHelpers
-        def self.CalculateServiceSecurityGroups(name, roles, services, scratch)
-          services.select{|key, value|
-            GetPathValue(value, ["network", "in"], []).length > 0 || GetPathValue(value, ["network", "out"], []).length > 0
-          }.map{|key, value|
-            {
-                CalculateServiceSecurityGroupName(name, key, scratch) => {
-                    :service => key,
-                    :in => GetPathValue(value, ["network", "in"], []).map{|rule|
-                      TranscodeRule(name, roles, key, rule, scratch)
-                    }.flatten,
-                    :out => GetPathValue(value, ["network", "out"], []).map{|rule| TranscodeRule(name, roles, key, rule, scratch)}.flatten
-                }
-            }
-          }.reduce({}){|hash,kv| hash.merge(kv)}
-        end
-
-        def self.GetPathValue(data, path, nodata)
-          path = [path] if !path.kind_of?(Array)
-          if !data.has_key?(path[0])
-            nodata
-          elsif path.length > 1
-            GetPathValue(data[path[0]], path[1..-1], nodata)
-          else
-            data[path[0]]
-          end
-        end
-
-        def self.CalculateServiceSecurityGroupName(name, service_name, scratch)
-          sprintf(scratch[:label_security_group], {
-            :vpc => name,
-            :service => service_name,
-            :VPC => name.upcase,
-            :SERVICE => service_name.upcase,
-            :Vpc => name.capitalize,
-            :Service => service_name.capitalize,
-          })
-        end
-
-        def self.TranscodeRule(name, roles, service, env_format, scratch)
-          segments = env_format.split('|')
-
-          case segments[2]
-            when 'rss'
-              location_type = 'sg'
-
-              case segments[3]
-                when 'elb'
-                  # This is the fun one!
-                  location_ident = roles.select{|role_name, role_data|
-                    role_data['services'].include?(service)
-                  }.map{|role_name, role_data|
-                    "#{name}_#{role_name}_elb"
-                  }
-              
-
-              end
-
-            when 'service'
-              location_type = 'sg'
-              location_ident = [CalculateServiceSecurityGroupName(name, segments[3], scratch)]
-            when 'rds'
-              location_type = 'sg'
-              location_ident = ["#{name}_#{segments[3]}"]
-            else
-              location_type = segments[2]
-              location_ident = [segments[3]]
-          end
-
-          location_ident.map{|loc_ident|  "#{segments[0]}|#{segments[1]}|#{location_type}|#{loc_ident}" }
-        end
-
-        def self.Services(role)
-          role.has_key?("services") ? role["services"] : []
-        end
-
-      end
-
 
       module NatHelpers
         def self.GenerateNatName(env_name, zones, z, az, azi, scratch)
