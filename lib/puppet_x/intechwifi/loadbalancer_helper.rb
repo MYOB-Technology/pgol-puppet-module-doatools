@@ -108,6 +108,17 @@ module PuppetX
             def self.CalculateSecurityGroups(name, server_roles, services)
               GetRoleNamesWithLoadBalancers(server_roles, services).map{|role_name| "#{name}_#{role_name}_elb"}
             end
+
+            def self.calculate_service_network_rules(service_array, scratch)
+              in_rules = service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{ParseSharedPort(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"}
+              out_rules = service_array.map{|service|
+                service['loadbalanced_ports'].map { |port|
+                  "tcp|#{ParseSharedPort(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(@name, service["service_name", scratch])}"
+                }
+              }.flatten.uniq
+
+              { :in => in_rules, :out => out_rules }
+            end
     
             def self.ParseSharedPort(shared_port)
               source_target_split = /^(.+)=>([0-9]{1,5})$/.match(shared_port)

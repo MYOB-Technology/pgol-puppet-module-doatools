@@ -34,7 +34,7 @@ module PuppetX
             zone_list.flatten.uniq
             end
 
-            def self.CalculateNetworkRules(name, services, db_server_name, db_server_engine, scratch)
+            def self.calculate_service_network_rules(name, services, db_server_name, db_server_engine, scratch)
             # First we need to find the port(s) to enable...
             ports = {
                 'mysql' => [3306],
@@ -52,7 +52,7 @@ module PuppetX
             }[db_server_engine.nil? ? 'mysql' : db_server_engine]
 
                 # Then we need the list of services that talk to this database.
-                services.select{|service_name, service|
+                in_rules = services.select{|service_name, service|
                 service['network']['out'].flatten.any?{|rule|
                     segments = rule.split('|')
                     segments[2] == 'rds' and segments[3] == db_server_name
@@ -60,6 +60,8 @@ module PuppetX
                 }.keys.map{|service_name|
                     ports.map{|port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name, scratch)}"}
                 }.flatten
+
+                { :in => in_rules, :out => [] }
             end
         end
     end

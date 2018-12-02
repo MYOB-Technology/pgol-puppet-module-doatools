@@ -114,7 +114,7 @@ module PuppetX
         security_group_resources = security_group_generator.generate(status, region, scratch[:tags_with_environment], db_servers, loadbalancer_sgs)
 
         security_group_rules_generator = PuppetX::IntechWIFI::NetworkRulesGenerator.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
-        security_group_rules_resources = security_group_rules_generator.generate(status, region, db_servers, scratch[:loadbalancer_role_service_hash], scratch)
+        security_group_rules_resources = security_group_rules_generator.generate(status, region, db_servers, scratch)
 
         internet_gateway_resources = {
             name => {
@@ -123,7 +123,6 @@ module PuppetX
                 :vpc   => name,
                 :nat_gateways => scratch[:nat_list].map{|nat| nat[:name]},
             }
-
         }
 
         #
