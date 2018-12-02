@@ -16,7 +16,7 @@
 require 'json'
 require 'puppet_x/intechwifi/exceptions'
 require 'puppet_x/intechwifi/awscmds'
-require 'puppet_x/intechwifi/security_group_helper'
+require 'puppet_x/intechwifi/security_group_generator'
 require 'puppet_x/intechwifi/rds_helpers'
 
 module PuppetX
@@ -107,8 +107,8 @@ module PuppetX
 
         loadbalancer_sgs = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
         
-        security_group_helper = PuppetX::IntechWIFI::SecurityGroupHelper.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
-        security_group_resources = security_group_helper.generate_group_resources(status, region, scratch[:tags_with_environment], db_servers, loadbalancer_sgs)
+        security_group_generator = PuppetX::IntechWIFI::SecurityGroupGenerator.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
+        security_group_resources = security_group_generator.generate(status, region, scratch[:tags_with_environment], db_servers, loadbalancer_sgs)
 
         security_group_rules_resources = (status == 'present' ? {
             name => {

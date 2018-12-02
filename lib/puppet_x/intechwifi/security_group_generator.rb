@@ -16,15 +16,15 @@
 
 module PuppetX
     module IntechWIFI
-        class SecurityGroupHelper
+        class SecurityGroupGenerator
             def initialize(name, roles, services, label_format, coalesce_sgs)
-                @helper = coalesce_sgs ? SgPerRoleHelper.new(label_format) : SgPerServiceHelper.new(label_format)
+                @generator = coalesce_sgs ? SgPerRoleGenerator.new(label_format) : SgPerServiceGenerator.new(label_format)
                 @name = name
                 @roles = roles
                 @services = services
             end
 
-            def generate_group_resources(status, region, tags, db_sgs, lb_sgs)
+            def generate(status, region, tags, db_sgs, lb_sgs)
                 (status == 'present' ? [{
                     # Default security group for a vpc
                     @name => {
@@ -36,7 +36,7 @@ module PuppetX
                 }] : []
                 ).concat(db_sgs.map{ |key, _val| generate_group_resource("#{@name}_#{key}", status, region, @name, tags, 'database security group') }) 
                  .concat(lb_sgs.map{ |sg| generate_group_resource(sg, status, region, @name, tags, 'load balancer security group') })        
-                 .concat(@helper.generate_group_resources(@name, @roles, @services, status, region, tags))
+                 .concat(@generator.generate(@name, @roles, @services, status, region, tags))
                  .reduce({}){ | hash, kv| hash.merge(kv) }
             end
 
@@ -46,12 +46,12 @@ module PuppetX
             end
         end
 
-        class SgPerServiceHelper < SecurityGroupHelper
+        class SgPerServiceGenerator < SecurityGroupGenerator
             def initialize(label_format)
                 @label_format = (label_format.nil? || label_format.empty?) ? '%{vpc}_%{service}' : label_format
             end
 
-            def generate_group_resources(name, roles, services, status, region, tags)
+            def generate(name, roles, services, status, region, tags)
                 get_service_security_groups(name, roles, services)
                     .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Service security group') }
             end
@@ -85,12 +85,12 @@ module PuppetX
             end
         end
       
-        class SgPerRoleHelper < SecurityGroupHelper
+        class SgPerRoleGenerator < SecurityGroupGenerator
             def initialize(sg_label_format)
                 @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{role}' : sg_label_format
             end
 
-            def generate_group_resources
+            def generate
                 get_role_security_groups(name, roles, services)
                     .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Service security group') }
             end
