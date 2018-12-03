@@ -16,54 +16,76 @@
 require 'puppet_x/intechwifi/service_helpers'
 
 module PuppetX
-    module IntechWIFI
-        module RdsHelpers
-            def self.CalculateRdsZones(name, network, zones, db_servers)
-            # Get the zones needed for all database server declarations.
-            zone_list = db_servers.keys.select{|s| db_servers[s].has_key?('zone') }.map{|s| db_servers[s]['zone']}
+  module IntechWIFI
+    module RdsHelpers
+      def self.CalculateRdsZones(name, network, zones, db_servers)
+        # Get the zones needed for all database server declarations.
+        zone_list = db_servers.keys.select{|s| db_servers[s].has_key?('zone') }.map{|s| db_servers[s]['zone']}
 
-            # Add the default zone as well, if needed.
-            zone_list << [
-                'private',
-                'nat',
-                'public'
-            ].select{ |zone|
-                zones.has_key?(zone)
-            }.first if db_servers.keys.select{|s| !db_servers[s].has_key?('zone') }.length > 0
+        # Add the default zone as well, if needed.
+        zone_list << [
+            'private',
+            'nat',
+            'public'
+        ].select{ |zone|
+            zones.has_key?(zone)
+        }.first if db_servers.keys.select{|s| !db_servers[s].has_key?('zone') }.length > 0
 
-            zone_list.flatten.uniq
-            end
+        zone_list.flatten.uniq
+      end
 
-            def self.calculate_service_network_rules(name, services, db_server_name, db_server_engine, scratch)
-            # First we need to find the port(s) to enable...
-            ports = {
-                'mysql' => [3306],
-                'mariadb' =>  [3306],
-                'oracle-se1' => [1525],
-                'oracle-se2' => [1526],
-                'oracle-se' => [1526],
-                'oracle-ee' => [1526],
-                'sqlserver-ee' => [1433],
-                'sqlserver-se' => [1433],
-                'sqlserver-ex' => [1433],
-                'sqlserver-web' => [1433],
-                'postgres' => [5432,5433],
-                'aurora' => [3306],
-            }[db_server_engine.nil? ? 'mysql' : db_server_engine]
+      def self.calculate_service_network_rules(name, services, db_server_name, db_server_engine, scratch)
+        ports = get_ports_to_enable(db_server_engine)
 
-                # Then we need the list of services that talk to this database.
-                in_rules = services.select{|service_name, service|
-                service['network']['out'].flatten.any?{|rule|
-                    segments = rule.split('|')
-                    segments[2] == 'rds' and segments[3] == db_server_name
-                }
-                }.keys.map{|service_name|
-                    ports.map{|port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name, scratch)}"}
-                }.flatten
+        # Then we need the list of services that talk to this database.
+        in_rules = get_services_that_talk_to_db(services, db_server_name)
+                     .map{ |service_name| ports.map{ |port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name, scratch)}" } }
+                     .flatten
+        { :in => in_rules, :out => [] }
+      end
 
-                { :in => in_rules, :out => [] }
-            end
-        end
+      def self.calculate_role_network_rules(name, roles, services, db_server_name, db_server_engine, scratch)
+        ports = get_ports_to_enable(db_server_engine)
+
+        in_rules = get_services_that_talk_to_db(services, db_server_name)
+                     .map{ |service_name| get_roles_with_service(service_name) }
+                     .flatten
+                     .uniq
+                     .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{ServiceHelpers.calculate_role_security_group_name(name, role_name, scratch)}" } }
+        { :in => in_rules, :out => [] }
+      end
+
+      def self.get_services_that_talk_to_db(services, db_server_name)
+        services.select{ |service_name, service|
+          service['network']['out'].flatten.any?{|rule|
+              segments = rule.split('|')
+              segments[2] == 'rds' and segments[3] == db_server_name
+          }
+        }.keys
+      end
+
+      def self.get_ports_to_enable(db_server_engine)
+        {
+          'mysql' => [3306],
+          'mariadb' =>  [3306],
+          'oracle-se1' => [1525],
+          'oracle-se2' => [1526],
+          'oracle-se' => [1526],
+          'oracle-ee' => [1526],
+          'sqlserver-ee' => [1433],
+          'sqlserver-se' => [1433],
+          'sqlserver-ex' => [1433],
+          'sqlserver-web' => [1433],
+          'postgres' => [5432,5433],
+          'aurora' => [3306],
+        }[db_server_engine.nil? ? 'mysql' : db_server_engine]
+      end
+
+      def self.get_roles_with_service(service_name, roles)
+        roles.select { |role_name, role_details| role_details['services'].include? service_name }
+             .keys
+      end 
     end
+  end
 end
 
