@@ -176,10 +176,10 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::AutoScalerHelpers'
     end
   end
 
-  describe "ParseSharedPort" do
+  describe "#parse_shared_port" do
     it "handles a http example properly" do
       expect(
-          helpers.ParseSharedPort("http|80=>80")
+          helpers.parse_shared_port("http|80=>80")
       ).to eq({
           :protocol => 'http',
           :listen_port => '80',

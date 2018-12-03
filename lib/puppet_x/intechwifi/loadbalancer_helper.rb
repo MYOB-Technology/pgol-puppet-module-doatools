@@ -31,7 +31,7 @@ module PuppetX
                       :region => region,
                       :subnets => scratch[:subnet_data].select{|data| data[:zone] == 'public' }.map{|data| data[:name] },
                       :listeners => scratch[:loadbalancer_role_service_hash][role_name].map{|service|
-                        service['loadbalanced_ports'].map{|port| ParseSharedPort(port)}
+                        service['loadbalanced_ports'].map{|port| parse_shared_port(port)}
                       }.flatten.map{|porthash|
                         (porthash.has_key?(:certificate) and porthash.has_key?(:protocol) and porthash[:protocol] == 'https') ?
                             "https://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
@@ -110,17 +110,17 @@ module PuppetX
             end
 
             def self.calculate_service_network_rules(service_array, scratch)
-              in_rules = service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{ParseSharedPort(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"}
+              in_rules = service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{parse_shared_port(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"}
               out_rules = service_array.map{|service|
                 service['loadbalanced_ports'].map { |port|
-                  "tcp|#{ParseSharedPort(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(@name, service["service_name", scratch])}"
+                  "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(@name, service["service_name", scratch])}"
                 }
               }.flatten.uniq
 
               { :in => in_rules, :out => out_rules }
             end
     
-            def self.ParseSharedPort(shared_port)
+            def self.parse_shared_port(shared_port)
               source_target_split = /^(.+)=>([0-9]{1,5})$/.match(shared_port)
     
               # no =>
