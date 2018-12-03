@@ -110,15 +110,28 @@ module PuppetX
             end
 
             def self.calculate_service_network_rules(service_array, scratch)
-              in_rules = service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{parse_shared_port(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"}
-              out_rules = service_array.map{|service|
+              in_rules = calculate_network_in_rules(service_array)
+              out_rules = service_array.map{ |service|
                 service['loadbalanced_ports'].map { |port|
-                  "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(@name, service["service_name", scratch])}"
+                  "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(@name, service["service_name"], scratch)}"
                 }
               }.flatten.uniq
 
               { :in => in_rules, :out => out_rules }
             end
+
+            def self.calculate_role_network_rules(role_name, service_array, scratch)
+              in_rules = calculate_network_in_rules(service_array)
+              out_rules = service_array.map{ |service|
+                service['loadbalanced_ports'].map { |port|
+                  "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{ServiceHelpers.calculate_role_security_group(@name, role_name, scratch)}"
+                }
+              }.flatten.uniq
+            end
+
+            def self.calculate_network_in_rules(service_array)
+              in_rules = service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{parse_shared_port(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"}
+            end 
     
             def self.parse_shared_port(shared_port)
               source_target_split = /^(.+)=>([0-9]{1,5})$/.match(shared_port)
