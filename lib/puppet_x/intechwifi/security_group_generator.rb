@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'puppet_x/intechwifi/service_helpers'
+require 'puppet_x/intechwifi/loadbalancer_helper'
 
 module PuppetX
     module IntechWIFI
@@ -25,7 +26,7 @@ module PuppetX
                 @services = services
             end
 
-            def generate(status, region, tags, db_sgs, lb_sgs)
+            def generate(status, region, tags, db_sgs)
                 (status == 'present' ? [{
                     # Default security group for a vpc
                     @name => {
@@ -36,7 +37,7 @@ module PuppetX
                     }
                 }] : []
                 ).concat(db_sgs.map{ |key, _val| generate_group_resource("#{@name}_#{key}", status, region, @name, tags, 'database security group') }) 
-                 .concat(lb_sgs.map{ |sg| generate_group_resource(sg, status, region, @name, tags, 'load balancer security group') })        
+                 .concat(LoadBalancerHelper.CalculateSecurityGroups(@name, @roles, @services).map{ |sg| generate_group_resource(sg, status, region, @name, tags, 'load balancer security group') })        
                  .concat(@generator.generate(@name, @roles, @services, status, region, tags))
                  .reduce({}){ | hash, kv| hash.merge(kv) }
             end
