@@ -14,6 +14,8 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'puppet_x/intechwifi/exceptions'
+require 'puppet_x/intechwifi/service_helpers'
+require 'puppet_x/intechwifi/role_helpers'
 
 module PuppetX
     module IntechWIFI
@@ -124,7 +126,7 @@ module PuppetX
               in_rules = calculate_network_in_rules(service_array)
               out_rules = service_array.map{ |service|
                 service['loadbalanced_ports'].map { |port|
-                  "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{ServiceHelpers.calculate_role_security_group(@name, role_name, scratch)}"
+                  "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{RoleHelpers.calculate_role_security_group(@name, role_name, scratch)}"
                 }
               }.flatten.uniq
             end

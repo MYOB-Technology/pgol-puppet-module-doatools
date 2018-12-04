@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'puppet_x/intechwifi/service_helpers'
+require 'puppet_x/intechwifi/rds_helpers'
 
 module PuppetX
   module IntechWIFI
@@ -51,7 +52,7 @@ module PuppetX
                      .map{ |service_name| get_roles_with_service(service_name) }
                      .flatten
                      .uniq
-                     .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{ServiceHelpers.calculate_role_security_group_name(name, role_name, scratch)}" } }
+                     .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{RoleHelpers.calculate_role_security_group_name(name, role_name, scratch)}" } }
         { :in => in_rules, :out => [] }
       end
 
