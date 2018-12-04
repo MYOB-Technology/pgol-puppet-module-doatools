@@ -15,6 +15,7 @@
 
 require 'puppet_x/intechwifi/service_helpers'
 require 'puppet_x/intechwifi/loadbalancer_helper'
+require 'puppet_x/intechwifi/role_helpers'
 
 module PuppetX
   module IntechWIFI
@@ -64,7 +65,7 @@ module PuppetX
       end
 
       def generate(name, roles, services, status, region, tags)
-        ServiceHelpers.calculate_role_security_groups(name, roles, services, { :label_security_group => @label_format } )
+        RoleHelpers.calculate_role_security_groups(name, roles, services, { :label_security_group => @label_format } )
           .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Role security group') }
       end
     end

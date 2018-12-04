@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'puppet_x/intechwifi/service_helpers'
+require 'puppet_x/intechwifi/role_helpers'
 
-describe 'PuppetX::IntechWIFI::ServiceHelpers' do
-  let(:helpers) { PuppetX::IntechWIFI::ServiceHelpers }
+describe 'PuppetX::IntechWIFI::RoleHelpers' do
+  let(:helpers) { PuppetX::IntechWIFI::RoleHelpers }
 
   name = 'Demo'
 
@@ -10,10 +10,10 @@ describe 'PuppetX::IntechWIFI::ServiceHelpers' do
 
   roles = {
     'role1' => {
-      'services' => ['service1', 'service2', 'sevice3']
+      'services' => ['service1', 'service2', 'service3']
     },
     'role2' => {
-      'services' => ['service2', 'sevice3']
+      'services' => ['service2', 'service3']
     },
     'role3' => {
       'services' => ['service4']
@@ -43,8 +43,30 @@ describe 'PuppetX::IntechWIFI::ServiceHelpers' do
   }
 
   role_security_groups = {
-    'Demo_role1' => { :in => [], :out => [] }, 
-    'Demo_role2' => { :in => [], :out => [] }
+    'Demo_role1' => {
+      :in => [
+        "tcp|22|cidr|0.0.0.0/0", 
+        "tcp|80|sg|Demo_role1_elb", 
+        "tcp|80|sg|Demo_role2_elb"
+      ], 
+      :out => [
+        "tcp|80|cidr|0.0.0.0/0", 
+        "tcp|443|cidr|0.0.0.0/0", 
+        "tcp|3306|sg|Demo_testdb"
+      ]
+    },
+    'Demo_role2' => {
+      :in => [
+        "tcp|22|cidr|0.0.0.0/0", 
+        "tcp|80|sg|Demo_role1_elb", 
+        "tcp|80|sg|Demo_role2_elb"
+      ], 
+      :out => [
+        "tcp|80|cidr|0.0.0.0/0", 
+        "tcp|443|cidr|0.0.0.0/0", 
+        "tcp|3306|sg|Demo_testdb" 
+      ]
+    },
   }
 
   describe '#calculate_role_security_groups' do

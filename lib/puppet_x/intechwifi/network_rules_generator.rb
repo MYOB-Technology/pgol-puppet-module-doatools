@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'puppet_x/intechwifi/service_helpers'
+require 'puppet_x/intechwifi/role_helpers'
 require 'puppet_x/intechwifi/rds_helpers'
 require 'puppet_x/intechwifi/loadbalancer_helper'
 
@@ -63,6 +64,9 @@ module PuppetX
 
             def generate
               security_group_rules_resources = (status == 'present' ? [generate_resource(@name, status, region, { :in => [], :out => [] })] : [])
+                .concat(RoleHelpers.CalculateServiceSecurityGroups(@name, @roles, @services, scratch).map{|key, value|
+                  generate_resource(key, status, region, { :in => value[:in], :out => value[:out] })
+                })
                 .concat(db_servers.map{|key, value|
                   generate_resource("#{@name}_#{key}", status, region, RdsHelpers.calculate_role_network_rules(@name, @services, key, value["engine"], scratch))
                 })

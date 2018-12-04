@@ -27,17 +27,6 @@ module PuppetX
                 } } 
                 .reduce({}){ |hash, kv| hash.merge(kv) }
       end
-      
-      def self.calculate_role_security_groups(name, roles, services, scratch)
-        roles.select { |role, role_details| !role_details['services'].nil? && role_details['services'].any? { |service| service_has_network?(services[service]) } }
-             .map{ |role_name, role_details| {
-               calculate_role_security_group_name(name, role_name, scratch) => {
-                 :in => [],
-                 :out => []
-               }
-             } }
-             .reduce({}){ |hash, kv| hash.merge(kv) }
-      end
 
       def self.get_path_value(data, path, nodata)
         path = [path] if !path.kind_of?(Array)
@@ -60,18 +49,7 @@ module PuppetX
           :Service => service_name.capitalize,
         })
       end
-
-      def self.calculate_role_security_group_name(name, role_name, scratch)
-        sprintf(scratch[:label_security_group], {
-          :vpc => name,
-          :role => role_name,
-          :VPC => name.upcase,
-          :ROLE => role_name.upcase,
-          :Vpc => name.capitalize,
-          :Role => role_name.capitalize,
-        })
-      end
-
+      
       def self.service_has_network?(service)
         get_path_value(service, ["network", "in"], []).length > 0 || get_path_value(service, ["network", "out"], []).length > 0
       end 
