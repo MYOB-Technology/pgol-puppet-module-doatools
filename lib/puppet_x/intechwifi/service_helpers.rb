@@ -17,15 +17,20 @@ module PuppetX
   module IntechWIFI
     module ServiceHelpers
       def self.calculate_security_groups(name, roles, services, scratch)
-        services.select{ |key, value| service_has_network?(value) }
-                .map{|key, value| {
-                  calculate_security_group_name(name, key, scratch) => {
-                    :service => key,
-                    :in => get_path_value(value, ["network", "in"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch) }.flatten,
-                    :out => get_path_value(value, ["network", "out"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch)}.flatten
-                  }
+        services.select{ |_service, details| service_has_network?(details) }
+                .map{ |service, details| {
+                   'name' => calculate_security_group_name(name, service, scratch),
+                   'description' => 'Service security group'
                 } } 
-                .reduce({}){ |hash, kv| hash.merge(kv) }
+      end
+
+      def self.calculate_network_rules(name, roles, services, scratch)
+        services.select{ |key, value| service_has_network?(value) }
+                .map{ |key, value| {
+                  :name => calculate_security_group_name(name, key, scratch),
+                  :in => get_path_value(value, ["network", "in"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch) }.flatten,
+                  :out => get_path_value(value, ["network", "out"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch)}.flatten
+                } } 
       end
 
       def self.get_path_value(data, path, nodata)

@@ -42,36 +42,49 @@ describe 'PuppetX::IntechWIFI::RoleHelpers' do
     'service4' => {}
   }
 
-  role_security_groups = {
-    'Demo_role1' => {
-      :in => [
-        "tcp|22|cidr|0.0.0.0/0", 
-        "tcp|80|sg|Demo_role1_elb", 
-        "tcp|80|sg|Demo_role2_elb"
-      ], 
-      :out => [
-        "tcp|80|cidr|0.0.0.0/0", 
-        "tcp|443|cidr|0.0.0.0/0", 
-        "tcp|3306|sg|Demo_testdb"
+  network_rules = [
+    {
+      :in => [ 
+        'tcp|22|cidr|0.0.0.0/0',
+        'tcp|80|sg|Demo_role1_elb',
+        'tcp|80|sg|Demo_role2_elb'
+      ],
+      :name => 'Demo_role1',
+      :out => [ 
+        'tcp|80|cidr|0.0.0.0/0',
+        'tcp|443|cidr|0.0.0.0/0',
+        'tcp|3306|sg|Demo_testdb'
       ]
     },
-    'Demo_role2' => {
+    {
       :in => [
-        "tcp|22|cidr|0.0.0.0/0", 
-        "tcp|80|sg|Demo_role1_elb", 
-        "tcp|80|sg|Demo_role2_elb"
-      ], 
-      :out => [
-        "tcp|80|cidr|0.0.0.0/0", 
-        "tcp|443|cidr|0.0.0.0/0", 
-        "tcp|3306|sg|Demo_testdb" 
+        'tcp|22|cidr|0.0.0.0/0',
+        'tcp|80|sg|Demo_role1_elb',
+        'tcp|80|sg|Demo_role2_elb'
+      ],
+      :name=>'Demo_role2',
+      :out=> [
+        'tcp|80|cidr|0.0.0.0/0',
+        'tcp|443|cidr|0.0.0.0/0',
+        'tcp|3306|sg|Demo_testdb'
       ]
-    },
-  }
+    }
+  ]
+
+  security_groups = [
+    {'description'=>'Role security group', 'name'=>'Demo_role1'},
+    {'description'=>'Role security group', 'name'=>'Demo_role2'}
+  ]
 
   describe '#calculate_security_groups' do
     it 'returns an array of roles that will have network rules attached to them' do
-      expect(helpers.calculate_security_groups(name, roles, services, scratch)).to eq(role_security_groups)
+      expect(helpers.calculate_security_groups(name, roles, services, scratch)).to eq(security_groups)
+    end
+  end
+
+  describe '#calculate_network_rules' do
+    it 'returns an array of roles that will have network rules attached to them' do
+      expect(helpers.calculate_network_rules(name, roles, services, scratch)).to eq(network_rules)
     end
   end
 end

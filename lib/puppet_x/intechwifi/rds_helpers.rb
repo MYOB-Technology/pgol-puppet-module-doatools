@@ -35,25 +35,37 @@ module PuppetX
         zone_list.flatten.uniq
       end
 
-      def self.calculate_service_network_rules(name, services, db_server_name, db_server_engine, scratch)
-        ports = get_ports_to_enable(db_server_engine)
-
-        # Then we need the list of services that talk to this database.
-        in_rules = get_services_that_talk_to_db(services, db_server_name)
-                     .map{ |service_name| ports.map{ |port| "tcp|#{port}|sg|#{ServiceHelpers.calculate_security_group_name(name, service_name, scratch)}" } }
-                     .flatten
-        { :in => in_rules, :out => [] }
+      def self.calculate_security_groups(name, db_servers)
+        db_servers.keys.map { |server| { 'name' => calculate_security_group_name(name, server), 'description' => 'database security group' }  }
       end
 
-      def self.calculate_role_network_rules(name, roles, services, db_server_name, db_server_engine, scratch)
-        ports = get_ports_to_enable(db_server_engine)
+      def self.calculate_security_group_name(name, server)
+        "#{name}_#{server}"
+      end
 
-        in_rules = get_services_that_talk_to_db(services, db_server_name)
-                     .map{ |service_name| get_roles_with_service(service_name) }
-                     .flatten
-                     .uniq
-                     .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, scratch)}" } }
-        { :in => in_rules, :out => [] }
+      def self.calculate_service_network_rules(name, services, db_servers, scratch)
+        db_servers.map{ |server, details|
+          ports = get_ports_to_enable(details['engine'])
+
+          in_rules = get_services_that_talk_to_db(services, server)
+                       .map{ |service_name| ports.map{ |port| "tcp|#{port}|sg|#{ServiceHelpers.calculate_security_group_name(name, service_name, scratch)}" } }
+                       .flatten
+          { :name => calculate_security_group_name(name, server), :in => in_rules, :out => [] }
+        }
+      end
+
+      def self.calculate_role_network_rules(name, roles, services, db_servers, scratch)
+        db_servers.map{ |server, details|
+          ports = get_ports_to_enable(db_server_engine)
+
+          in_rules = get_services_that_talk_to_db(services, db_server_name)
+                      .map{ |service_name| get_roles_with_service(service_name) }
+                      .flatten
+                      .uniq
+                      .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, scratch)}" } }
+
+          { :name => calculate_security_group_name(name, server), :in => in_rules, :out => [] }
+        }
       end
 
       def self.get_services_that_talk_to_db(services, db_server_name)

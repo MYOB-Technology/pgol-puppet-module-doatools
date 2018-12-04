@@ -15,6 +15,7 @@
 
 require 'puppet_x/intechwifi/service_helpers'
 require 'puppet_x/intechwifi/loadbalancer_helper'
+require 'puppet_x/intechwifi/rds_helpers'
 require 'puppet_x/intechwifi/role_helpers'
 
 module PuppetX
@@ -27,20 +28,13 @@ module PuppetX
         @services = services
       end
 
-      def generate(status, region, tags, db_sgs)
-        (status == 'present' ? [{
-            # Default security group for a vpc
-            @name => {
-                :ensure => status,
-                :region => region,
-                :vpc   => @name,
-                :tags => tags,
-            }
-        }] : []
-        ).concat(db_sgs.map{ |key, _val| generate_group_resource("#{@name}_#{key}", status, region, @name, tags, 'database security group') }) 
-          .concat(LoadBalancerHelper.calculate_security_groups(@name, @roles, @services).map{ |sg| generate_group_resource(sg, status, region, @name, tags, 'load balancer security group') })        
-          .concat(@generator.generate(@name, @roles, @services, status, region, tags))
+      def generate(status, region, tags, db_servers)
+        @generator.generate(@name, @roles, @services, status, region, tags)
+          .concat(LoadBalancerHelper.calculate_security_groups(@name, @roles, @services))
+          .concat(RdsHelpers.calculate_security_groups(@name, db_servers))
+          .map{ |sg| generate_group_resource(sg['name'], status, region, @name, tags, sg['description']) }        
           .reduce({}){ | hash, kv| hash.merge(kv) }
+          .merge( (status == 'present') ? { @name => {:ensure => status, :region => region, :vpc => @name, :tags => tags } } : {})
       end
 
       def generate_group_resource(resource_name, status, region, vpc, tags, description)
@@ -55,7 +49,6 @@ module PuppetX
 
       def generate(name, roles, services, status, region, tags)
         ServiceHelpers.calculate_security_groups(name, roles, services, { :label_security_group => @label_format } )
-          .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Service security group') }
       end
     end
 
@@ -66,10 +59,7 @@ module PuppetX
 
       def generate(name, roles, services, status, region, tags)
         RoleHelpers.calculate_security_groups(name, roles, services, { :label_security_group => @label_format } )
-          .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Role security group') }
       end
     end
   end
 end
-  
-  

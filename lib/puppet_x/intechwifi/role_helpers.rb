@@ -19,12 +19,18 @@ module PuppetX
       def self.calculate_security_groups(name, roles, services, scratch)
         roles.select { |role, role_details| !role_details['services'].nil? && role_details['services'].any? { |service| service_has_network?(services[service]) } }
              .map{ |role_name, role_details| {
-               calculate_security_group_name(name, role_name, scratch) => {
-                 :in => get_network_rules(role_details['services'], name, roles, services, scratch, 'in'),
-                 :out => get_network_rules(role_details['services'], name, roles, services, scratch, 'out')
-               }
+               'name' => calculate_security_group_name(name, role_name, scratch),
+               'description' => 'Role security group'
              } }
-             .reduce({}){ |hash, kv| hash.merge(kv) }
+      end
+
+      def self.calculate_network_rules(name, roles, services, scratch)
+        roles.select { |role, role_details| !role_details['services'].nil? && role_details['services'].any? { |service| service_has_network?(services[service]) } }
+             .map{ |role_name, role_details| {
+               :name => calculate_security_group_name(name, role_name, scratch),
+               :in => get_network_rules(role_details['services'], name, roles, services, scratch, 'in'),
+               :out => get_network_rules(role_details['services'], name, roles, services, scratch, 'out')
+             } }
       end
 
       def self.get_path_value(data, path, nodata)

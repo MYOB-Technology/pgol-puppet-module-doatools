@@ -75,9 +75,6 @@ module PuppetX
         scratch[:rds_default_zone] = ['private', 'nat', 'public'].select{ |zone| zones.has_key?(zone) }.first
         scratch[:rds_zones] = RdsHelpers.calculate_rds_zones(name, network, zones, db_servers)
 
-        scratch[:service_security_groups] = ServiceHelpers.calculate_security_groups(name, server_roles, services, scratch)
-        scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(server_roles, services)
-
         scratch[:code_deploy_service_role] = IAMHelper.GenerateRoleName(name, "codedeploy", scratch)
 
         vpc_resources = {
@@ -149,7 +146,7 @@ module PuppetX
                        'security_groups' => ServiceHelpers.services(role[1]).map{|service|
                          sg = ServiceHelpers.calculate_security_group_name(name, service, scratch)
                        }.select{|sg|
-                         scratch[:service_security_groups].has_key?(sg)
+                         ServiceHelpers.calculate_security_groups(name, server_roles, services, scratch).map{ |sg| sg['name'] }.include?(sg)
                        },
                        'iam_instance_profile' => [
                            IAMHelper.GenerateInstanceProfileName(name, role[0], scratch)
@@ -301,7 +298,7 @@ module PuppetX
                       }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
                           AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
                       )).merge(
-                          scratch[:loadbalancer_role_service_hash].has_key?(role_name) ? {
+                          LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(server_roles, services).has_key?(role_name) ? {
                               'load_balancer' => LoadBalancerHelper.generate_loadbalancer_name(name, role_name)
                           } : {}
                       )

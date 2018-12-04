@@ -29,50 +29,44 @@ module PuppetX
                 @generator.generate(status, region, db_servers, scratch)
             end
 
-            def generate_resource(resource_name, status, region, rules)
-                { resource_name => { :ensure => status, :region => region, :in => rules[:in], :out => rules[:out] } }
+            def generate_resource(resource_name, status, region, in_rule, out_rule)
+                { resource_name => { :ensure => status, :region => region, :in => in_rule, :out => out_rule } }
             end
         end
 
         class NetworkRulesPerServiceGenerator < NetworkRulesGenerator
             def initialize(name, roles, services, label_format)
-                @label_format = (label_format.nil? || label_format.empty?) ? '%{vpc}_%{service}' : label_format
-                @name = name
-                @roles = roles
-                @services = services
+              @label_format = (label_format.nil? || label_format.empty?) ? '%{vpc}_%{service}' : label_format
+              @name = name
+              @roles = roles
+              @services = services
             end
 
             def generate(status, region, db_servers, scratch)
-              security_group_rules_resources = (status == 'present' ? [generate_resource(@name, status, region, { :in => [], :out => [] })] : [])
-                .concat(ServiceHelpers.calculate_security_groups(@name, @roles, @services, scratch).map{|key, value|
-                  generate_resource(key, status, region, { :in => value[:in], :out => value[:out] })
-                })
-                .concat(db_servers.map{|key, value|
-                  generate_resource("#{@name}_#{key}", status, region, RdsHelpers.calculate_service_network_rules(@name, @services, key, value["engine"], scratch))
-                })
-                .concat(LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(@roles, @services).map{|role_name, service_array|
-                  generate_resource("#{@name}_#{role_name}_elb", status, region, LoadBalancerHelper.calculate_service_network_rules(service_array, scratch))
-                })
+              security_group_rules_resources = (status == 'present' ? [{ :name => @name, :in => [], :out => [] }] : [])
+                .concat(ServiceHelpers.calculate_network_rules(@name, @roles, @services, scratch))
+                .concat(RdsHelpers.calculate_service_network_rules(@name, @services, db_servers, scratch))
+                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, scratch))
+                .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
                 .reduce({}){| hash, kv| hash.merge(kv)}
             end
         end
 
         class NetworkRulesPerRoleGenerator < NetworkRulesGenerator
-            def initialize(sg_label_format)
-                @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{role}' : sg_label_format
+            def initialize(name, roles, services, label_format)
+              @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{role}' : sg_label_format
+              @name = name
+              @roles = roles
+              @services = services
             end
 
-            def generate
+            def generate(status, region, db_servers, scratch)
               security_group_rules_resources = (status == 'present' ? [generate_resource(@name, status, region, { :in => [], :out => [] })] : [])
-                .concat(RoleHelpers.calculate_security_groups(@name, @roles, @services, scratch).map{|key, value|
-                  generate_resource(key, status, region, { :in => value[:in], :out => value[:out] })
-                })
-                .concat(db_servers.map{|key, value|
-                  generate_resource("#{@name}_#{key}", status, region, RdsHelpers.calculate_role_network_rules(@name, @services, key, value["engine"], scratch))
-                })
-                .concat(LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(@roles, @services).map{|role_name, service_array|
-                  generate_resource("#{@name}_#{role_name}_elb", status, region, LoadBalancerHelper.calculate_role_network_rules(role_name, service_array, scratch)) 
-                })
+                .concat(RoleHelpers.calculate_network_rules(@name, @roles, @services, scratch))
+                .concat(RdsHelpers.calculate_role_network_rules(@name, @services, db_servers, scratch))
+                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, scratch))
+                .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
+                .reduce({}){| hash, kv| hash.merge(kv)}
             end
         end
     end
