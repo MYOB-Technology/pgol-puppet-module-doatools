@@ -21,12 +21,15 @@ require 'puppet_x/intechwifi/loadbalancer_helper'
 module PuppetX
     module IntechWIFI
         class NetworkRulesGenerator
-            def initialize(name, roles, services, label_format, coalesce_sgs)
-                @generator = coalesce_sgs ? NetworkRulesPerRoleGenerator.new(name, roles, services, label_format) : NetworkRulesPerServiceGenerator.new(name, roles, services, label_format)
+            def initialize(coalesce_sgs)
+                @generator = coalesce_sgs ? NetworkRulesPerRoleGenerator.new : NetworkRulesPerServiceGenerator.new
             end
 
-            def generate(status, region, db_servers)
-                @generator.generate(status, region, db_servers)
+            def generate(name, roles, services, label_format, status, region, db_servers)
+                (status == 'present' ? [{ :name => name, :in => [], :out => [] }] : [])
+                  .concat(@generator.generate(name, roles, services, label_format, db_servers))
+                  .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
+                  .reduce({}){| hash, kv| hash.merge(kv)}
             end
 
             def generate_resource(resource_name, status, region, in_rule, out_rule)
@@ -34,39 +37,19 @@ module PuppetX
             end
         end
 
-        class NetworkRulesPerServiceGenerator < NetworkRulesGenerator
-            def initialize(name, roles, services, label_format)
-              @label_format = label_format
-              @name = name
-              @roles = roles
-              @services = services
-            end
-
-            def generate(status, region, db_servers)
-              (status == 'present' ? [{ :name => @name, :in => [], :out => [] }] : [])
-                .concat(ServiceHelpers.calculate_network_rules(@name, @roles, @services, @label_format))
-                .concat(RdsHelpers.calculate_service_network_rules(@name, @services, db_servers, @label_format))
-                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, @label_format))
-                .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
-                .reduce({}){| hash, kv| hash.merge(kv)}
+        class NetworkRulesPerServiceGenerator
+            def generate(name, roles, services, label_format, db_servers)
+              ServiceHelpers.calculate_network_rules(name, roles, services, label_format)
+                .concat(RdsHelpers.calculate_service_network_rules(name, services, db_servers, label_format))
+                .concat(LoadBalancerHelper.calculate_service_network_rules(name, roles, services, label_format))
             end
         end
 
-        class NetworkRulesPerRoleGenerator < NetworkRulesGenerator
-            def initialize(name, roles, services, label_format)
-              @label_format = label_format
-              @name = name
-              @roles = roles
-              @services = services
-            end
-
-            def generate(status, region, db_servers)
-              (status == 'present' ? [{ :name => @name, :in => [], :out => [] }] : [])
-                .concat(RoleHelpers.calculate_network_rules(@name, @roles, @services, @label_format))
-                .concat(RdsHelpers.calculate_role_network_rules(@name, @roles, @services, db_servers, @label_format))
-                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, @label_format))
-                .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
-                .reduce({}){| hash, kv| hash.merge(kv)}
+        class NetworkRulesPerRoleGenerator
+            def generate(name, roles, services, label_format, db_servers)
+              RoleHelpers.calculate_network_rules(name, roles, services, label_format)
+                .concat(RdsHelpers.calculate_role_network_rules(name, roles, services, db_servers, label_format))
+                .concat(LoadBalancerHelper.calculate_service_network_rules(name, roles, services, label_format))
             end
         end
     end

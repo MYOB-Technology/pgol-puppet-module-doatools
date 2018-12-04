@@ -21,21 +21,17 @@ require 'puppet_x/intechwifi/role_helpers'
 module PuppetX
   module IntechWIFI
     class SecurityGroupGenerator
-      def initialize(name, roles, services, label_format, coalesce_sgs)
+      def initialize(coalesce_sgs)
         @generator = coalesce_sgs ? SgPerRoleGenerator.new : SgPerServiceGenerator.new
-        @name = name
-        @roles = roles
-        @services = services
-        @label_format = label_format
       end
 
-      def generate(status, region, tags, db_servers)
-        @generator.generate(@name, @roles, @services, status, region, tags, @label_format)
-          .concat(LoadBalancerHelper.calculate_security_groups(@name, @roles, @services))
-          .concat(RdsHelpers.calculate_security_groups(@name, db_servers))
-          .map{ |sg| generate_group_resource(sg['name'], status, region, @name, tags, sg['description']) }        
+      def generate(name, roles, services, label_format, status, region, tags, db_servers)
+        @generator.generate(name, roles, services, status, region, tags, label_format)
+          .concat(LoadBalancerHelper.calculate_security_groups(name, roles, services))
+          .concat(RdsHelpers.calculate_security_groups(name, db_servers))
+          .map{ |sg| generate_group_resource(sg['name'], status, region, name, tags, sg['description']) }        
           .reduce({}){ | hash, kv| hash.merge(kv) }
-          .merge( (status == 'present') ? { @name => {:ensure => status, :region => region, :vpc => @name, :tags => tags } } : {})
+          .merge( (status == 'present') ? { name => {:ensure => status, :region => region, :vpc => name, :tags => tags } } : {})
       end
 
       def generate_group_resource(resource_name, status, region, vpc, tags, description)
