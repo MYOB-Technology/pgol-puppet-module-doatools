@@ -1,8 +1,9 @@
 require 'spec_helper'
 require 'puppet_x/intechwifi/declare_environment_resources'
+require 'puppet_x/intechwifi/declare_environment_resources/loadbalancer_helper'
 
-describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::AutoScalerHelpers' do
-  let(:helpers) { PuppetX::IntechWIFI::LoadBalancerHelper }
+describe 'PuppetX::IntechWIFI::DeclareEnvironmentResources::AutoScalerHelpers' do
+  let(:helpers) { PuppetX::IntechWIFI::DeclareEnvironmentResources::LoadBalancerHelper }
 
   services_1 = {
       'service_1' => {

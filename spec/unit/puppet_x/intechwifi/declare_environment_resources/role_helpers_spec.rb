@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'puppet_x/intechwifi/role_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/role_helpers'
 
-describe 'PuppetX::IntechWIFI::RoleHelpers' do
-  let(:helpers) { PuppetX::IntechWIFI::RoleHelpers }
+describe 'PuppetX::IntechWIFI::DeclareEnvironmentResources::RoleHelpers' do
+  let(:helpers) { PuppetX::IntechWIFI::DeclareEnvironmentResources::RoleHelpers }
 
   name = 'Demo'
 

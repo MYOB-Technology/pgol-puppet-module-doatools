@@ -16,11 +16,11 @@
 require 'json'
 require 'puppet_x/intechwifi/exceptions'
 require 'puppet_x/intechwifi/awscmds'
-require 'puppet_x/intechwifi/security_group_generator'
-require 'puppet_x/intechwifi/rds_helpers'
-require 'puppet_x/intechwifi/service_helpers'
-require 'puppet_x/intechwifi/loadbalancer_helper'
-require 'puppet_x/intechwifi/network_rules_generator'
+require 'puppet_x/intechwifi/declare_environment_resources/rds_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/service_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/loadbalancer_helper'
+require 'puppet_x/intechwifi/declare_environment_resources/security_group_generator'
+require 'puppet_x/intechwifi/declare_environment_resources/network_rules_generator'
 
 module PuppetX
   module IntechWIFI
@@ -103,10 +103,10 @@ module PuppetX
 
         subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
         
-        security_group_generator = PuppetX::IntechWIFI::SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
+        security_group_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
         security_group_resources = security_group_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, scratch[:tags_with_environment], db_servers)
 
-        security_group_rules_generator = PuppetX::IntechWIFI::NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
+        security_group_rules_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
         security_group_rules_resources = security_group_rules_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, db_servers)
 
         internet_gateway_resources = {
