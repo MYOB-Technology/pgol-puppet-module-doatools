@@ -16,20 +16,22 @@
 module PuppetX
   module IntechWIFI
     module RoleHelpers
-      def self.calculate_security_groups(name, roles, services, scratch)
+      DEFAULT_LABEL = '%{vpc}_%{role}'
+
+      def self.calculate_security_groups(name, roles, services, label_format)
         roles.select { |role, role_details| !role_details['services'].nil? && role_details['services'].any? { |service| service_has_network?(services[service]) } }
              .map{ |role_name, role_details| {
-               'name' => calculate_security_group_name(name, role_name, scratch),
+               'name' => calculate_security_group_name(name, role_name, label_format),
                'description' => 'Role security group'
              } }
       end
 
-      def self.calculate_network_rules(name, roles, services, scratch)
+      def self.calculate_network_rules(name, roles, services, label_format)
         roles.select { |role, role_details| !role_details['services'].nil? && role_details['services'].any? { |service| service_has_network?(services[service]) } }
              .map{ |role_name, role_details| {
-               :name => calculate_security_group_name(name, role_name, scratch),
-               :in => get_network_rules(role_details['services'], name, roles, services, scratch, 'in'),
-               :out => get_network_rules(role_details['services'], name, roles, services, scratch, 'out')
+               :name => calculate_security_group_name(name, role_name, label_format),
+               :in => get_network_rules(role_details['services'], name, roles, services, label_format, 'in'),
+               :out => get_network_rules(role_details['services'], name, roles, services, label_format, 'out')
              } }
       end
 
@@ -44,8 +46,8 @@ module PuppetX
         end
       end
 
-      def self.calculate_security_group_name(name, role_name, scratch)
-        sprintf(scratch[:label_security_group], {
+      def self.calculate_security_group_name(name, role_name, label_format)
+        sprintf(get_label_format(label_format), {
           :vpc => name,
           :role => role_name,
           :VPC => name.upcase,
@@ -55,17 +57,21 @@ module PuppetX
         })
       end
 
+      def self.get_label_format(label_format)
+        (label_format.nil? || label_format.empty?) ? DEFAULT_LABEL : label_format
+      end 
+
       def self.service_has_network?(service)
         get_path_value(service, ['network', 'in'], []).length > 0 || get_path_value(service, ['network', 'out'], []).length > 0
       end 
 
-      def self.get_network_rules(service_roles, name, roles, services, scratch, direction)
-        service_roles.map{ |service| get_path_value(services[service], ['network', direction], []).map { |rule| transcode_rule(name, roles, service, rule, scratch) } } 
+      def self.get_network_rules(service_roles, name, roles, services, label_format, direction)
+        service_roles.map{ |service| get_path_value(services[service], ['network', direction], []).map { |rule| transcode_rule(name, roles, service, rule, label_format) } } 
                      .flatten
                      .uniq
       end
 
-      def self.transcode_rule(name, roles, service, env_format, scratch)
+      def self.transcode_rule(name, roles, service, env_format, label_format)
         segments = env_format.split('|')
 
         case segments[2]
@@ -82,7 +88,7 @@ module PuppetX
           when 'service'
             location_type = 'sg'
             location_ident = roles.select{ |role_name, role_data| role_includes_service?(role_data, service) }
-                                  .map{ |role_name, role_data| calculate_security_group_name(name, segments[3], scratch) }
+                                  .map{ |role_name, role_data| calculate_security_group_name(name, segments[3], label_format) }
           when 'rds'
             location_type = 'sg'
             location_ident = ["#{name}_#{segments[3]}"]

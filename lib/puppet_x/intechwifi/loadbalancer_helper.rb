@@ -112,12 +112,12 @@ module PuppetX
               "#{name}_#{role_name}_elb"
             end
 
-            def self.calculate_service_network_rules(name, roles, services, scratch)
+            def self.calculate_service_network_rules(name, roles, services, label_format)
               generate_services_with_loadbalanced_ports_by_role(roles, services).map{ |role_name, service_array|
                 in_rules = calculate_network_in_rules(service_array)
                 out_rules = service_array.map{ |service|
                   service['loadbalanced_ports'].map { |port|
-                    "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{ServiceHelpers.calculate_security_group_name(name, service['service_name'], scratch)}"
+                    "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{ServiceHelpers.calculate_security_group_name(name, service['service_name'], label_format)}"
                   }
                 }.flatten.uniq
 
@@ -125,12 +125,12 @@ module PuppetX
               }
             end
 
-            def self.calculate_role_network_rules(name, roles, services, scratch)
+            def self.calculate_role_network_rules(name, roles, services, label_format)
               generate_services_with_loadbalanced_ports_by_role(roles, services).map{ |role_name, service_array|
                 in_rules = calculate_network_in_rules(service_array)
                 out_rules = service_array.map{ |service|
                   service['loadbalanced_ports'].map { |port|
-                    "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, scratch)}"
+                    "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, label_format)}"
                   }
                 }.flatten.uniq
 

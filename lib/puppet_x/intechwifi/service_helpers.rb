@@ -16,20 +16,22 @@
 module PuppetX
   module IntechWIFI
     module ServiceHelpers
-      def self.calculate_security_groups(name, roles, services, scratch)
+      DEFAULT_LABEL = '%{vpc}_%{service}'
+
+      def self.calculate_security_groups(name, roles, services, label_format)
         services.select{ |_service, details| service_has_network?(details) }
                 .map{ |service, details| {
-                   'name' => calculate_security_group_name(name, service, scratch),
+                   'name' => calculate_security_group_name(name, service, label_format),
                    'description' => 'Service security group'
                 } } 
       end
 
-      def self.calculate_network_rules(name, roles, services, scratch)
+      def self.calculate_network_rules(name, roles, services, label_format)
         services.select{ |key, value| service_has_network?(value) }
                 .map{ |key, value| {
-                  :name => calculate_security_group_name(name, key, scratch),
-                  :in => get_path_value(value, ["network", "in"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch) }.flatten,
-                  :out => get_path_value(value, ["network", "out"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch)}.flatten
+                  :name => calculate_security_group_name(name, key, label_format),
+                  :in => get_path_value(value, ["network", "in"], []).map{ |rule| transcode_rule(name, roles, key, rule, label_format) }.flatten,
+                  :out => get_path_value(value, ["network", "out"], []).map{ |rule| transcode_rule(name, roles, key, rule, label_format)}.flatten
                 } } 
       end
 
@@ -44,8 +46,8 @@ module PuppetX
         end
       end
   
-      def self.calculate_security_group_name(name, service_name, scratch)
-        sprintf(scratch[:label_security_group], {
+      def self.calculate_security_group_name(name, service_name, label_format)
+        sprintf(get_label_format(label_format), {
           :vpc => name,
           :service => service_name,
           :VPC => name.upcase,
@@ -54,12 +56,16 @@ module PuppetX
           :Service => service_name.capitalize,
         })
       end
+
+      def self.get_label_format(label_format)
+        (label_format.nil? || label_format.empty?) ? DEFAULT_LABEL : label_format
+      end 
       
       def self.service_has_network?(service)
         get_path_value(service, ["network", "in"], []).length > 0 || get_path_value(service, ["network", "out"], []).length > 0
       end 
 
-      def self.transcode_rule(name, roles, service, env_format, scratch)
+      def self.transcode_rule(name, roles, service, env_format, label_format)
         segments = env_format.split('|')
 
         case segments[2]
@@ -78,7 +84,7 @@ module PuppetX
 
           when 'service'
             location_type = 'sg'
-            location_ident = [calculate_security_group_name(name, segments[3], scratch)]
+            location_ident = [calculate_security_group_name(name, segments[3], label_format)]
           when 'rds'
             location_type = 'sg'
             location_ident = ["#{name}_#{segments[3]}"]

@@ -63,7 +63,6 @@ module PuppetX
         scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
         scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
         scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{role}'
-        scratch[:label_security_group] = label_formats.has_key?('security_group') ? label_formats['security_group'] : '%{vpc}_%{service}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -104,11 +103,11 @@ module PuppetX
 
         subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
         
-        security_group_generator = PuppetX::IntechWIFI::SecurityGroupGenerator.new(name, server_roles, services, scratch[:label_security_group], options['coalesce_sg_per_role'])
+        security_group_generator = PuppetX::IntechWIFI::SecurityGroupGenerator.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
         security_group_resources = security_group_generator.generate(status, region, scratch[:tags_with_environment], db_servers)
 
-        security_group_rules_generator = PuppetX::IntechWIFI::NetworkRulesGenerator.new(name, server_roles, services, scratch[:label_security_group], options['coalesce_sg_per_role'])
-        security_group_rules_resources = security_group_rules_generator.generate(status, region, db_servers, scratch)
+        security_group_rules_generator = PuppetX::IntechWIFI::NetworkRulesGenerator.new(name, server_roles, services, label_formats['security_group'], options['coalesce_sg_per_role'])
+        security_group_rules_resources = security_group_rules_generator.generate(status, region, db_servers)
 
         internet_gateway_resources = {
             name => {
@@ -144,9 +143,9 @@ module PuppetX
                        'ensure' => status,
                        'region' => region,
                        'security_groups' => ServiceHelpers.services(role[1]).map{|service|
-                         sg = ServiceHelpers.calculate_security_group_name(name, service, scratch)
+                         sg = ServiceHelpers.calculate_security_group_name(name, service, label_formats['security_group'])
                        }.select{|sg|
-                         ServiceHelpers.calculate_security_groups(name, server_roles, services, scratch).map{ |sg| sg['name'] }.include?(sg)
+                         ServiceHelpers.calculate_security_groups(name, server_roles, services, label_formats['security_group']).map{ |sg| sg['name'] }.include?(sg)
                        },
                        'iam_instance_profile' => [
                            IAMHelper.GenerateInstanceProfileName(name, role[0], scratch)

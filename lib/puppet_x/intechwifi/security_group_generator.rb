@@ -22,14 +22,15 @@ module PuppetX
   module IntechWIFI
     class SecurityGroupGenerator
       def initialize(name, roles, services, label_format, coalesce_sgs)
-        @generator = coalesce_sgs ? SgPerRoleGenerator.new(label_format) : SgPerServiceGenerator.new(label_format)
+        @generator = coalesce_sgs ? SgPerRoleGenerator.new : SgPerServiceGenerator.new
         @name = name
         @roles = roles
         @services = services
+        @label_format = label_format
       end
 
       def generate(status, region, tags, db_servers)
-        @generator.generate(@name, @roles, @services, status, region, tags)
+        @generator.generate(@name, @roles, @services, status, region, tags, @label_format)
           .concat(LoadBalancerHelper.calculate_security_groups(@name, @roles, @services))
           .concat(RdsHelpers.calculate_security_groups(@name, db_servers))
           .map{ |sg| generate_group_resource(sg['name'], status, region, @name, tags, sg['description']) }        
@@ -42,23 +43,15 @@ module PuppetX
       end
     end
 
-    class SgPerServiceGenerator < SecurityGroupGenerator
-      def initialize(label_format)
-        @label_format = (label_format.nil? || label_format.empty?) ? '%{vpc}_%{service}' : label_format
-      end
-
-      def generate(name, roles, services, status, region, tags)
-        ServiceHelpers.calculate_security_groups(name, roles, services, { :label_security_group => @label_format } )
+    class SgPerServiceGenerator
+      def generate(name, roles, services, status, region, tags, label_format)
+        ServiceHelpers.calculate_security_groups(name, roles, services, label_format)
       end
     end
 
-    class SgPerRoleGenerator < SecurityGroupGenerator
-      def initialize(sg_label_format)
-        @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{role}' : sg_label_format
-      end
-
-      def generate(name, roles, services, status, region, tags)
-        RoleHelpers.calculate_security_groups(name, roles, services, { :label_security_group => @label_format } )
+    class SgPerRoleGenerator
+      def generate(name, roles, services, status, region, tags, label_format)
+        RoleHelpers.calculate_security_groups(name, roles, services, label_format)
       end
     end
   end

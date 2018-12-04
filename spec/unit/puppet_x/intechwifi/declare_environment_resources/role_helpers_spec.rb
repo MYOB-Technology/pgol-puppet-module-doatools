@@ -6,7 +6,7 @@ describe 'PuppetX::IntechWIFI::RoleHelpers' do
 
   name = 'Demo'
 
-  scratch = { :label_security_group => '%{vpc}_%{role}' }
+  label_security_group = '%{vpc}_%{role}'
 
   roles = {
     'role1' => {
@@ -78,13 +78,13 @@ describe 'PuppetX::IntechWIFI::RoleHelpers' do
 
   describe '#calculate_security_groups' do
     it 'returns an array of roles that will have network rules attached to them' do
-      expect(helpers.calculate_security_groups(name, roles, services, scratch)).to eq(security_groups)
+      expect(helpers.calculate_security_groups(name, roles, services, label_security_group)).to eq(security_groups)
     end
   end
 
   describe '#calculate_network_rules' do
     it 'returns an array of roles that will have network rules attached to them' do
-      expect(helpers.calculate_network_rules(name, roles, services, scratch)).to eq(network_rules)
+      expect(helpers.calculate_network_rules(name, roles, services, label_security_group)).to eq(network_rules)
     end
   end
 end

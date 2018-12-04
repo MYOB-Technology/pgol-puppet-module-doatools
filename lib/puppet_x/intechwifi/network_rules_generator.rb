@@ -25,8 +25,8 @@ module PuppetX
                 @generator = coalesce_sgs ? NetworkRulesPerRoleGenerator.new(name, roles, services, label_format) : NetworkRulesPerServiceGenerator.new(name, roles, services, label_format)
             end
 
-            def generate(status, region, db_servers, scratch)
-                @generator.generate(status, region, db_servers, scratch)
+            def generate(status, region, db_servers)
+                @generator.generate(status, region, db_servers)
             end
 
             def generate_resource(resource_name, status, region, in_rule, out_rule)
@@ -36,17 +36,17 @@ module PuppetX
 
         class NetworkRulesPerServiceGenerator < NetworkRulesGenerator
             def initialize(name, roles, services, label_format)
-              @label_format = (label_format.nil? || label_format.empty?) ? '%{vpc}_%{service}' : label_format
+              @label_format = label_format
               @name = name
               @roles = roles
               @services = services
             end
 
-            def generate(status, region, db_servers, scratch)
-              security_group_rules_resources = (status == 'present' ? [{ :name => @name, :in => [], :out => [] }] : [])
-                .concat(ServiceHelpers.calculate_network_rules(@name, @roles, @services, scratch))
-                .concat(RdsHelpers.calculate_service_network_rules(@name, @services, db_servers, scratch))
-                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, scratch))
+            def generate(status, region, db_servers)
+              (status == 'present' ? [{ :name => @name, :in => [], :out => [] }] : [])
+                .concat(ServiceHelpers.calculate_network_rules(@name, @roles, @services, @label_format))
+                .concat(RdsHelpers.calculate_service_network_rules(@name, @services, db_servers, @label_format))
+                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, @label_format))
                 .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
                 .reduce({}){| hash, kv| hash.merge(kv)}
             end
@@ -54,17 +54,17 @@ module PuppetX
 
         class NetworkRulesPerRoleGenerator < NetworkRulesGenerator
             def initialize(name, roles, services, label_format)
-              @label_format = (sg_label_format.nil? || sg_label_format.empty?) ? '%{vpc}_%{role}' : sg_label_format
+              @label_format = label_format
               @name = name
               @roles = roles
               @services = services
             end
 
-            def generate(status, region, db_servers, scratch)
-              security_group_rules_resources = (status == 'present' ? [generate_resource(@name, status, region, { :in => [], :out => [] })] : [])
-                .concat(RoleHelpers.calculate_network_rules(@name, @roles, @services, scratch))
-                .concat(RdsHelpers.calculate_role_network_rules(@name, @services, db_servers, scratch))
-                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, scratch))
+            def generate(status, region, db_servers)
+              (status == 'present' ? [{ :name => @name, :in => [], :out => [] }] : [])
+                .concat(RoleHelpers.calculate_network_rules(@name, @roles, @services, @label_format))
+                .concat(RdsHelpers.calculate_role_network_rules(@name, @roles, @services, db_servers, @label_format))
+                .concat(LoadBalancerHelper.calculate_service_network_rules(@name, @roles, @services, @label_format))
                 .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
                 .reduce({}){| hash, kv| hash.merge(kv)}
             end
