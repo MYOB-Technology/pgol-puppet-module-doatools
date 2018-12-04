@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 
-describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths' do
-  let(:cidr_maths) { PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths }
+describe 'PuppetX::IntechWIFI::DeclareEnvironmentResources::CidrMaths' do
+  let(:cidr_maths) { PuppetX::IntechWIFI::DeclareEnvironmentResources::CidrMaths }
 
   describe 'self.CidrBlockSize' do
     it 'should handle standard block sizes' do

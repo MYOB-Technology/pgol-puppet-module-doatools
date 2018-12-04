@@ -18,7 +18,7 @@ Puppet::Functions.create_function('define_environment_resources') do
     label_formats,
     options
   )
-    PuppetX::IntechWIFI::Declare_Environment_Resources.define_environment_resources(
+    PuppetX::IntechWIFI::DeclareEnvironmentResources.define_environment_resources(
         name,
         status,
         region,

@@ -24,7 +24,7 @@ require 'puppet_x/intechwifi/network_rules_generator'
 
 module PuppetX
   module IntechWIFI
-    module Declare_Environment_Resources
+    module DeclareEnvironmentResources
 
       def self.define_environment_resources(
           name,

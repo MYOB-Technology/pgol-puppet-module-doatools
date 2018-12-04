@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'puppet_x/intechwifi/declare_environment_resources'
 
-describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::AutoScalerHelpers' do
-  let(:helpers) { PuppetX::IntechWIFI::Declare_Environment_Resources::AutoScalerHelper }
+describe 'PuppetX::IntechWIFI::DeclareEnvironmentResources::AutoScalerHelpers' do
+  let(:helpers) { PuppetX::IntechWIFI::DeclareEnvironmentResources::AutoScalerHelper }
 
   describe 'GetDefaultScaling' do
     it 'returns a min size of 0' do

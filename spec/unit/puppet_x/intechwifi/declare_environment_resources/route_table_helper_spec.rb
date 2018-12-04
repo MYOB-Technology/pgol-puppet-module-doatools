@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'puppet_x/intechwifi/declare_environment_resources'
 
-describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::RouteHelpers' do
-  let(:helpers) { PuppetX::IntechWIFI::Declare_Environment_Resources::RouteTableHelpers }
+describe 'PuppetX::IntechWIFI::DeclareEnvironmentResources::RouteHelpers' do
+  let(:helpers) { PuppetX::IntechWIFI::DeclareEnvironmentResources::RouteTableHelpers }
 
   let(:network1) {
     {

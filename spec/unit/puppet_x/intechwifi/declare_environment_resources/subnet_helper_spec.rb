@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'puppet_x/intechwifi/declare_environment_resources'
 
-describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
-  let(:subnet_helpers) { PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelpers }
+describe 'PuppetX::IntechWIFI::DeclareEnvironmentResources::SubnetHelper' do
+  let(:subnet_helpers) { PuppetX::IntechWIFI::DeclareEnvironmentResources::SubnetHelpers }
 
   describe 'self.CalculateCidrsForNetwork' do
     let(:network1) {
@@ -123,7 +123,7 @@ describe 'PuppetX::IntechWIFI::Declare_Environment_Resources::SubnetHelper' do
     it 'should reject layouts where the subnet cidrs become too small' do
       expect {
         subnet_helpers.CalculateSubnetData("unittest", network1, zones3, scratch)
-      }.to raise_exception(PuppetX::IntechWIFI::Declare_Environment_Resources::CidrMaths::CidrSizeTooSmallForSubnet)
+      }.to raise_exception(PuppetX::IntechWIFI::DeclareEnvironmentResources::CidrMaths::CidrSizeTooSmallForSubnet)
 
 
     end
