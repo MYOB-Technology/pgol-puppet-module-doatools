@@ -38,7 +38,7 @@ module PuppetX
             }
         }] : []
         ).concat(db_sgs.map{ |key, _val| generate_group_resource("#{@name}_#{key}", status, region, @name, tags, 'database security group') }) 
-          .concat(LoadBalancerHelper.CalculateSecurityGroups(@name, @roles, @services).map{ |sg| generate_group_resource(sg, status, region, @name, tags, 'load balancer security group') })        
+          .concat(LoadBalancerHelper.calculate_security_groups(@name, @roles, @services).map{ |sg| generate_group_resource(sg, status, region, @name, tags, 'load balancer security group') })        
           .concat(@generator.generate(@name, @roles, @services, status, region, tags))
           .reduce({}){ | hash, kv| hash.merge(kv) }
       end
@@ -54,7 +54,7 @@ module PuppetX
       end
 
       def generate(name, roles, services, status, region, tags)
-        ServiceHelpers.CalculateServiceSecurityGroups(name, roles, services, { :label_security_group => @label_format } )
+        ServiceHelpers.calculate_security_groups(name, roles, services, { :label_security_group => @label_format } )
           .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Service security group') }
       end
     end
@@ -65,7 +65,7 @@ module PuppetX
       end
 
       def generate(name, roles, services, status, region, tags)
-        RoleHelpers.calculate_role_security_groups(name, roles, services, { :label_security_group => @label_format } )
+        RoleHelpers.calculate_security_groups(name, roles, services, { :label_security_group => @label_format } )
           .map{ |sg, _val| generate_group_resource(sg, status, region, name, tags, 'Role security group') }
       end
     end

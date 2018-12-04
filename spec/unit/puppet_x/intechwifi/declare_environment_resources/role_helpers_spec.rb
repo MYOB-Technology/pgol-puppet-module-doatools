@@ -69,9 +69,9 @@ describe 'PuppetX::IntechWIFI::RoleHelpers' do
     },
   }
 
-  describe '#calculate_role_security_groups' do
+  describe '#calculate_security_groups' do
     it 'returns an array of roles that will have network rules attached to them' do
-      expect(helpers.calculate_role_security_groups(name, roles, services, scratch)).to eq(role_security_groups)
+      expect(helpers.calculate_security_groups(name, roles, services, scratch)).to eq(role_security_groups)
     end
   end
 end

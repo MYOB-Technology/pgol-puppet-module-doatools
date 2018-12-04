@@ -44,13 +44,13 @@ module PuppetX
 
             def generate(status, region, db_servers, scratch)
               security_group_rules_resources = (status == 'present' ? [generate_resource(@name, status, region, { :in => [], :out => [] })] : [])
-                .concat(ServiceHelpers.CalculateServiceSecurityGroups(@name, @roles, @services, scratch).map{|key, value|
+                .concat(ServiceHelpers.calculate_security_groups(@name, @roles, @services, scratch).map{|key, value|
                   generate_resource(key, status, region, { :in => value[:in], :out => value[:out] })
                 })
                 .concat(db_servers.map{|key, value|
                   generate_resource("#{@name}_#{key}", status, region, RdsHelpers.calculate_service_network_rules(@name, @services, key, value["engine"], scratch))
                 })
-                .concat(LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(@roles, @services).map{|role_name, service_array|
+                .concat(LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(@roles, @services).map{|role_name, service_array|
                   generate_resource("#{@name}_#{role_name}_elb", status, region, LoadBalancerHelper.calculate_service_network_rules(service_array, scratch))
                 })
                 .reduce({}){| hash, kv| hash.merge(kv)}
@@ -64,13 +64,13 @@ module PuppetX
 
             def generate
               security_group_rules_resources = (status == 'present' ? [generate_resource(@name, status, region, { :in => [], :out => [] })] : [])
-                .concat(RoleHelpers.CalculateServiceSecurityGroups(@name, @roles, @services, scratch).map{|key, value|
+                .concat(RoleHelpers.calculate_security_groups(@name, @roles, @services, scratch).map{|key, value|
                   generate_resource(key, status, region, { :in => value[:in], :out => value[:out] })
                 })
                 .concat(db_servers.map{|key, value|
                   generate_resource("#{@name}_#{key}", status, region, RdsHelpers.calculate_role_network_rules(@name, @services, key, value["engine"], scratch))
                 })
-                .concat(LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(@roles, @services).map{|role_name, service_array|
+                .concat(LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(@roles, @services).map{|role_name, service_array|
                   generate_resource("#{@name}_#{role_name}_elb", status, region, LoadBalancerHelper.calculate_role_network_rules(role_name, service_array, scratch)) 
                 })
             end

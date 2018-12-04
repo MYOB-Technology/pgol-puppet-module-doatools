@@ -19,7 +19,7 @@ require 'puppet_x/intechwifi/rds_helpers'
 module PuppetX
   module IntechWIFI
     module RdsHelpers
-      def self.CalculateRdsZones(name, network, zones, db_servers)
+      def self.calculate_rds_zones(name, network, zones, db_servers)
         # Get the zones needed for all database server declarations.
         zone_list = db_servers.keys.select{|s| db_servers[s].has_key?('zone') }.map{|s| db_servers[s]['zone']}
 
@@ -40,7 +40,7 @@ module PuppetX
 
         # Then we need the list of services that talk to this database.
         in_rules = get_services_that_talk_to_db(services, db_server_name)
-                     .map{ |service_name| ports.map{ |port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name, scratch)}" } }
+                     .map{ |service_name| ports.map{ |port| "tcp|#{port}|sg|#{ServiceHelpers.calculate_security_group_name(name, service_name, scratch)}" } }
                      .flatten
         { :in => in_rules, :out => [] }
       end
@@ -52,7 +52,7 @@ module PuppetX
                      .map{ |service_name| get_roles_with_service(service_name) }
                      .flatten
                      .uniq
-                     .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{RoleHelpers.calculate_role_security_group_name(name, role_name, scratch)}" } }
+                     .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, scratch)}" } }
         { :in => in_rules, :out => [] }
       end
 

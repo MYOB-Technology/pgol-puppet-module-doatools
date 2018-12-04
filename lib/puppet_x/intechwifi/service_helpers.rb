@@ -16,10 +16,10 @@
 module PuppetX
   module IntechWIFI
     module ServiceHelpers
-      def self.CalculateServiceSecurityGroups(name, roles, services, scratch)
+      def self.calculate_security_groups(name, roles, services, scratch)
         services.select{ |key, value| service_has_network?(value) }
                 .map{|key, value| {
-                  CalculateServiceSecurityGroupName(name, key, scratch) => {
+                  calculate_security_group_name(name, key, scratch) => {
                     :service => key,
                     :in => get_path_value(value, ["network", "in"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch) }.flatten,
                     :out => get_path_value(value, ["network", "out"], []).map{ |rule| transcode_rule(name, roles, key, rule, scratch)}.flatten
@@ -39,7 +39,7 @@ module PuppetX
         end
       end
   
-      def self.CalculateServiceSecurityGroupName(name, service_name, scratch)
+      def self.calculate_security_group_name(name, service_name, scratch)
         sprintf(scratch[:label_security_group], {
           :vpc => name,
           :service => service_name,
@@ -73,7 +73,7 @@ module PuppetX
 
           when 'service'
             location_type = 'sg'
-            location_ident = [CalculateServiceSecurityGroupName(name, segments[3], scratch)]
+            location_ident = [calculate_security_group_name(name, segments[3], scratch)]
           when 'rds'
             location_type = 'sg'
             location_ident = ["#{name}_#{segments[3]}"]
@@ -85,7 +85,7 @@ module PuppetX
         location_ident.map{|loc_ident|  "#{segments[0]}|#{segments[1]}|#{location_type}|#{loc_ident}" }
       end
 
-      def self.Services(role)
+      def self.services(role)
         role.has_key?("services") ? role["services"] : []
       end
     end

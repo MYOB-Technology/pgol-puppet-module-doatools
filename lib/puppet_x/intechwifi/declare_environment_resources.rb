@@ -49,7 +49,6 @@ module PuppetX
         # Our scratch pad for storing and passing all our dynamically generated data.
         scratch = { }
 
-
         scratch[:public_zone?] = zones.has_key?('public')
         scratch[:nat_zone?] = zones.has_key?('nat')
         scratch[:private_zone?] = zones.has_key?('private')
@@ -74,10 +73,10 @@ module PuppetX
 
         # The array of rds_zones needed...
         scratch[:rds_default_zone] = ['private', 'nat', 'public'].select{ |zone| zones.has_key?(zone) }.first
-        scratch[:rds_zones] = RdsHelpers.CalculateRdsZones(name, network, zones, db_servers)
+        scratch[:rds_zones] = RdsHelpers.calculate_rds_zones(name, network, zones, db_servers)
 
-        scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services, scratch)
-        scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
+        scratch[:service_security_groups] = ServiceHelpers.calculate_security_groups(name, server_roles, services, scratch)
+        scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(server_roles, services)
 
         scratch[:code_deploy_service_role] = IAMHelper.GenerateRoleName(name, "codedeploy", scratch)
 
@@ -147,8 +146,8 @@ module PuppetX
                    {
                        'ensure' => status,
                        'region' => region,
-                       'security_groups' => ServiceHelpers.Services(role[1]).map{|service|
-                         sg = ServiceHelpers.CalculateServiceSecurityGroupName(name, service, scratch)
+                       'security_groups' => ServiceHelpers.services(role[1]).map{|service|
+                         sg = ServiceHelpers.calculate_security_group_name(name, service, scratch)
                        }.select{|sg|
                          scratch[:service_security_groups].has_key?(sg)
                        },
@@ -220,7 +219,7 @@ module PuppetX
             },
             {
                 'resource_type' => "load_balancer",
-                'resources' => LoadBalancerHelper.GenerateLoadbalancerResources(name, status, region, server_roles, services, scratch)
+                'resources' => LoadBalancerHelper.generate_loadbalancer_resources(name, status, region, server_roles, services, scratch)
             },
             {
                 'resource_type' => "rds_subnet_group",
@@ -303,7 +302,7 @@ module PuppetX
                           AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
                       )).merge(
                           scratch[:loadbalancer_role_service_hash].has_key?(role_name) ? {
-                              'load_balancer' => LoadBalancerHelper.GenerateLoadBalancerName(name, role_name)
+                              'load_balancer' => LoadBalancerHelper.generate_loadbalancer_name(name, role_name)
                           } : {}
                       )
                   }
