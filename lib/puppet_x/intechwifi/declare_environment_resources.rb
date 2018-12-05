@@ -140,12 +140,12 @@ module PuppetX
                        'ensure' => status,
                        'region' => region,
                        'security_groups' => ServiceHelpers.services(role[1]).map{|service|
-                         sg = ServiceHelpers.calculate_security_group_name(name, service, label_formats['security_group'])
+                         ServiceHelpers.calculate_security_group_name(name, service, label_formats['security_group'])
                        }.select{|sg|
                          ServiceHelpers.calculate_security_groups(name, server_roles, services, label_formats['security_group']).map{ |sg| sg['name'] }.include?(sg)
                        },
                        'iam_instance_profile' => [
-                           IAMHelper.GenerateInstanceProfileName(name, role[0], scratch)
+                         IAMHelper.GenerateInstanceProfileName(name, role[0], scratch)
                        ],
                        'public_ip' => role[1]['zone'] == 'public' ? :enabled : :disabled
                    }
