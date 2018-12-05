@@ -39,6 +39,21 @@ module PuppetX
                                                      .map { |k,v| v.reduce(:deep_merge) }
         end
 
+        def self.get_image_disks_from_block_device_mapping(block_device_mapping, ami_image_mapping)
+          block_device_mapping.select { |mapping| get_ami_image_device_names(ami_image_mapping).include?(mapping[DEVICE_NAME]) }
+                              .map { |mapping| { mapping[DEVICE_NAME] => mapping['Ebs'] } }
+                              .reduce({}){ | hash, kv| hash.merge(kv) }
+        end
+
+        def self.get_extra_disks_from_block_device_mapping(block_device_mapping, ami_image_mapping)
+          block_device_mapping.reject { |mapping| get_ami_image_device_names(ami_image_mapping).include?(mapping[DEVICE_NAME]) }
+                              .map { |mapping| mapping['Ebs'] }
+        end
+
+        def self.get_ami_image_device_names(ami_image_mapping)
+          ami_image_device_names = ami_image_mapping.map { |mapping| mapping[DEVICE_NAME] }
+        end
+
         def self.remove_snapshot_encrypted_flag(mappings)
             mappings.map do | mapping |
                 (mapping['Ebs'] && mapping['Ebs'].key?(SNAPSHOT_ID)) ? 
