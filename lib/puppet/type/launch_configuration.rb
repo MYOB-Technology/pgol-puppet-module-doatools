@@ -100,9 +100,11 @@ Puppet::Type.newtype(:launch_configuration) do
   end
 
   newproperty(:image_disks) do
+    defaultto {}
   end
 
   newproperty(:extra_disks, :array_matching => :all) do
+    defaultto []
   end
 
 end
