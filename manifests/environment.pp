@@ -99,7 +99,7 @@ define doatools::environment (
   }),
 
   $options = lookup('doatools::environment::options', Hash, 'deep', {
-    coalesce_sg_per_role => false
+    'coalesce_sg_per_role' => false
   })
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
@@ -108,7 +108,6 @@ define doatools::environment (
 #  $ensure=lookup('environment::ensure', Data, 'first', present)
 )  {
   info("declaring environment ${env} in region ${region}.")
-  notice("roles looks like :  ${server_roles}")
   notice("services looks like :  ${services}")
   define_environment_resources(
     $name,
