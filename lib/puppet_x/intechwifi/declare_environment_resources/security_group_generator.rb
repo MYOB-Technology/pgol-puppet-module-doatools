@@ -27,12 +27,13 @@ module PuppetX
         end
   
         def generate(name, roles, services, label_format, status, region, tags, db_servers)
-          @generator.generate(name, roles, services, status, region, tags, label_format)
+          resources = @generator.generate(name, roles, services, status, region, tags, label_format)
             .concat(LoadBalancerHelper.calculate_security_groups(name, roles, services))
             .concat(RdsHelpers.calculate_security_groups(name, db_servers))
             .map{ |sg| generate_group_resource(sg['name'], status, region, name, tags, sg['description']) }        
             .reduce({}){ | hash, kv| hash.merge(kv) }
             .merge( (status == 'present') ? { name => {:ensure => status, :region => region, :vpc => name, :tags => tags } } : {})
+          { 'resource_type' => 'security_group', 'resources' => resources }
         end
   
         def generate_group_resource(resource_name, status, region, vpc, tags, description)

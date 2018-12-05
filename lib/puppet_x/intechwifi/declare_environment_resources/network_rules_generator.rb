@@ -27,10 +27,11 @@ module PuppetX
         end
 
         def generate(name, roles, services, label_format, status, region, db_servers)
-            (status == 'present' ? [{ :name => name, :in => [], :out => [] }] : [])
+            resources = (status == 'present' ? [{ :name => name, :in => [], :out => [] }] : [])
               .concat(@generator.generate(name, roles, services, label_format, db_servers))
               .map { |rule| generate_resource(rule[:name], status, region, rule[:in], rule[:out]) }
               .reduce({}){| hash, kv| hash.merge(kv)}
+            { 'resource_type' => 'security_group_rules', 'resources' => resources }
         end
 
         def generate_resource(resource_name, status, region, in_rule, out_rule)
