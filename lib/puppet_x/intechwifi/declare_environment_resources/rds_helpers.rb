@@ -56,10 +56,10 @@ module PuppetX
   
         def self.calculate_role_network_rules(name, roles, services, db_servers, label_format)
           db_servers.map{ |server, details|
-            ports = get_ports_to_enable(db_server_engine)
+            ports = get_ports_to_enable(details['engine'])
   
-            in_rules = get_services_that_talk_to_db(services, db_server_name)
-                        .map{ |service_name| get_roles_with_service(service_name) }
+            in_rules = get_services_that_talk_to_db(services, server)
+                        .map{ |service_name| get_roles_with_service(service_name, roles) }
                         .flatten
                         .uniq
                         .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, label_format)}" } }
