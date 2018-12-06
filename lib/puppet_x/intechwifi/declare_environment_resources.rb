@@ -21,6 +21,7 @@ require 'puppet_x/intechwifi/declare_environment_resources/service_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources/loadbalancer_helper'
 require 'puppet_x/intechwifi/declare_environment_resources/security_group_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/network_rules_generator'
+require 'puppet_x/intechwifi/declare_environment_resources/launch_configuration_generator'
 
 module PuppetX
   module IntechWIFI
@@ -105,6 +106,7 @@ module PuppetX
 
         security_group_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
         security_group_rules_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
+        launch_configuration_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::LaunchConfigurationGenerator.new(options['coalesce_sg_per_role'])
 
         internet_gateway_resources = {
             name => {
@@ -114,39 +116,6 @@ module PuppetX
                 :nat_gateways => scratch[:nat_list].map{|nat| nat[:name]},
             }
         }
-
-        launch_configuration_resources = server_roles.to_a.map{|role|
-          serverrole = {}.update(role[1])
-
-          serverole_name = AutoScalerHelper.GenerateLaunchConfigName(name, role[0], zones, role[1]['zone'], scratch )
-          {
-              "#{serverole_name}" => {
-                  # Defaults
-
-              }.merge(
-                  serverrole.has_key?('ec2') ? serverrole['ec2'] : {}
-              ).merge(
-                  serverrole.keep_if{|key, value|
-                    ["ssh_key_name", "userdata"].include?(key)
-                  }
-              ).merge(
-                   # Forced values
-                   {
-                       'ensure' => status,
-                       'region' => region,
-                       'security_groups' => ServiceHelpers.services(role[1]).map{|service|
-                         ServiceHelpers.calculate_security_group_name(name, service, label_formats['security_group'])
-                       }.select{|sg|
-                         ServiceHelpers.calculate_security_groups(name, server_roles, services, label_formats['security_group']).map{ |sg| sg['name'] }.include?(sg)
-                       },
-                       'iam_instance_profile' => [
-                         IAMHelper.GenerateInstanceProfileName(name, role[0], scratch)
-                       ],
-                       'public_ip' => role[1]['zone'] == 'public' ? :enabled : :disabled
-                   }
-              )
-          }
-        }.reduce({}){|hash, kv| hash.merge(kv)}
 
         #  This is the data structure that we need to return, defining all resource types and  their properties.
         things = [
@@ -254,10 +223,7 @@ module PuppetX
                   }
                 }.flatten.reduce({}){|hash, kv| hash.merge(kv)}
             },
-            {
-                'resource_type' => "launch_configuration",
-                'resources' => launch_configuration_resources
-            },
+            launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
             {
                 'resource_type' => "autoscaling_group",
                 'resources' => server_roles.map{|role_name, role_data|
@@ -322,8 +288,7 @@ module PuppetX
                 }
             }
         ]
-
-        puts things
+        #puts things
         things
       end
 

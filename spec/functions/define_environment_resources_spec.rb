@@ -814,9 +814,7 @@ describe 'define_environment_resources' do
               "security_groups"=>[
                   "demo_my_srv"
               ],
-              "iam_instance_profile"=>[
-                  "demotestrole"
-              ],
+              "iam_instance_profile"=> "demotestrole",
               "public_ip"=> :enabled
           }
       }
@@ -834,9 +832,7 @@ describe 'define_environment_resources' do
                   "demo_my_srv",
                   "demo_my_other_srv"
               ],
-              "iam_instance_profile"=>[
-                  "demotestrole"
-              ],
+              "iam_instance_profile"=> "demotestrole",
               "public_ip"=> :enabled
           }
       }
