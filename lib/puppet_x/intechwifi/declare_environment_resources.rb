@@ -102,7 +102,7 @@ module PuppetX
         })
 
         subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
-        
+
         security_group_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
         security_group_rules_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
 
@@ -114,11 +114,6 @@ module PuppetX
                 :nat_gateways => scratch[:nat_list].map{|nat| nat[:name]},
             }
         }
-
-        #
-        #
-        #
-        #puts("Created Internet Gateway Rules")
 
         launch_configuration_resources = server_roles.to_a.map{|role|
           serverrole = {}.update(role[1])
@@ -153,14 +148,8 @@ module PuppetX
           }
         }.reduce({}){|hash, kv| hash.merge(kv)}
 
-        #
-        #
-        #
-        #puts("Created Launch Configuration Rules")
-
-
         #  This is the data structure that we need to return, defining all resource types and  their properties.
-        [
+        things = [
             {
                 'resource_type' => "vpc",
                 'resources' => vpc_resources
@@ -333,6 +322,9 @@ module PuppetX
                 }
             }
         ]
+
+        puts things
+        things
       end
 
       module AutoScalerHelper

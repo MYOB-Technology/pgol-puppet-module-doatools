@@ -55,6 +55,9 @@ module PuppetX
             :SERVICE => service_name.upcase,
             :Vpc => name.capitalize,
             :Service => service_name.capitalize,
+            :role => '',
+            :Role => '',
+            :ROLE => ''            
           })
         end
   
