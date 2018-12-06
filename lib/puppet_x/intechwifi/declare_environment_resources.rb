@@ -104,9 +104,9 @@ module PuppetX
 
         subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
 
-        security_group_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
-        security_group_rules_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
-        launch_configuration_generator = PuppetX::IntechWIFI::DeclareEnvironmentResources::LaunchConfigurationGenerator.new(options['coalesce_sg_per_role'])
+        security_group_generator = SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
+        security_group_rules_generator = NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
+        launch_configuration_generator = LaunchConfigurationGenerator.new(options['coalesce_sg_per_role'])
 
         internet_gateway_resources = {
             name => {
@@ -288,7 +288,7 @@ module PuppetX
                 }
             }
         ]
-        #puts things
+        puts things
         things
       end
 
