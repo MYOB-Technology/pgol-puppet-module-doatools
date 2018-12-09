@@ -118,178 +118,176 @@ module PuppetX
         }
 
         #  This is the data structure that we need to return, defining all resource types and  their properties.
-        things = [
-            {
-                'resource_type' => "vpc",
-                'resources' => vpc_resources
-            },
-            {
-                'resource_type' => "route_table",
-                'resources' => route_table_resources
-            },
-            subnet_resources_hash,
-            security_group_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, scratch[:tags_with_environment], db_servers),
-            security_group_rules_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, db_servers),
-            {
-                'resource_type' => "internet_gateway",
-                'resources' => internet_gateway_resources
-            },
-            {
-                'resource_type' => "nat_gateway",
-                'resources' => scratch[:nat_list].map{|nat|
-                  {
-                      nat[:name] => {
-                          :ensure => status,
-                          :region => region,
-                          :elastic_ip => nat[:ip_addr],
-                          :internet_gateway => name,
-                          :subnet => nat[:subnet],
-                      }
-                  }
-                }.reduce({}){|hash, item| hash.merge(item) }
-            },
-            {
-                'resource_type' => "route_table_routes",
-                'resources' => scratch[:route_table_data].map{|rt_data|
-                  {
-                      rt_data[:name] => {
-                          :ensure => status,
-                          :region => region,
-                          :routes => RouteTableHelpers.CalculateRoutes(name, network, zones, scratch, rt_data)
-                      }
-                  }
-                }.reduce({}){|hash, kv|
-                  hash.merge(kv)
-                }
-            },
-            {
-                'resource_type' => "load_balancer",
-                'resources' => LoadBalancerHelper.generate_loadbalancer_resources(name, status, region, server_roles, services, scratch)
-            },
-            {
-                'resource_type' => "rds_subnet_group",
-                'resources' => [
-                    # The RDS subnets that should be present.
-                    scratch[:rds_zones].map{ |zone|
-                      {
-                          "#{name}-#{zone}" => {
-                              :ensure  => status,
-                              :region  => region,
-                              :subnets => scratch[:subnet_data].select{|s|
-                                s[:zone] == zone
-                              }.map{|s|
-                                s[:name]
-                              }
-                          }
-                      }
-                    },
-                    # The RDS subnets that should not be present.
-                    zones.keys.select{|zone_names|
-                      !scratch[:rds_zones].include?(zone_names)
-                    }.map{ |zone_name|
-                      {
-                          "#{name}-#{zone_name}" => {
-                              :ensure  => 'absent',
-                              :region  => region,
-                          }
-                      }
+        [
+          {
+              'resource_type' => "vpc",
+              'resources' => vpc_resources
+          },
+          {
+              'resource_type' => "route_table",
+              'resources' => route_table_resources
+          },
+          subnet_resources_hash,
+          security_group_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, scratch[:tags_with_environment], db_servers),
+          security_group_rules_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, db_servers),
+          {
+              'resource_type' => "internet_gateway",
+              'resources' => internet_gateway_resources
+          },
+          {
+              'resource_type' => "nat_gateway",
+              'resources' => scratch[:nat_list].map{|nat|
+                {
+                    nat[:name] => {
+                        :ensure => status,
+                        :region => region,
+                        :elastic_ip => nat[:ip_addr],
+                        :internet_gateway => name,
+                        :subnet => nat[:subnet],
                     }
-                ].flatten.reduce({}){|hash, kv| hash.merge(kv)  }
-            },
-            {
-                'resource_type' => "rds",
-                'resources' => db_servers.keys.map{|db|
-                  {
-                      "#{name}-#{db}" => {
-                          'master_username' => 'admin',
-                          'master_password' => 'password!',
-                          'database' => "#{db}",
-                          'multi_az' => 'false',
-                          'public_access' => 'false',
-                          'instance_type' => 'db.t2.micro',
-                          'storage_size' => '50',
-                      }.merge(
-                          {
-                              'ensure' => status,
-                              'region' => region,
-                              'security_groups' => [
-                                  "#{name}_#{db}"
-                              ],
-                              'rds_subnet_group' => db_servers[db].has_key?('zone') ? "#{name}-#{db_servers[db]['zone']}"  :  "#{name}-#{scratch[:rds_default_zone]}",
-                          }
-                      ).merge(
-                        db_servers[db].dup.keep_if{|k, v| k != 'zone' }
-                      )
-                  }
-                }.flatten.reduce({}){|hash, kv| hash.merge(kv)}
-            },
-            launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
-            {
-                'resource_type' => "autoscaling_group",
-                'resources' => server_roles.map{|role_name, role_data|
-
-                  {
-                      AutoScalerHelper.GenerateAutoScalerName(name, role_name, zones, role_data['zone'], scratch) => {
-                          'ensure' => status,
-                          'region' => region,
-                          'launch_configuration' => AutoScalerHelper.GenerateLaunchConfigName(name, role_name, zones, role_data['zone'], scratch ),
-                          'subnets' => scratch[:subnet_data].select{|sn|
-                            sn[:zone] == role_data['zone']
-                          }.map{|sn| sn[:name] },
-                          #TODO: We need to set the internet gateway
-                          #'internet_gateway' => nil,
-                          #TODO: We need to set the nat gateway
-                          #'nat_gateway' => nil,
-                      }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
-                          AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
-                      )).merge(
-                          LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(server_roles, services).has_key?(role_name) ? {
-                              'load_balancer' => LoadBalancerHelper.generate_loadbalancer_name(name, role_name)
-                          } : {}
-                      )
-                  }
-                }.reduce({}){|hash, kv| hash.merge(kv)}
-
-            },
-            {
-              'resource_type' => "deployment_group",
-              'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(name, server_roles, status, region, zones, scratch)
-            },
-            {
-                'resource_type' => "iam_role",
-                'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services, scratch)
-            },
-            {
-                'resource_type' => "iam_policy",
-                'resources' => IAMHelper.CalculatePolicyResources(name, status, policies, scratch)
-            },
-            {
-                'resource_type' => "iam_instance_profile",
-                'resources' => IAMHelper.CalculateInstanceProfileResources(name, status, server_roles, scratch)
-            },
-            {
-                'resource_type' => "s3_bucket",
-                'resources' => s3.map{|bucket_name, data|
-                  {
-                      bucket_name => {
-                          :ensure => status,
-                          :region => region,
-                          :policy => data['policy'],
-                          :grants => data['grants'],
-                          :cors => data['cors'],
-                      }
-                  }
-                }.reduce({}){|hash, kv| hash.merge(kv)}
-            },
-            {
-                'resource_type' => "s3_key",
-                'resources' => {
-
                 }
-            }
+              }.reduce({}){|hash, item| hash.merge(item) }
+          },
+          {
+              'resource_type' => "route_table_routes",
+              'resources' => scratch[:route_table_data].map{|rt_data|
+                {
+                    rt_data[:name] => {
+                        :ensure => status,
+                        :region => region,
+                        :routes => RouteTableHelpers.CalculateRoutes(name, network, zones, scratch, rt_data)
+                    }
+                }
+              }.reduce({}){|hash, kv|
+                hash.merge(kv)
+              }
+          },
+          {
+              'resource_type' => "load_balancer",
+              'resources' => LoadBalancerHelper.generate_loadbalancer_resources(name, status, region, server_roles, services, scratch)
+          },
+          {
+              'resource_type' => "rds_subnet_group",
+              'resources' => [
+                  # The RDS subnets that should be present.
+                  scratch[:rds_zones].map{ |zone|
+                    {
+                        "#{name}-#{zone}" => {
+                            :ensure  => status,
+                            :region  => region,
+                            :subnets => scratch[:subnet_data].select{|s|
+                              s[:zone] == zone
+                            }.map{|s|
+                              s[:name]
+                            }
+                        }
+                    }
+                  },
+                  # The RDS subnets that should not be present.
+                  zones.keys.select{|zone_names|
+                    !scratch[:rds_zones].include?(zone_names)
+                  }.map{ |zone_name|
+                    {
+                        "#{name}-#{zone_name}" => {
+                            :ensure  => 'absent',
+                            :region  => region,
+                        }
+                    }
+                  }
+              ].flatten.reduce({}){|hash, kv| hash.merge(kv)  }
+          },
+          {
+              'resource_type' => "rds",
+              'resources' => db_servers.keys.map{|db|
+                {
+                    "#{name}-#{db}" => {
+                        'master_username' => 'admin',
+                        'master_password' => 'password!',
+                        'database' => "#{db}",
+                        'multi_az' => 'false',
+                        'public_access' => 'false',
+                        'instance_type' => 'db.t2.micro',
+                        'storage_size' => '50',
+                    }.merge(
+                        {
+                            'ensure' => status,
+                            'region' => region,
+                            'security_groups' => [
+                                "#{name}_#{db}"
+                            ],
+                            'rds_subnet_group' => db_servers[db].has_key?('zone') ? "#{name}-#{db_servers[db]['zone']}"  :  "#{name}-#{scratch[:rds_default_zone]}",
+                        }
+                    ).merge(
+                      db_servers[db].dup.keep_if{|k, v| k != 'zone' }
+                    )
+                }
+              }.flatten.reduce({}){|hash, kv| hash.merge(kv)}
+          },
+          launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
+          {
+              'resource_type' => "autoscaling_group",
+              'resources' => server_roles.map{|role_name, role_data|
+
+                {
+                    AutoScalerHelper.GenerateAutoScalerName(name, role_name, zones, role_data['zone'], scratch) => {
+                        'ensure' => status,
+                        'region' => region,
+                        'launch_configuration' => AutoScalerHelper.GenerateLaunchConfigName(name, role_name, zones, role_data['zone'], scratch ),
+                        'subnets' => scratch[:subnet_data].select{|sn|
+                          sn[:zone] == role_data['zone']
+                        }.map{|sn| sn[:name] },
+                        #TODO: We need to set the internet gateway
+                        #'internet_gateway' => nil,
+                        #TODO: We need to set the nat gateway
+                        #'nat_gateway' => nil,
+                    }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
+                        AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
+                    )).merge(
+                        LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(server_roles, services).has_key?(role_name) ? {
+                            'load_balancer' => LoadBalancerHelper.generate_loadbalancer_name(name, role_name)
+                        } : {}
+                    )
+                }
+              }.reduce({}){|hash, kv| hash.merge(kv)}
+
+          },
+          {
+            'resource_type' => "deployment_group",
+            'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(name, server_roles, status, region, zones, scratch)
+          },
+          {
+              'resource_type' => "iam_role",
+              'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services, scratch)
+          },
+          {
+              'resource_type' => "iam_policy",
+              'resources' => IAMHelper.CalculatePolicyResources(name, status, policies, scratch)
+          },
+          {
+              'resource_type' => "iam_instance_profile",
+              'resources' => IAMHelper.CalculateInstanceProfileResources(name, status, server_roles, scratch)
+          },
+          {
+              'resource_type' => "s3_bucket",
+              'resources' => s3.map{|bucket_name, data|
+                {
+                    bucket_name => {
+                        :ensure => status,
+                        :region => region,
+                        :policy => data['policy'],
+                        :grants => data['grants'],
+                        :cors => data['cors'],
+                    }
+                }
+              }.reduce({}){|hash, kv| hash.merge(kv)}
+          },
+          {
+              'resource_type' => "s3_key",
+              'resources' => {
+
+              }
+          }
         ]
-        puts things
-        things
       end
 
       module AutoScalerHelper

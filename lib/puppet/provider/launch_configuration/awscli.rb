@@ -166,7 +166,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
       extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
-      ami_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
+      ami_disks_configured = value(:image_disks).nil? ? [] : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
       ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
 
       merged_ami_disks = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, ami_disks_configured 
