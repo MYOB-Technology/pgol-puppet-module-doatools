@@ -423,7 +423,7 @@ module PuppetX
                   :ensure => status,
                   :policies => role_data['services'].map{|service_label|
                     service  = services[service_label]
-                    service.has_key?('policies') ? service['policies'].map{|policy_label| GeneratePolicyName(name, policy_label, scatch)} : []
+                    service.has_key?('policies') ? service['policies'].map{|policy_label| GeneratePolicyName(name, policy_label, scratch)} : []
                   }.flatten.uniq
               }
           }
