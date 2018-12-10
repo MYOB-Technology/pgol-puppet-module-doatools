@@ -56,6 +56,7 @@ module PuppetX
       end
 
       def self.FormatPorts data
+        puts "FORMAT PORTS #{data}"
         from = data["FromPort"]
         to = data["ToPort"]
 
