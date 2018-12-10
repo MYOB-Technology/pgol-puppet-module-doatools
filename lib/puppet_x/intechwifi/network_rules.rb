@@ -56,16 +56,15 @@ module PuppetX
       end
 
       def self.FormatPorts data
-        puts "FORMAT PORTS #{data}"
-        from = data["FromPort"]
-        to = data["ToPort"]
+        from = data['FromPort']
+        to = data['ToPort']
 
-        if from and to and from != to
+        if from && to && from != to
           "#{from}-#{to}"
-        elsif from and to
+        elsif from
           "#{from}"
         else
-          ""
+          '0-65535'
         end
       end
 
