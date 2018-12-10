@@ -128,5 +128,9 @@ Puppet::Type.newtype(:autoscaling_group) do
 
   end
 
+  newparam(:tags) do
+
+  end
+
 
 end

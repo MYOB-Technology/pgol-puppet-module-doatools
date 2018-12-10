@@ -236,6 +236,7 @@ module PuppetX
                         'subnets' => scratch[:subnet_data].select{|sn|
                           sn[:zone] == role_data['zone']
                         }.map{|sn| sn[:name] },
+                        'tags' => { 'Role' => role_name, 'Name' => "#{role_name}_#{name}" }
                         #TODO: We need to set the internet gateway
                         #'internet_gateway' => nil,
                         #TODO: We need to set the nat gateway

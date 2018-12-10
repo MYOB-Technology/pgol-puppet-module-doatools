@@ -56,6 +56,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     }.join(",")]
     args << ["--health-check-grace-period", resource[:healthcheck_grace]] unless resource[:healthcheck_grace].nil?
     args << ["--health-check-type", resource[:healthcheck_type]] unless resource[:healthcheck_type].nil?
+    args << ['--tags', convert_puppet_to_aws_tags(resource[:name], resource[:tags]).to_json] unless resource[:tags].nil?
 
     awscli(args.flatten)
 
@@ -68,6 +69,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     @property_hash[:launch_configuration] = resource[:launch_configuration]
     @property_hash[:healthcheck_type] = resource[:healthcheck_type] unless resource[:healthcheck_type].nil?
     @property_hash[:healthcheck_grace] = resource[:healthcheck_grace] unless resource[:healthcheck_grace].nil?
+    @property_hash[:tags] = resource[:tags]
 
   end
 
@@ -112,6 +114,9 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     }
     @property_hash[:healthcheck_grace] = Integer(data["HealthCheckGracePeriod"])
     @property_hash[:healthcheck_type] = data["HealthCheckType"]
+    env_tags = convert_aws_to_puppet_tags(data['Tags'])
+    puts "ENV TAGS #{env_tags}"
+    @property_hash[:tags] = convert_aws_to_puppet_tags(data['Tags'])
     @property_hash[:load_balancer] = PuppetX::IntechWIFI::Autoscaling_Rules.get_load_balancer(@property_hash[:name], @property_hash[:region]){|*arg| awscli(*arg)}
 
 
@@ -187,6 +192,23 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
   end
 
+  def convert_puppet_to_aws_tags(asg_name, tags)
+    tags.map { |key, value| 
+      {
+        'ResourceId' => asg_name,
+        'ResourceType' => 'auto-scaling-group',
+        'Key' =>  key,
+        'Value' => value,
+        'PropagateAtLaunch': true
+      }
+    }
+  end
+
+  def convert_aws_to_puppet_tags(tags)
+    tags.map { |tag| { tag['Key'] => tag['Value'] } }
+        .reduce({}){ |hash, kv| hash.merge(kv)  }
+  end
+
 
   def initialize(value={})
     super(value)
@@ -221,6 +243,9 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
   def healthcheck_type=(value)
     @property_flush[:healthcheck_type] = value
+  end
+  def tags=(value)
+    @property_flush[:tags] = value
   end
 
 end

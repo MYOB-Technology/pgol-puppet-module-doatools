@@ -843,7 +843,7 @@ describe 'define_environment_resources' do
   autoscaling_group1 = {
       "resource_type" => "autoscaling_group",
       "resources" => {
-
+    
       }
   }
 
@@ -859,6 +859,7 @@ describe 'define_environment_resources' do
                   "demopublicb",
                   "demopublicc",
               ],
+              "tags" => { "Role" => "testrole", "Name" => "testrole_demo" },
               "minimum_instances"=>0,
               "maximum_instances"=>2,
               "desired_instances"=>2,
