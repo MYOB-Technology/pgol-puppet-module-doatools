@@ -20,24 +20,26 @@ module PuppetX
   module IntechWIFI
     module DeclareEnvironmentResources
       module AutoscalingGroupHelpers
-        def self.generate(name, services, roles, zones, status, region, network, scratch)
+        DEFAULT_LABEL = '%{role}_%{vpc}'
+
+        def self.generate(name, services, roles, zones, status, region, instance_label, network, scratch)
           resources = roles.map { |role, role_data| {
             generate_auto_scaler_name(name, role, zones, role_data['zone'], scratch) => 
-              get_groups(name, status, role, role_data, region, network, zones, scratch)
+              get_groups(name, status, role, role_data, region, network, zones, instance_label, scratch)
               .merge(get_scaling_properties(role_data))
               .merge(get_loadbalancers(name, roles, role, services))
           } }
           .reduce({}){|hash, kv| hash.merge(kv)}
           { 'resource_type' => "autoscaling_group", 'resources' => resources }
         end
-        
-        def self.get_groups(name, status, role, role_data, region, network, zones, scratch)
+
+        def self.get_groups(name, status, role, role_data, region, network, zones, instance_label, scratch)
           {
             'ensure' => status,
             'region' => region,
             'launch_configuration' => generate_launch_configuration_name(name, role, zones, role_data['zone'], scratch),
             'subnets' => get_group_subnets(name, role_data, network, zones, scratch),
-            'tags' => { 'Role' => role, 'Name' => "#{role}_#{name}" }
+            'tags' => { 'Role' => role, 'Name' => generate_name_tag(name, role, instance_label) }
             #TODO: We need to set the internet gateway
             #'internet_gateway' => nil,
             #TODO: We need to set the nat gateway
@@ -87,6 +89,21 @@ module PuppetX
                     :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize,
                     :Role => role.capitalize
                 })
+        end
+
+        def self.generate_name_tag(env_name, role, label_format)
+          sprintf(get_label_format(label_format), {
+            :vpc => env_name,
+            :role => role,
+            :VPC => env_name.upcase,
+            :ROLE => role.upcase,
+            :Vpc => env_name.capitalize,
+            :Role => role.capitalize
+          })
+        end
+
+        def self.get_label_format(label_format)
+          (label_format.nil? || label_format.empty?) ? DEFAULT_LABEL : label_format
         end
 
         def self.get_default_scaling

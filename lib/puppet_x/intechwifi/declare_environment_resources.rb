@@ -222,7 +222,7 @@ module PuppetX
               }.flatten.reduce({}){|hash, kv| hash.merge(kv)}
           },
           launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
-          AutoscalingGroupHelpers.generate(name, services, server_roles, zones, status, region, network, scratch),
+          AutoscalingGroupHelpers.generate(name, services, server_roles, zones, status, region, label_formats['instance'], network, scratch),
           {
             'resource_type' => "deployment_group",
             'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(name, server_roles, status, region, zones, scratch)
