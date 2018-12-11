@@ -56,12 +56,13 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     }.join(",")]
     args << ["--health-check-grace-period", resource[:healthcheck_grace]] unless resource[:healthcheck_grace].nil?
     args << ["--health-check-type", resource[:healthcheck_type]] unless resource[:healthcheck_type].nil?
-    args << ['--tags', convert_puppet_to_aws_tags(resource[:name], resource[:tags]).to_json] unless resource[:tags].nil?
-
     awscli(args.flatten)
+
+    create_update_tags(resource[:tags], resource[:name], resource[:region]) unless resource[:tags].nil?
 
     add_loadbalancer(resource[:region], resource[:name], resource[:load_balancer]) unless resource[:load_balancer].nil?
 
+    @property_hash[:name] = resource[:name]
     @property_hash[:region] = resource[:region]
     @property_hash[:desired_instances] = resource[:desired_instances]
     @property_hash[:minimum_instances] = resource[:minimum_instances]
@@ -114,8 +115,6 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     }
     @property_hash[:healthcheck_grace] = Integer(data["HealthCheckGracePeriod"])
     @property_hash[:healthcheck_type] = data["HealthCheckType"]
-    env_tags = convert_aws_to_puppet_tags(data['Tags'])
-    puts "ENV TAGS #{env_tags}"
     @property_hash[:tags] = convert_aws_to_puppet_tags(data['Tags'])
     @property_hash[:load_balancer] = PuppetX::IntechWIFI::Autoscaling_Rules.get_load_balancer(@property_hash[:name], @property_hash[:region]){|*arg| awscli(*arg)}
 
@@ -159,6 +158,8 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
       awscli(args.flatten)
 
+      create_update_tags(@property_flush[:tags], @property_hash[:name], @property_hash[:region]) if @property_flush.has_key?(:tags)
+
       update_loadbalancer(@property_hash[:region], @property_hash[:name], @property_hash[:load_balancer], @property_flush[:load_balancer]) if @property_flush.has_key?(:load_balancer)
     end
   end
@@ -190,6 +191,14 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
     awscli(args.flatten)
 
+  end
+
+  def create_update_tags(tags, asg_name, region)
+    args = [
+      "autoscaling", "create-auto-scaling-group", "--region", region,
+      "--tags", convert_puppet_to_aws_tags(asg_name, tags)
+    ]
+    awscli(args.flatten)
   end
 
   def convert_puppet_to_aws_tags(asg_name, tags)
