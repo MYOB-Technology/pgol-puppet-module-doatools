@@ -15,6 +15,7 @@
 
 require 'puppet_x/intechwifi/declare_environment_resources/service_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources/role_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources'
 
 module PuppetX
@@ -39,7 +40,7 @@ module PuppetX
 
         def self.get_launch_configuration(name, role, role_details, zones, zone, scratch)
           {
-            'name' => AutoScalerHelper.GenerateLaunchConfigName(name, role, zones, zone, scratch),
+            'name' => AutoscalingGroupHelpers.generate_launch_configuration_name(name, role, zones, zone, scratch),
             'image' => role_details['ec2']['image'],
             'instance_type' => role_details['ec2']['instance_type'],
             'iam_instance_profile' => IAMHelper.GenerateInstanceProfileName(name, role, scratch),

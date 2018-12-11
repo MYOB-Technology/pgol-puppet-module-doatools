@@ -22,6 +22,7 @@ require 'puppet_x/intechwifi/declare_environment_resources/loadbalancer_helper'
 require 'puppet_x/intechwifi/declare_environment_resources/security_group_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/network_rules_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/launch_configuration_generator'
+require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_helpers'
 
 module PuppetX
   module IntechWIFI
@@ -224,34 +225,7 @@ module PuppetX
               }.flatten.reduce({}){|hash, kv| hash.merge(kv)}
           },
           launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
-          {
-              'resource_type' => "autoscaling_group",
-              'resources' => server_roles.map{|role_name, role_data|
-
-                {
-                    AutoScalerHelper.GenerateAutoScalerName(name, role_name, zones, role_data['zone'], scratch) => {
-                        'ensure' => status,
-                        'region' => region,
-                        'launch_configuration' => AutoScalerHelper.GenerateLaunchConfigName(name, role_name, zones, role_data['zone'], scratch ),
-                        'subnets' => scratch[:subnet_data].select{|sn|
-                          sn[:zone] == role_data['zone']
-                        }.map{|sn| sn[:name] },
-                        'tags' => { 'Role' => role_name, 'Name' => "#{role_name}_#{name}" }
-                        #TODO: We need to set the internet gateway
-                        #'internet_gateway' => nil,
-                        #TODO: We need to set the nat gateway
-                        #'nat_gateway' => nil,
-                    }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
-                        AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
-                    )).merge(
-                        LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(server_roles, services).has_key?(role_name) ? {
-                            'load_balancer' => LoadBalancerHelper.generate_loadbalancer_name(name, role_name)
-                        } : {}
-                    )
-                }
-              }.reduce({}){|hash, kv| hash.merge(kv)}
-
-          },
+          AutoscalingGroupHelpers.generate(name, services, server_roles, zones, status, region, network, scratch),
           {
             'resource_type' => "deployment_group",
             'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(name, server_roles, status, region, zones, scratch)
@@ -291,61 +265,6 @@ module PuppetX
         ]
       end
 
-      module AutoScalerHelper
-        def self.GenerateAutoScalerName(env_name, role, zones, z, scratch)
-          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_autoscaling', scratch), {
-                    :vpc => env_name,
-                    :zone => SubnetHelpers.ZoneLiteral(z, scratch),
-                    :role => role,
-                    :VPC => env_name.upcase,
-                    :ZONE => SubnetHelpers.ZoneLiteral(z, scratch).upcase,
-                    :ROLE => role.upcase,
-                    :Vpc => env_name.capitalize,
-                    :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize,
-                    :Role => role.capitalize
-                })
-        end
-
-        def self.GenerateLaunchConfigName(env_name, role, zones, z, scratch)
-          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_launch_configuration', scratch), {
-                    :vpc => env_name,
-                    :zone => SubnetHelpers.ZoneLiteral(z, scratch),
-                    :role => role,
-                    :VPC => env_name.upcase,
-                    :ZONE => SubnetHelpers.ZoneLiteral(z, scratch).upcase,
-                    :ROLE => role.upcase,
-                    :Vpc => env_name.capitalize,
-                    :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize,
-                    :Role => role.capitalize
-                })
-        end
-
-
-
-        def self.GetDefaultScaling()
-          {
-              # Defaults
-              'min' => 0,
-              'max' => 2,
-              'desired' => 2,
-          }
-        end
-
-        def self.CopyScalingValues(src)
-          {}.merge(src).keep_if{|key, value|
-            ["min", "max", "desired"].include?(key)
-          }
-        end
-
-        def self.ConvertScalingToAutoScaleValues(src)
-          {
-              'minimum_instances' => src['min'],
-              'desired_instances' => src['desired'],
-              'maximum_instances' => src['max'],
-          }
-        end
-      end
-
       module DeploymentGroupHelper
         def self.GenerateDeploymentGroupName(env_name, deploy, appname, scratch)
           sprintf(scratch[:label_deployment_group], {
@@ -382,7 +301,7 @@ module PuppetX
                     "region" => region,
                     "application_name" => data[1],
                     "service_role" => scratch[:code_deploy_service_role],
-                    "autoscaling_groups" => data[0].map{|r|  AutoScalerHelper.GenerateAutoScalerName(env_name, r, zones, server_roles[r]['zone'], scratch) }
+                    "autoscaling_groups" => data[0].map{|r|  AutoscalingGroupHelpers.generate_auto_scaler_name(env_name, r, zones, server_roles[r]['zone'], scratch) }
                 }
             ]
           }.reduce({}) {|m, v| m[v[0]] = v[1]; m }
