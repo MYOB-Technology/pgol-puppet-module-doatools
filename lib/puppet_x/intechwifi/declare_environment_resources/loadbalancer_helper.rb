@@ -22,9 +22,10 @@ module PuppetX
     module DeclareEnvironmentResources
       module LoadBalancerHelper
         def self.generate_loadbalancer_resources(name, status, region, roles, services, scratch)
-          get_role_names_with_load_balancers(roles, services).map{|role_name|
+          resources = get_role_names_with_load_balancers(roles, services).map{|role_name|
             generate_load_balancer(name, status, region, role_name, services, scratch)
           }.reduce({}){|hash, kv| hash.merge(kv) }
+          { 'resource_type' => 'load_balancer', 'resources' => resources }
         end
 
         def self.generate_load_balancer(name, status, region, role_name, services, scratch)

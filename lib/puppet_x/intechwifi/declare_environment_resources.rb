@@ -163,10 +163,7 @@ module PuppetX
                 hash.merge(kv)
               }
           },
-          {
-              'resource_type' => "load_balancer",
-              'resources' => LoadBalancerHelper.generate_loadbalancer_resources(name, status, region, server_roles, services, scratch)
-          },
+          LoadBalancerHelper.generate_loadbalancer_resources(name, status, region, server_roles, services, scratch),
           {
               'resource_type' => "rds_subnet_group",
               'resources' => [
