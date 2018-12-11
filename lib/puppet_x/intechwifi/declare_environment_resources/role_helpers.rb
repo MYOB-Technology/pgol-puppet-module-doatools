@@ -92,7 +92,7 @@ module PuppetX
             when 'service'
               location_type = 'sg'
               location_ident = roles.select{ |role_name, role_data| role_includes_service?(role_data, service) }
-                                    .map{ |role_name, role_data| calculate_security_group_name(name, segments[3], label_format) }
+                                    .map{ |role_name, role_data| calculate_security_group_name(name, role_name, label_format) }
             when 'rds'
               location_type = 'sg'
               location_ident = ["#{name}_#{segments[3]}"]

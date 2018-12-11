@@ -60,9 +60,9 @@ module PuppetX
   
             in_rules = get_services_that_talk_to_db(services, server)
                         .map{ |service_name| get_roles_with_service(service_name, roles) }
-                        .flatten
-                        .uniq
+                        .flatten.uniq
                         .map{ |role_name| ports.map{ |port| "tcp|#{port}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, label_format)}" } }
+                        .flatten.uniq
   
             { :name => calculate_security_group_name(name, server), :in => in_rules, :out => [] }
           }
