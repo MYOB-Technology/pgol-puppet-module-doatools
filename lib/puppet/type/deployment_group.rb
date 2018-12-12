@@ -31,6 +31,7 @@ Puppet::Type.newtype(:deployment_group) do
   newparam(:name, :namevar => true) do
   end
 
+  # magically imports the provider for this type
   providify
   paramclass(:provider)
 
@@ -46,7 +47,7 @@ Puppet::Type.newtype(:deployment_group) do
 
   newproperty(:autoscaling_groups, :array_matching => :all) do
     def insync?(is)
-      is.all?{ |v| @should.include? v} && @should.all?{|v| is.include? v} && provider.checkworks
+      is.all?{ |v| @should.include? v} && @should.all?{|v| is.include? v} && provider.has_deploy_lifecycle_hook(@should)
     end
   end
 

@@ -106,6 +106,21 @@ module PuppetX
         }
       end
 
+      def AwsCmds.find_lifecyle_hooks_by_asg_name(regions, name, &aws_command)
+        result = regions.map{ |r|
+          { :region => r, :data => JSON.parse(aws_command.call('autoscaling', 'describe-lifecycle-hooks', '--region', r, '--auto-scaling-group-name', name))['LifecycleHooks']}
+        }.select{ |a| a[:data].length != 0 }.flatten
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  matches in more than one region.
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
+
+        {
+            :region => result[0][:region],
+            :data   => result[0][:data],
+        }
+      end
+
       def AwsCmds.find_iam_instance_profile_by_name(name, &aws_command)
         JSON.parse(aws_command.call('iam', 'get-instance-profile', "--instance-profile-name", name))["InstanceProfile"]
       rescue Puppet::ExecutionFailure => e
