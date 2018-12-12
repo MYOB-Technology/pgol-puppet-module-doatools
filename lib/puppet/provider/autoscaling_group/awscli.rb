@@ -195,7 +195,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
   def create_update_tags(tags, asg_name, region)
     args = [
-      "autoscaling", "create-auto-scaling-group", "--region", region,
+      "autoscaling", "create-or-update-tags", "--region", region,
       "--tags", convert_puppet_to_aws_tags(asg_name, tags)
     ]
     awscli(args.flatten)
@@ -209,7 +209,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
         'Key' =>  key,
         'Value' => value,
         'PropagateAtLaunch': true
-      }
+      }.to_json
     }
   end
 
