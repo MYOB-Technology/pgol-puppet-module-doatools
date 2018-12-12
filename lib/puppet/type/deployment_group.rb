@@ -31,6 +31,13 @@ Puppet::Type.newtype(:deployment_group) do
   newparam(:name, :namevar => true) do
   end
 
+  providify
+  paramclass(:provider).isnamevar
+
+  def self.parameters_to_include
+    [:provider]
+  end
+
   newparam(:application_name) do
   end
 
@@ -39,7 +46,7 @@ Puppet::Type.newtype(:deployment_group) do
 
   newproperty(:autoscaling_groups, :array_matching => :all) do
     def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+      is.all?{ |v| @should.include? v} && @should.all?{|v| is.include? v} && provider.checkworks
     end
   end
 

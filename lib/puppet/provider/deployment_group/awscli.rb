@@ -48,6 +48,11 @@ Puppet::Type.type(:deployment_group).provide(:awscli) do
     awscli(args.flatten)
   end
 
+  def checkworks
+    puts 'DID I MAKE IT HERE PELASE {P:LEASE'
+    true
+  end
+
 
   def exists?
     #
