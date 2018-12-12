@@ -32,7 +32,7 @@ Puppet::Type.newtype(:deployment_group) do
   end
 
   providify
-  paramclass(:provider).isnamevar
+  paramclass(:provider)
 
   def self.parameters_to_include
     [:provider]
