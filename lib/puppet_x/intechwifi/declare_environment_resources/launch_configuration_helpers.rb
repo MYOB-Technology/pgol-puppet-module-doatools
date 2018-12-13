@@ -22,7 +22,7 @@ module PuppetX
   module IntechWIFI
     module DeclareEnvironmentResources
       module LaunchConfigurationHelpers
-        OPTIONAL_PARAMS = ['ssh_key_name', 'userdata']
+        OPTIONAL_PARAMS = ['ssh_key_name', 'userdata', 'image_disks', 'extra_disks']
 
         def self.get_role_based_launch_configuration(name, services, roles, zones, sg_label_format, scratch)
           roles.map { |role, role_details| get_launch_configuration(name, role, role_details, zones, role_details['zone'], scratch)
