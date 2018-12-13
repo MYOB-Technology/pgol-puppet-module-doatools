@@ -50,14 +50,10 @@ Puppet::Type.type(:deployment_group).provide(:awscli) do
 
   def has_deploy_lifecycle_hook(groups)
     regions = resource[:region].nil? ? PuppetX::IntechWIFI::Constants.Regions : [resource[:region]]
-    groups.map{ |group| find_auto_scaling_group_life_cycle_hooks(group, regions) }
-          .each { |hooks| puts "HOOKs #{hooks}"}
+    groups.map { |group| find_auto_scaling_group_life_cycle_hooks(group, regions) }
           .map { |hooks| hooks.map{ |hook| hook['LifecycleHookName'] } }
-          .each { |hooks| puts "HOOKNAMES #{hooks}"}
-          .map{ |hooks| hooks.map {|name| name.include?('CodeDeploy-managed-automatic-launch-deployment-hook') } }
-          .each { |result| puts "RESULT #{result} "}
+          .map { |hooks| hooks.map {|name| name.include?('CodeDeploy-managed-automatic-launch-deployment-hook') } }
           .map { |result| result.any? } 
-          .each { |hooks| puts "POST HOKS #{hooks}" }
           .all?
   end
 

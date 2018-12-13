@@ -91,7 +91,7 @@ module PuppetX
         result.max { |a, b| a["LaunchConfigurationName"]  <=> b["LaunchConfigurationName"]}
       end
 
-      def AwsCmds.find_autoscaling_by_name( regions, name, &aws_command)
+      def AwsCmds.find_autoscaling_by_name( regions, name, aws_command = Proc.new)
         result = regions.map{ |r|
           { :region => r, :data => JSON.parse(aws_command.call('autoscaling', 'describe-auto-scaling-groups', '--region', r, "--auto-scaling-group-names", name))["AutoScalingGroups"]}
         }.select{ |a| a[:data].length != 0 }.flatten
@@ -106,14 +106,13 @@ module PuppetX
         }
       end
 
-      def AwsCmds.find_lifecyle_hooks_by_asg_name(regions, name, &aws_command)
+      def AwsCmds.find_lifecyle_hooks_by_asg_name(regions, name, aws_command = Proc.new)
+        find_autoscaling_by_name(regions, name, aws_command) #check if the autoscaling group exists first
         result = regions.map{ |r|
-          { :region => r, :data => JSON.parse(aws_command.call('autoscaling', 'describe-lifecycle-hooks', '--region', r, '--auto-scaling-group-name', name))['LifecycleHooks']}
-        }.select{ |a| a[:data].length != 0 }.flatten
+          { :region => r, :data => JSON.parse(aws_command.call('autoscaling', 'describe-lifecycle-hooks', '--region', r, '--auto-scaling-group-name', name))['LifecycleHooks'] }
+        }
 
-        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  matches in more than one region.
-        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result[0][:data].length > 1  #  More than one match in the region.
 
         {
             :region => result[0][:region],
