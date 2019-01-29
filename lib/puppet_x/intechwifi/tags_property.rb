@@ -20,7 +20,7 @@ module PuppetX
     module Tags_Property
       def self.validate_value(value)
         fail('The tags property should be a hash of tags and values') if !value.is_a?(Hash)
-        fail('We can only support 8 tags') if value.keys.length > 8
+        fail('We can only support 50 tags') if value.keys.length > 50
         # We block lowercase 'name' as well to avoid confusion later.
         fail('Puppet already uses the tag "Name", it cannot be used inside the tags property') if value.keys.map{|x| x.downcase }.include? 'name'
       end
