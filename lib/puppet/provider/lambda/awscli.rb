@@ -37,6 +37,9 @@ require 'puppet_x/intechwifi/exceptions'
 Puppet::Type.type(:lambda).provide(:awscli) do
   commands :awscli => "aws"
 
+  LAMBDA_CONFIG_PROPERTIES = [:role, :handler, :runtime]
+  LAMBDA_CODE_PROPERTIES = [:s3_bucket, :s3_key]
+
   def create
     args = [
         'lambda', 'create-function', 
@@ -86,19 +89,26 @@ Puppet::Type.type(:lambda).provide(:awscli) do
   end
 
   def flush
-    if @property_flush and @property_flush.length > 0
-      args = [
-        'lambda', 'update-function-configuration',
-        '--region', resource[:region]
-      ]
-
-      args << ['--role', @property_flush[:role]] if @property_flush.key? :role
-      args << ['--handler', @property_flush[:handler]] if @property_flush.key? :handler
-      args << ['--runtime', @property_flush[:runtime]] if @property_flush.key? :runtime
-
-      awscli(args.flatten)
+    if @property_flush && @property_flush.length > 0
+      update_lambda_config if @property_flush.keys.any? { |key| LAMBDA_CONFIG_PROPERTIES.include? key }
+      update_lambda_code if @property_flush.keys.any? { |key| LAMBDA_CODE_PROPERTIES.include? key }
     end
+  end
 
+  def update_lambda_config
+    args = [
+      'lambda', 'update-function-configuration',
+      '--region', resource[:region]
+    ]
+
+    args << ['--role', @property_flush[:role]] if @property_flush.key? :role
+    args << ['--handler', @property_flush[:handler]] if @property_flush.key? :handler
+    args << ['--runtime', @property_flush[:runtime]] if @property_flush.key? :runtime
+
+    awscli(args.flatten)
+  end
+  
+  def update_lambda_code
     args = [
       'lambda', 'update-function-code',
       '--function-name', resource[:name],
@@ -130,5 +140,13 @@ Puppet::Type.type(:lambda).provide(:awscli) do
 
   def region=(value)
     @property_flush[:region] = value
+  end
+
+  def s3_bucket=(value)
+    @property_flush[:s3_bucket] = value
+  end
+
+  def s3_key=(value)
+    @property_flush[:s3_key] = value
   end
 end
