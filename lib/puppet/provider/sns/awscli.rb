@@ -175,6 +175,7 @@ Puppet::Type.type(:sns).provide(:awscli) do
     args = [
         'sns', 'create-topic', 
         '--name', resource[:name],
+        '--region', resource[:region]
     ]
 
     awscli(args.flatten)
@@ -186,7 +187,8 @@ Puppet::Type.type(:sns).provide(:awscli) do
     data = PuppetX::IntechWIFI::AwsCmds.find_sns_by_name(resource[:region], resource[:name]){ | *arg | awscli(*arg) }
     args = [
         "sns", "delete-topic", 
-        "--topic-arn", data['TopicArn']
+        "--topic-arn", data['TopicArn'],
+        "--region", resource[:region]
     ]
     awscli(args.flatten)
   end
