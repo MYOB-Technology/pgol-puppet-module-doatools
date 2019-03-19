@@ -36,10 +36,8 @@ Puppet::Type.newtype(:lambda) do
   end
 
   newproperty(:s3_bucket) do
-    desc "simple"
   end
 
   newproperty(:s3_key) do
-      desc "simple"
   end
 end

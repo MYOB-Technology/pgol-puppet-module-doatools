@@ -71,11 +71,10 @@ Puppet::Type.type(:lambda).provide(:awscli) do
     debug("searching for lambda=#{resource[:name]}\n")
 
     search = PuppetX::IntechWIFI::AwsCmds.find_lambda_by_name(resource[:region], resource[:name]){ | *arg | awscli(*arg) }
-    puts "THIS IS SEARCH #{search}"
     @property_hash[:name] = resource[:name]
-    @property_hash[:runtime] = search['Runtime']
-    @property_hash[:role] = search['Role']
-    @property_hash[:handler] = search['Handler']
+    @property_hash[:runtime] = search['Configuration']['Runtime']
+    @property_hash[:role] = search['Configuration']['Role']
+    @property_hash[:handler] = search['Configuration']['Handler']
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     debug(e)
@@ -86,11 +85,11 @@ Puppet::Type.type(:lambda).provide(:awscli) do
     false
   end
 
-
   def flush
     if @property_flush and @property_flush.length > 0
       args = [
-        'lambda', 'update-function-configuration'
+        'lambda', 'update-function-configuration',
+        '--region', resource[:region]
       ]
 
       args << ['--role', @property_flush[:role]] if @property_flush.key? :role
@@ -98,10 +97,17 @@ Puppet::Type.type(:lambda).provide(:awscli) do
       args << ['--runtime', @property_flush[:runtime]] if @property_flush.key? :runtime
 
       awscli(args.flatten)
-
     end
-  end
 
+    args = [
+      'lambda', 'update-function-code',
+      '--function-name', resource[:name],
+      '--s3-bucket', resource[:s3_bucket],
+      '--s3-key', resource[:s3_key],
+      '--region', resource[:region]
+    ]
+    awscli(args.flatten)
+  end
 
   def initialize(value={})
     super(value)
@@ -125,13 +131,4 @@ Puppet::Type.type(:lambda).provide(:awscli) do
   def region=(value)
     @property_flush[:region] = value
   end
-
-  def s3_bucket=(value)
-    @property_flush[:s3_bucket] = value
-  end
-
-  def s3_key=(value)
-    @property_flush[:s3_key] = value
-  end
-
 end

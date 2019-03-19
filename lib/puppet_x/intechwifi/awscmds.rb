@@ -261,12 +261,10 @@ module PuppetX
       def AwsCmds.find_lambda_by_name(region, name, &aws_command)
         functions = JSON.parse(aws_command.call('lambda', 'list-functions', '--region', region))['Functions']
 
-        puts "THIS IS DATA #{functions}"
-
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if functions.empty?
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if functions.select { |function| function['FunctionName'] == name }.empty?
 
-        JSON.parse(aws_command.call('lambda', 'get-function', '--function-name', name, '--region', region))['Configuration']
+        JSON.parse(aws_command.call('lambda', 'get-function', '--function-name', name, '--region', region))
       end
     end
   end
