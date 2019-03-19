@@ -266,6 +266,17 @@ module PuppetX
 
         JSON.parse(aws_command.call('lambda', 'get-function', '--function-name', name, '--region', region))
       end
+
+      def AwsCmds.find_sns_by_name(region, name, &aws_command)
+        topics = JSON.parse(aws_command.call('sns', 'list-topics', '--region', region))['Topics']
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if functions.empty?
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if functions.select { |function| function['TopicArn'].end_with? 'name' }.empty?
+
+        arn = topics[0]['TopicArn']
+
+        JSON.parse(aws_command.call('sns', 'get-topic-attributes', '--topic-arn', arn, '--region', region))['Attributes']
+      end
     end
   end
 end
