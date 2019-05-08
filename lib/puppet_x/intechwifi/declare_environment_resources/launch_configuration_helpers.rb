@@ -16,6 +16,7 @@
 require 'puppet_x/intechwifi/declare_environment_resources/service_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources/role_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/iam_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources'
 
 module PuppetX
@@ -43,7 +44,7 @@ module PuppetX
             'name' => AutoscalingGroupHelpers.generate_launch_configuration_name(name, role, zones, zone, scratch),
             'image' => role_details['ec2']['image'],
             'instance_type' => role_details['ec2']['instance_type'],
-            'iam_instance_profile' => IAMHelper.GenerateInstanceProfileName(name, role, scratch),
+            'iam_instance_profile' => IAMHelpers.generate_instance_profile_name(name, role, scratch),
             'public_ip' => role_details['zone'] == 'public' ? :enabled : :disabled
           }
         end

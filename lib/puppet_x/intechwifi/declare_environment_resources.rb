@@ -23,6 +23,7 @@ require 'puppet_x/intechwifi/declare_environment_resources/security_group_genera
 require 'puppet_x/intechwifi/declare_environment_resources/network_rules_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/launch_configuration_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/iam_helpers'
 
 module PuppetX
   module IntechWIFI
@@ -77,7 +78,7 @@ module PuppetX
         scratch[:rds_default_zone] = ['private', 'nat', 'public'].select{ |zone| zones.has_key?(zone) }.first
         scratch[:rds_zones] = RdsHelpers.calculate_rds_zones(name, network, zones, db_servers)
 
-        scratch[:code_deploy_service_role] = IAMHelper.GenerateRoleName(name, "codedeploy", scratch)
+        scratch[:code_deploy_service_role] = IAMHelpers.generate_role_name(name, "codedeploy", scratch)
 
         vpc_resources = {
             name => {
@@ -230,15 +231,15 @@ module PuppetX
           },
           {
               'resource_type' => "iam_role",
-              'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services, scratch)
+              'resources' => IAMHelpers.calculate_all_role_resources(name, status, server_roles , services, scratch)
           },
           {
               'resource_type' => "iam_policy",
-              'resources' => IAMHelper.CalculatePolicyResources(name, status, services, policies, scratch)
+              'resources' => IAMHelpers.calculate_policy_resources(name, status, services, policies, scratch)
           },
           {
               'resource_type' => "iam_instance_profile",
-              'resources' => IAMHelper.CalculateInstanceProfileResources(name, status, server_roles, scratch)
+              'resources' => IAMHelpers.calculate_instance_profile_resources(name, status, server_roles, scratch)
           },
           {
               'resource_type' => "s3_bucket",
@@ -304,133 +305,6 @@ module PuppetX
             ]
           }.reduce({}) {|m, v| m[v[0]] = v[1]; m }
         end
-
-      end
-
-      module IAMHelper
-        def self.CalculatePolicyResources(name, status, services, policies, scratch)  
-          all_policies =  services.select { |service, properties| properties.key? 'lambdas' }  
-                                  .map{ |_service, properties| properties['lambdas'] } 
-                                  .flatten
-                                  .map { |lambda_func| lambda_func['policies']}
-                                  .flatten
-                                  .reduce({}){|hash, kv| hash.merge(kv){ |key, oldval, newval| oldval.concat(newval) } }
-                                  .merge(policies) { |key, oldval, newval| oldval.concat(newval) }
-
-          all_policies.map{|key,value|
-            {
-                GeneratePolicyName(name, key, scratch) => {
-                    :ensure => status,
-                    :policy => value.kind_of?(Array) ? value : [value]
-                }
-            }
-          }.reduce({}){|hash, kv| hash.merge(kv)}
-        end
-
-        def self.CalculateAllRoleResources(name, status, server_roles, services, scratch)
-          roles = server_roles.map{|role_label, role_data|
-            CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
-          }
-
-          roles.concat(calculate_lambda_roles(name, status, services, scratch))
-
-          roles <<  {
-             "#{scratch[:code_deploy_service_role]}" => {
-               :ensure => status,
-               :policies => [ "AWSCodeDeployRole" ],
-               :trust => [ "codedeploy" ],
-             }
-           } if DeploymentGroupHelper.DeploymentGroups?(server_roles)
-
-          roles.reduce({}){|hash, kv| hash.merge(kv)}
-        end
-
-        def self.CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
-          {
-              GenerateRoleName(name, role_label, scratch) => {
-                  :ensure => status,
-                  :policies => role_data['services'].map{|service_label|
-                    service  = services[service_label]
-                    service.has_key?('policies') ? service['policies'].map{|policy_label| GeneratePolicyName(name, policy_label, scratch)} : []
-                  }.flatten.uniq
-              }
-          }
-        end
-
-        def self.CalculateInstanceProfileResources(name, status, server_roles, scratch)
-          server_roles.map{|role_label, role_data|
-            {
-                GenerateInstanceProfileName(name, role_label, scratch) => {
-                    :ensure => status,
-                    :iam_role => GenerateRoleName(name, role_label, scratch)
-                }
-            }
-          }.reduce({}){|hash, kv| hash.merge(kv)}
-        end
-
-        def self.calculate_lambda_roles(name, status, services, scratch)
-          services.select { |service, properties| properties.key? 'lambdas' }
-                  .map { |_service, properties| properties['lambdas'] }
-                  .flatten
-                  .map { |lambda_function| {
-                    generate_lambda_role_name(name, lambda_function['name'], scratch) => {
-                      :ensure => status, 
-                      :policies => lambda_function['policies'].reduce({}){|hash, kv| hash.merge(kv)}
-                                                              .keys 
-                                                              .map{ |policy| GeneratePolicyName(name, policy, scratch) },
-                      :trust => [ 'lambda' ]
-                    }
-                  }}
-        end 
-
-        def self.GenerateRoleName(name, role, scratch)
-          sprintf(scratch[:label_iam_role], {
-                    :vpc => name,
-                    :VPC => name.upcase,
-                    :Vpc => name.capitalize,
-                    :role => role,
-                    :ROLE => role.upcase,
-                    :Role => role.capitalize,
-                })
-
-        end
-
-        def self.generate_lambda_role_name(name, lambda_function, scratch)
-          sprintf(scratch[:label_lambda_iam_role], {
-                    :vpc => name,
-                    :VPC => name.upcase,
-                    :Vpc => name.capitalize,
-                    :lambda => lambda_function,
-                    :LAMBDA => lambda_function.upcase,
-                    :Lambda => lambda_function.capitalize,
-                })
-
-        end
-
-        def self.GeneratePolicyName(name, policy, scratch)
-          sprintf(scratch[:label_iam_policy], {
-                    :vpc => name,
-                    :VPC => name.upcase,
-                    :Vpc => name.capitalize,
-                    :policy => policy,
-                    :POLICY => policy.upcase,
-                    :Policy => policy.capitalize,
-                })
-
-        end
-
-        def self.GenerateInstanceProfileName(name, role, scratch)
-          sprintf(scratch[:label_iam_instance_profile], {
-                    :vpc => name,
-                    :VPC => name.upcase,
-                    :Vpc => name.capitalize,
-                    :role => role,
-                    :ROLE => role.upcase,
-                    :Role => role.capitalize,
-                })
-
-        end
-
 
       end
 
