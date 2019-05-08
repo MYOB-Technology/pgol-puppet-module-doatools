@@ -65,6 +65,7 @@ module PuppetX
         scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
         scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
         scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{policy}'
+        scratch[:label_lambda_iam_role] = label_formats.has_key?('lambda_iam_role') ? label_formats['lambda_iam_role'] : '%{lambda}-%{vpc}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -233,7 +234,7 @@ module PuppetX
           },
           {
               'resource_type' => "iam_policy",
-              'resources' => IAMHelper.CalculatePolicyResources(name, status, policies, scratch)
+              'resources' => IAMHelper.CalculatePolicyResources(name, status, services, policies, scratch)
           },
           {
               'resource_type' => "iam_instance_profile",
@@ -307,8 +308,16 @@ module PuppetX
       end
 
       module IAMHelper
-        def self.CalculatePolicyResources(name, status, policies, scratch)
-          policies.map{|key,value|
+        def self.CalculatePolicyResources(name, status, services, policies, scratch)  
+          all_policies =  services.select { |service, properties| properties.key? 'lambdas' }  
+                                  .map{ |_service, properties| properties['lambdas'] } 
+                                  .flatten
+                                  .map { |lambda_func| lambda_func['policies']}
+                                  .flatten
+                                  .reduce({}){|hash, kv| hash.merge(kv){ |key, oldval, newval| oldval.concat(newval) } }
+                                  .merge(policies) { |key, oldval, newval| oldval.concat(newval) }
+
+          all_policies.map{|key,value|
             {
                 GeneratePolicyName(name, key, scratch) => {
                     :ensure => status,
@@ -322,6 +331,8 @@ module PuppetX
           roles = server_roles.map{|role_label, role_data|
             CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
           }
+
+          roles.concat(calculate_lambda_roles(name, status, services, scratch))
 
           roles <<  {
              "#{scratch[:code_deploy_service_role]}" => {
@@ -357,6 +368,21 @@ module PuppetX
           }.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
+        def self.calculate_lambda_roles(name, status, services, scratch)
+          services.select { |service, properties| properties.key? 'lambdas' }
+                  .map { |_service, properties| properties['lambdas'] }
+                  .flatten
+                  .map { |lambda_function| {
+                    generate_lambda_role_name(name, lambda_function['name'], scratch) => {
+                      :ensure => status, 
+                      :policies => lambda_function['policies'].reduce({}){|hash, kv| hash.merge(kv)}
+                                                              .keys 
+                                                              .map{ |policy| GeneratePolicyName(name, policy, scratch) },
+                      :trust => [ 'lambda' ]
+                    }
+                  }}
+        end 
+
         def self.GenerateRoleName(name, role, scratch)
           sprintf(scratch[:label_iam_role], {
                     :vpc => name,
@@ -365,6 +391,18 @@ module PuppetX
                     :role => role,
                     :ROLE => role.upcase,
                     :Role => role.capitalize,
+                })
+
+        end
+
+        def self.generate_lambda_role_name(name, lambda_function, scratch)
+          sprintf(scratch[:label_lambda_iam_role], {
+                    :vpc => name,
+                    :VPC => name.upcase,
+                    :Vpc => name.capitalize,
+                    :lambda => lambda_function,
+                    :LAMBDA => lambda_function.upcase,
+                    :Lambda => lambda_function.capitalize,
                 })
 
         end
