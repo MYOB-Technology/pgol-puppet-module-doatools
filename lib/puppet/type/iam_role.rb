@@ -15,6 +15,7 @@
 
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
+require 'active_support/core_ext/string'
 
 Puppet::Type.newtype(:iam_role) do
   ensurable
@@ -33,6 +34,9 @@ Puppet::Type.newtype(:iam_role) do
 
 
   newparam(:name, :namevar => true) do
+    munge do |value|
+      value.truncate(64) # Max character length is 64 for iam role names
+    end
   end
 
   newproperty(:policies, :array_matching => :all) do

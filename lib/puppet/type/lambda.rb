@@ -20,6 +20,9 @@ Puppet::Type.newtype(:lambda) do
   ensurable
 
   newparam(:name, :namevar => true) do
+    munge do |value|
+      value.truncate(64) # Max character length is 64 for lambda function names
+    end
   end
 
   newparam(:region) do
@@ -30,6 +33,9 @@ Puppet::Type.newtype(:lambda) do
   end
 
   newproperty(:role) do
+    munge do |value|
+      value.truncate(64) # Max character length is 64 for iam role names
+    end
   end
 
   newproperty(:handler) do
