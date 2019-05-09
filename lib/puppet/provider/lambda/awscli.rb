@@ -98,7 +98,8 @@ Puppet::Type.type(:lambda).provide(:awscli) do
   def update_lambda_config
     args = [
       'lambda', 'update-function-configuration',
-      '--region', resource[:region]
+      '--region', resource[:region],
+      '--function-name', resource[:name]
     ]
 
     args << ['--role', PuppetX::IntechWIFI::AwsCmds.find_iam_role_by_name(@property_flush[:role]){ |*arg| awscli(*arg) }['Arn']] if @property_flush.key? :role
