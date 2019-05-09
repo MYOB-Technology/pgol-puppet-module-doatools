@@ -1102,6 +1102,27 @@ describe 'define_environment_resources' do
       }
   }
 
+  lambda1 = {
+    "resource_type" => 'lambda',
+    "resources" => {
+    }
+  }
+
+  lambda2 = {
+    "resource_type" => 'lambda',
+    "resources" => {
+      "lambda_name-demo" => {
+        :ensure => 'present', 
+        :region => 'us-east-1', 
+        :handler => 'lambda_handler', 
+        :s3_bucket => 's3_bucket', 
+        :s3_key => '1.0.0.0.py',
+        :role => 'lambda_name-demo', 
+        :runtime => 'python'
+      }
+    }
+  }
+
 
   context 'creating an environment with a public zone' do
     it { is_expected.to run.with_params(
@@ -1146,7 +1167,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile1,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1197,7 +1219,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile1,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1253,7 +1276,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile1,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1311,7 +1335,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile1,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1371,7 +1396,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile1,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1442,7 +1468,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile2,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1535,7 +1562,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile2,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1631,7 +1659,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile2,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1723,7 +1752,8 @@ describe 'define_environment_resources' do
             iam_policies_1,
             iam_instance_profile2,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end
@@ -1766,8 +1796,9 @@ describe 'define_environment_resources' do
                   {
                     'name' => 'lambda_name',
                     's3_bucket' => 's3_bucket',
-                    's3_location' => 'DirectorLambda/1.0.0.0.py',
+                    's3_location' => '1.0.0.0.py',
                     'handler' => 'lambda_handler',
+                    'runtime' => 'python',
                     'policies' => [
                       'DefaultPolicy' => [
                         'Effect' => 'Allow',
@@ -1816,7 +1847,8 @@ describe 'define_environment_resources' do
             iam_policies_3,
             iam_instance_profile2,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda2
         ])
     }
   end
@@ -1894,7 +1926,8 @@ describe 'define_environment_resources' do
             iam_policies_2,
             iam_instance_profile2,
             s3_bucket1,
-            s3_key1
+            s3_key1,
+            lambda1
         ])
     }
   end

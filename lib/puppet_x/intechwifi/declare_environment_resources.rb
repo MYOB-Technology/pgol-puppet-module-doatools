@@ -24,6 +24,7 @@ require 'puppet_x/intechwifi/declare_environment_resources/network_rules_generat
 require 'puppet_x/intechwifi/declare_environment_resources/launch_configuration_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources/iam_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/lambda_helpers'
 
 module PuppetX
   module IntechWIFI
@@ -67,6 +68,7 @@ module PuppetX
         scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
         scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{policy}'
         scratch[:label_lambda_iam_role] = label_formats.has_key?('lambda_iam_role') ? label_formats['lambda_iam_role'] : '%{lambda}-%{vpc}'
+        scratch[:label_lambda] = label_formats.has_key?('lambda') ? label_formats['lambda'] : '%{lambda}-%{vpc}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -260,7 +262,8 @@ module PuppetX
               'resources' => {
 
               }
-          }
+          },
+          LambdaHelpers.generate_lambda_resources(services, name, status, region, scratch)
         ]
       end
 
