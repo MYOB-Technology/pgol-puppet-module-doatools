@@ -45,7 +45,7 @@ Puppet::Type.type(:lambda).provide(:awscli) do
         'lambda', 'create-function', 
         '--function-name', resource[:name],
         '--runtime', resource[:runtime],
-        '--role', resource[:role],
+        '--role', PuppetX::IntechWIFI::AwsCmds.find_iam_role_by_name(resource[:role]){ |*arg| awscli(*arg) }['Arn'],
         '--handler', resource[:handler],
         '--region', resource[:region],
         '--code', "S3Bucket=#{resource[:s3_bucket]},S3Key=#{resource[:s3_key]}",
@@ -101,7 +101,7 @@ Puppet::Type.type(:lambda).provide(:awscli) do
       '--region', resource[:region]
     ]
 
-    args << ['--role', @property_flush[:role]] if @property_flush.key? :role
+    args << ['--role', PuppetX::IntechWIFI::AwsCmds.find_iam_role_by_name(@property_flush[:role]){ |*arg| awscli(*arg) }['Arn']] if @property_flush.key? :role
     args << ['--handler', @property_flush[:handler]] if @property_flush.key? :handler
     args << ['--runtime', @property_flush[:runtime]] if @property_flush.key? :runtime
 
