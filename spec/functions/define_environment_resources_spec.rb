@@ -1111,7 +1111,7 @@ describe 'define_environment_resources' do
   lambda2 = {
     "resource_type" => 'lambda',
     "resources" => {
-      "lambda_name-demo" => {
+      "lambda_namedemo" => {
         :ensure => 'present', 
         :region => 'us-east-1', 
         :handler => 'lambda_handler', 
@@ -1137,13 +1137,29 @@ describe 'define_environment_resources' do
         :ensure => 'present', 
         :region => 'us-east-1', 
         :bucket => 'ContentBucket', 
-        :endpoint => 'DirectorLambda-demo', 
+        :endpoint => 'DirectorLambdademo', 
         :endpoint_type => 'lambda',
-        :events =>  ['s3:ReducedRedundancyLostObject', 's3:ObjectCreated:*', 's3:ObjectCreated:Put', 's3:ObjectCreated:Post', 
-        's3:ObjectCreated:Copy', 's3:ObjectCreated:CompleteMultipartUpload', 's3:ObjectRemoved:*', 's3:ObjectRemoved:Delete', 
-        's3:ObjectRemoved:DeleteMarkerCreated', 's3:ObjectRestore:Post', 's3:ObjectRestore:Completed'],
+        :events => ['s3:ReducedRedundancyLostObject', 's3:ObjectCreated:*', 's3:ObjectRemoved:*', 's3:ObjectRestore:Post', 
+                    's3:ObjectRestore:Completed'],
         :key_prefixs => 'CoolContent',
         :key_suffixs => [] 
+      }
+    }
+  }
+
+  sns1 = {
+    "resource_type" => "sns",
+    "resources" => {
+
+    }
+  }
+
+  sns2 = {
+    "resource_type" => "sns",
+    "resources" => {
+      "my_srv-AwesomeContent" => {
+        :ensure => 'present', 
+        :region => 'us-east-1'
       }
     }
   }
@@ -1194,7 +1210,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1247,7 +1264,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1305,7 +1323,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1365,7 +1384,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1427,7 +1447,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1500,7 +1521,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1595,7 +1617,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1693,7 +1716,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1787,7 +1811,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1883,7 +1908,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda2,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end
@@ -1987,7 +2013,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda2,
-            s3_event_notifications2
+            s3_event_notifications2,
+            sns2
         ])
     }
   end
@@ -2067,7 +2094,8 @@ describe 'define_environment_resources' do
             s3_bucket1,
             s3_key1,
             lambda1,
-            s3_event_notifications1
+            s3_event_notifications1,
+            sns1
         ])
     }
   end

@@ -26,6 +26,7 @@ require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_hel
 require 'puppet_x/intechwifi/declare_environment_resources/iam_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources/lambda_helpers'
 require 'puppet_x/intechwifi/declare_environment_resources/s3_event_notification_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/sns_helpers'
 
 module PuppetX
   module IntechWIFI
@@ -71,6 +72,7 @@ module PuppetX
         scratch[:label_lambda_iam_role] = label_formats.has_key?('lambda_iam_role') ? label_formats['lambda_iam_role'] : '%{lambda}-%{vpc}'
         scratch[:label_lambda] = label_formats.has_key?('lambda') ? label_formats['lambda'] : '%{lambda}-%{vpc}'
         scratch[:label_s3_event_notification] = label_formats.has_key?('s3_event_notification') ? label_formats['s3_event_notification'] : '%{service}-%{s3_event_notification}'
+        scratch[:label_sns] = label_formats.has_key?('sns') ? label_formats['sns'] : '%{service}-%{sns}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
@@ -266,7 +268,8 @@ module PuppetX
               }
           },
           LambdaHelpers.generate_lambda_resources(services, name, status, region, scratch),
-          S3EventNotificationHelpers.generate_resources(services, name, status, region, scratch, options) 
+          S3EventNotificationHelpers.generate_resources(services, name, status, region, scratch, options),
+          SNSHelpers.generate_resources(services, name, status, region, scratch)
         ]
       end
 
