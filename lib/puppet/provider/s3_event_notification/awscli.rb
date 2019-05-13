@@ -37,46 +37,32 @@ require 'puppet_x/intechwifi/exceptions'
 Puppet::Type.type(:s3_event_notification).provide(:awscli) do
   commands :awscli => "aws"
 
-  CONFIGURATIONS = ['TopicConfigurations', 'QueueConfigurations', 'LambdaFunctionConfigurations']
-
   def create
-    config = update_config(resource[:name], resource[:endpoint_arn], resource[:events], resource[:key_prefixs], resource[:key_suffixs], resource[:bucket])
-
-    args = [
-      's3api', 'put-bucket-notification-configuration', 
-      '--bucket', resource[:bucket],
-      '--notification-configuration', config.to_json
-    ]
-
-    awscli(args.flatten)
+    config = update_config(resource[:name], resource[:endpoint], resource[:endpoint_type], resource[:events], resource[:key_prefixs], 
+                           resource[:key_suffixs], resource[:bucket])
+    apply_config(config)
 
     @property_hash[:name] = resource[:name]
     @property_hash[:region] = resource[:region]
     @property_hash[:bucket] = resource[:bucket]
-    @property_hash[:endpoint_arn] = resource[:endpoint_arn]
+    @property_hash[:endpoint] = resource[:endpoint]
+    @property_hash[:endpoint_type] = resource[:endpoint]
     @property_hash[:events] = resource[:events]
     @property_hash[:key_prefixs] = resource[:key_prefixs]
     @property_hash[:key_suffixs] = resource[:key_suffixs]
   end
 
   def destroy
-    existing_config = get_config(bucket)
+    existing_config = PuppetX::IntechWIFI::AwsCmds.find_s3_bucket_notification_config(resource[:region], resource[:bucket]){ | *arg | awscli(*arg) }
     config = delete_config(resource[:name], existing_config)
-
-    args = [
-      's3api', 'put-bucket-notification-configuration', 
-      '--bucket', resource[:bucket],
-      '--notification-configuration', config.to_json
-    ]
-
-    awscli(args.flatten)
+    apply_config(config)
   end
 
   def exists?
     debug("searching for S3 Event Notification=#{resource[:name]}\n")
 
-    bucket_config = get_config(resource[:bucket])
-    notification_type = get_notification_type(resource[:endpoint_arn])
+    bucket_config = PuppetX::IntechWIFI::AwsCmds.find_s3_bucket_notification_config(resource[:region], resource[:bucket]){ | *arg | awscli(*arg) }
+    notification_type = PuppetX::IntechWIFI::Constants.notification_type_map[resource[:endpoint_type]]
 
     config = bucket_config["#{notification_type}Configurations"].select { |notification| notification['Id'] === resource[:name] }
 
@@ -86,10 +72,13 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     key_suffixs = groups_rules['suffix'].map { |rule| rule['Value'] }
     key_prefixs = groups_rules['prefix'].map { |rule| rule['Value'] }
 
+    arn_parts = config["#{notification_type}Arn"].split(':')
+
     @property_hash[:name] = resource[:name]
     @property_hash[:region] = resource[:region]
     @property_hash[:bucket] = resource[:bucket]
-    @property_hash[:endpoint_arn] = config["#{notification_type}Arn"]
+    @property_hash[:endpoint] = arn_parts.last
+    @property_hash[:endpoint_type] = arn_parts[2]
     @property_hash[:events] = config['Events']
     @property_hash[:key_prefixs] = key_prefixs
     @property_hash[:key_suffixs] = key_suffixs
@@ -106,44 +95,43 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
 
   def flush
     if @property_flush && @property_flush.length > 0
-      config = update_config(resource[:name], resource[:endpoint_arn], resource[:events], resource[:key_prefixs], resource[:key_suffixs], resource[:bucket])
-
-      args = [
-        's3api', 'put-bucket-notification-configuration', 
-        '--bucket', resource[:bucket],
-        '--notification-configuration', config.to_json
-      ]
-  
-      awscli(args.flatten)
+      config = update_config(resource[:name], resource[:endpoint], resource[:endpoint_type], resource[:events], resource[:key_prefixs], 
+                             resource[:key_suffixs], resource[:bucket])
+      apply_config(config)
     end
   end
 
-  def get_config(bucket)
-    PuppetX::IntechWIFI::AwsCmds.find_s3_bucket_notification_config(resource[:region], resource[:bucket]){ | *arg | awscli(*arg) }
+  def apply_config(config)
+    args = [
+      's3api', 'put-bucket-notification-configuration', 
+      '--bucket', resource[:bucket],
+      '--notification-configuration', config.to_json
+    ]
+
+    awscli(args.flatten)
   end
 
-  def get_notification_type(endpoint_arn)
-    arn_parts = endpoint_arn.split(':')
-    type = case arn_parts[2] 
-      when 'sqs'
-        'Queue'
-      when 'lambda'
-        'LambdaFunction'
-      when 'sns'
-        'Topic'
+  def get_endpoint_arn(endpoint, endpoint_type)
+    arn = case endpoint_type
+    when 'sqs'
+      # Need to implement
+    when 'lambda'
+      PuppetX::IntechWIFI::AwsCmds.find_lambda_by_name(resource[:region], endpoint){ | *arg | awscli(*arg) }['Configuration']['FunctionArn']
+    when 'sns'
+      # Need to implement
     end
-    type
+    arn
   end
 
-  def update_config(name, endpoint_arn, events, key_prefixs, key_suffixs, bucket)
+  def update_config(name, endpoint, endpoint_type, events, key_prefixs, key_suffixs, bucket)
     begin
-      config = get_config(bucket)
+      config = PuppetX::IntechWIFI::AwsCmds.find_s3_bucket_notification_config(resource[:region], bucket){ | *arg | awscli(*arg) }
     rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
       config = {}
     end
 
-    notification_type = get_notification_type(endpoint_arn)
-    new_config = generate_config(notification_type, name, endpoint_arn, events, key_prefixs, key_suffixs)
+    notification_type = PuppetX::IntechWIFI::Constants.notification_type_map[endpoint_type]
+    new_config = generate_config(notification_type, name, endpoint, endpoint_type, events, key_prefixs, key_suffixs)
 
     if config.empty? || !config.keys.include?("#{notification_type}Configurations")
       config["#{notification_type}Configurations"] = [new_config]
@@ -160,7 +148,7 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
           .reduce({}){ | hash, kv| hash.merge(kv) }
   end
 
-  def generate_config(notification_type, name, endpoint_arn, events, key_prefixs, key_suffixs)
+  def generate_config(notification_type, name, endpoint, endpoint_type, events, key_prefixs, key_suffixs)
     prefix_rules = key_prefixs.map{ |prefix| { 'Name' => 'Prefix', 'Value' => prefix } }
     suffix_rules = key_suffixs.map{ |suffix| { 'Name' => 'Suffix', 'Value' => suffic } }
     filter_rules = prefix_rules + suffix_rules
@@ -177,7 +165,7 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
 
     config = {
       'Id' => name,
-      "#{notification_type}Arn" => endpoint_arn,
+      "#{notification_type}Arn" => get_endpoint_arn(endpoint, endpoint_type),
       'Events' => events,
     }
 
@@ -195,8 +183,12 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     @property_flush[:bucket] = value
   end
 
-  def endpoint_arn=(value)
-    @property_flush[:endpoint_arn] = value
+  def endpoint=(value)
+    @property_flush[:endpoint] = value
+  end
+
+  def endpoint_type=(value)
+    @property_flush[:endpoint_type] = value
   end
 
   def events=(value)

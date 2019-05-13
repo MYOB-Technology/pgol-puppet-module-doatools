@@ -29,7 +29,14 @@ Puppet::Type.newtype(:s3_event_notification) do
   newproperty(:bucket) do
   end
 
-  newproperty(:endpoint_arn) do
+  newproperty(:endpoint) do
+  end
+
+  newproperty(:endpoint_type) do
+    validate do |value|
+      types = PuppetX::IntechWIFI::Constants.notification_types
+      fail("Unsupported Notification Type #{value} we support the following types #{types}") unless types.include? value
+    end
   end
 
   newproperty(:events, :array_matching => :all) do

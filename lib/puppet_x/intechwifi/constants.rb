@@ -35,6 +35,12 @@ module PuppetX
         "sa-east-1"
       ]
 
+      @@notification_type_map = {
+        'sqs' => 'Queue',
+        'lambda' => 'LambdaFunction',
+        'sns' => 'Topic'
+      }
+
       @@zone_map = [
           {:az => 'a', :zone => "a" },
           {:az => 'b', :zone => "b" },
@@ -45,6 +51,14 @@ module PuppetX
 
       def self.Regions
         @@regions
+      end
+
+      def self.notification_types
+        @@notification_type_map.keys
+      end
+
+      def self.notification_type_map
+        @@notification_type_map
       end
 
       def self.AvailabilityZones
