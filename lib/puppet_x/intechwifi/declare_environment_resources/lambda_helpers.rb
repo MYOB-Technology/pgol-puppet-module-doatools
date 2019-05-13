@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'puppet_x/intechwifi/declare_environment_resources/iam_helpers'
+require 'active_support/core_ext/string'
 
 module PuppetX
   module IntechWIFI
@@ -50,7 +51,8 @@ module PuppetX
                   :lambda => function_name,
                   :LAMBDA => function_name.upcase,
                   :Lambda => function_name.capitalize
-          })
+          }).gsub('-', '') # Lambda names do not like special characters
+            .truncate(64, omission: '-(trunc)') # Max character length is 64 for lambda function names
         end
       end
     end

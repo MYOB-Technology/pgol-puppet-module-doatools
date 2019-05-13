@@ -20,10 +20,6 @@ Puppet::Type.newtype(:lambda) do
   ensurable
 
   newparam(:name, :namevar => true) do
-    munge do |value|
-      new_value = value.gsub('-', '') # Lambda names do not like special characters
-      new_value.truncate(64, omission: '-(trunc)') # Max character length is 64 for lambda function names
-    end
   end
 
   newparam(:region) do
