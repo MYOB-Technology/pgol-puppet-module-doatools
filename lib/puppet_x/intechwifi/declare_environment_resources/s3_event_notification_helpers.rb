@@ -55,9 +55,8 @@ module PuppetX
           services.select { |service, properties| properties.key? 'content_retriever' }
                   .map { |service, properties| properties['content_retriever'].map { |retriever| retriever.merge({ 
                     'service_name' => service,
-                    'events' => ['s3:ReducedRedundancyLostObject', 's3:ObjectCreated:*', 's3:ObjectCreated:Put', 's3:ObjectCreated:Post', 
-                                 's3:ObjectCreated:Copy', 's3:ObjectCreated:CompleteMultipartUpload', 's3:ObjectRemoved:*', 's3:ObjectRemoved:Delete', 
-                                 's3:ObjectRemoved:DeleteMarkerCreated', 's3:ObjectRestore:Post', 's3:ObjectRestore:Completed'],
+                    'events' => ['s3:ReducedRedundancyLostObject', 's3:ObjectCreated:*', 's3:ObjectRemoved:*', 's3:ObjectRestore:Post', 
+                                 's3:ObjectRestore:Completed'],
                     'endpoint' => LambdaHelpers.generate_lambda_name(vpc, options['content_retriever_lambda_name'], scratch),
                     'endpoint_type' => 'lambda',
                     'key_prefixs' => retriever['s3_location'],
