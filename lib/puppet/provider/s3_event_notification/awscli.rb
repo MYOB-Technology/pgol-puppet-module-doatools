@@ -59,7 +59,6 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
   end
 
   def exists?
-    puts 'MADE IT TO EXISTS'
     debug("searching for S3 Event Notification=#{resource[:name]}\n")
 
     bucket_config = PuppetX::IntechWIFI::AwsCmds.find_s3_bucket_notification_config(resource[:region], resource[:bucket]){ | *arg | awscli(*arg) }
@@ -67,21 +66,15 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
 
     config = bucket_config["#{notification_type}Configurations"].select { |notification| notification['Id'] === resource[:name] }
                                                                 .first
-    puts "THIS IS THE CONFIG #{config}"
     return false if config.empty?
-    puts 'did i make past the exists check?'
-    puts "THIS IS FILTER RULES #{config['Filter']['Key']['FilterRules']}"
+    
     grouped_rules = config['Filter']['Key']['FilterRules'].group_by { |rule| rule['Name'] }
     grouped_rules['Suffix'] = [] if grouped_rules['Suffix'].nil?
     grouped_rules['Prefix'] = [] if grouped_rules['Prefix'].nil?
-    puts "THIS IS THE GROUPEDRULES #{grouped_rules}"
     key_suffixs = grouped_rules['Suffix'].map { |rule| rule['Value'] }
-    puts "THIS IS THE SUFFIS #{key_suffixs}"
     key_prefixs = grouped_rules['Prefix'].map { |rule| rule['Value'] }
-    puts "THIS IS THE PREFIXs #{key_prefixs}"
 
     arn_parts = config["#{notification_type}Arn"].split(':')
-    puts "THIS IS THE ARN PARTS #{arn_parts}"
 
     @property_hash[:name] = resource[:name]
     @property_hash[:region] = resource[:region]
@@ -91,8 +84,6 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     @property_hash[:events] = config['Events']
     @property_hash[:key_prefixs] = key_prefixs
     @property_hash[:key_suffixs] = key_suffixs
-
-    puts "made it to the end"
 
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
