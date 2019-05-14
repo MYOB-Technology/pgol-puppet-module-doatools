@@ -66,14 +66,18 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     notification_type = PuppetX::IntechWIFI::Constants.notification_type_map[resource[:endpoint_type]]
 
     config = bucket_config["#{notification_type}Configurations"].select { |notification| notification['Id'] === resource[:name] }
+                                                                .first
     puts "THIS IS THE CONFIG #{config}"
     return false if config.empty?
-
-    grouped_rules = config['Filter']['Key']['FilterRules'].groupBy { |rule| rule['Key'] }
+    puts 'did i make past the exists check?'
+    puts "THIS IS FILTER RULES #{config['Filter']['Key']['FilterRules']}"
+    grouped_rules = config['Filter']['Key']['FilterRules'].group_by { |rule| rule['Name'] }
+    grouped_rules['Suffix'] = [] if grouped_rules['Suffix'].nil?
+    grouped_rules['Prefix'] = [] if grouped_rules['Prefix'].nil?
     puts "THIS IS THE GROUPEDRULES #{grouped_rules}"
-    key_suffixs = groups_rules['suffix'].map { |rule| rule['Value'] }
+    key_suffixs = grouped_rules['Suffix'].map { |rule| rule['Value'] }
     puts "THIS IS THE SUFFIS #{key_suffixs}"
-    key_prefixs = groups_rules['prefix'].map { |rule| rule['Value'] }
+    key_prefixs = grouped_rules['Prefix'].map { |rule| rule['Value'] }
     puts "THIS IS THE PREFIXs #{key_prefixs}"
 
     arn_parts = config["#{notification_type}Arn"].split(':')
@@ -88,7 +92,7 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     @property_hash[:key_prefixs] = key_prefixs
     @property_hash[:key_suffixs] = key_suffixs
 
-    puts "THIS IS THE Property hash #{@property_hash}"
+    puts "made it to the end"
 
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -157,7 +161,7 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
 
   def generate_config(notification_type, name, endpoint, endpoint_type, events, key_prefixs, key_suffixs)
     prefix_rules = key_prefixs.map{ |prefix| { 'Name' => 'Prefix', 'Value' => prefix } }
-    suffix_rules = key_suffixs.map{ |suffix| { 'Name' => 'Suffix', 'Value' => suffic } }
+    suffix_rules = key_suffixs.map{ |suffix| { 'Name' => 'Suffix', 'Value' => suffix } }
     filter_rules = prefix_rules + suffix_rules
 
     filter = {
