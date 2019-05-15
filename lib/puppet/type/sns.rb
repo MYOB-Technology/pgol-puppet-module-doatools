@@ -25,4 +25,8 @@ Puppet::Type.newtype(:sns) do
   newparam(:region) do
     defaultto 'ap-southeast-2'
   end
+
+  newproperty(:topic_attributes) do
+    defaultto {}
+  end
 end

@@ -29,6 +29,8 @@ Puppet::Type.type(:sns).provide(:awscli) do
         '--region', resource[:region]
     ]
 
+    args << ['--attributes', resource[:topic_attributes].to_json] unless resource[:topic_attributes].empty?
+
     awscli(args.flatten)
 
     @property_hash[:name] = resource[:name]
@@ -48,6 +50,7 @@ Puppet::Type.type(:sns).provide(:awscli) do
     debug("searching for sns=#{resource[:name]}\n")
 
     search = PuppetX::IntechWIFI::AwsCmds.find_sns_by_name(resource[:region], resource[:name]){ | *arg | awscli(*arg) }
+    @property_hash[:topic_attributes] = search
 
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -61,7 +64,10 @@ Puppet::Type.type(:sns).provide(:awscli) do
 
   def flush
     if @property_flush and @property_flush.length > 0
+        new_attributes = @property_flush[:topic_attributes].merge(resource[:topic_attributes])
+        topic_arn = new_attributes['TopicArn']
 
+        new_attributes.each { |name, value| awscli(["sns", "set-topic-attributes", '--topic-arn', topic_arn, '--attribute-name', key, '--attribute-value', 'value'])}
     end
   end
 
@@ -71,4 +77,8 @@ Puppet::Type.type(:sns).provide(:awscli) do
   end
 
   mk_resource_methods
+
+  def topic_attributes=(value)
+    @property_flush[:topic_attributes] = value
+  end
 end
