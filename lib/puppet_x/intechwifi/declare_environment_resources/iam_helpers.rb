@@ -13,46 +13,26 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 require 'active_support/core_ext/string'
+require 'puppet_x/intechwifi/declare_environment_resources/sns_helpers'
 
 module PuppetX
   module IntechWIFI
     module DeclareEnvironmentResources
       module IAMHelpers
-        def self.calculate_policy_resources(name, status, services, policies, scratch)  
-          all_policies =  services.select { |service, properties| properties.key? 'lambdas' }  
-                                  .map{ |_service, properties| properties['lambdas'] } 
-                                  .flatten
-                                  .map { |lambda_func| lambda_func['policies']}
-                                  .flatten
-                                  .reduce({}){|hash, kv| hash.merge(kv){ |key, oldval, newval| oldval.concat(newval) } }
-                                  .merge(policies) { |key, oldval, newval| oldval.concat(newval) }
-
-          all_policies.map{|key,value|
-            {
-                generate_policy_name(name, key, scratch) => {
-                    :ensure => status,
-                    :policy => value.kind_of?(Array) ? value : [value]
-                }
-            }
-          }.reduce({}){|hash, kv| hash.merge(kv)}
+        def self.calculate_policy_resources(vpc, status, services, policies, scratch)  
+          all_policies = calculate_lambda_policies(services)
+                          .reduce({}){|hash, kv| hash.merge(kv){ |key, oldval, newval| oldval.concat(newval) } }
+                          .merge(policies) { |key, oldval, newval| oldval.concat(newval) }
+                          .map{ |name, policy| calculate_single_policy_resource(vpc, status, name, policy, scratch)}
+                          .reduce({}){|hash, kv| hash.merge(kv)}
         end
 
         def self.calculate_all_role_resources(name, status, server_roles, services, scratch)
-          roles = server_roles.map{|role_label, role_data|
-            calculate_single_role_resource(name, status, role_label, role_data, services, scratch)
-          }
-
-          roles.concat(calculate_lambda_roles(name, status, services, scratch))
-
-          roles <<  {
-             "#{scratch[:code_deploy_service_role]}" => {
-               :ensure => status,
-               :policies => [ "AWSCodeDeployRole" ],
-               :trust => [ "codedeploy" ],
-             }
-           } if DeploymentGroupHelper.DeploymentGroups?(server_roles)
-
-          roles.reduce({}){|hash, kv| hash.merge(kv)}
+          roles = server_roles.map{|role_label, role_data| calculate_single_role_resource(name, status, role_label, role_data, services, scratch) }
+                              .concat(calculate_lambda_roles(name, status, services, scratch))
+                              .concat(calculate_sns_content_retriever_log_role(name, status, services, scratch))
+                              .concat(calculate_code_deploy_role(status, server_roles, scratch)) 
+                              .reduce({}){|hash, kv| hash.merge(kv)}
         end
 
         def self.calculate_single_role_resource(name, status, role_label, role_data, services, scratch)
@@ -64,6 +44,15 @@ module PuppetX
                     service.has_key?('policies') ? service['policies'].map{|policy_label| generate_policy_name(name, policy_label, scratch)} : []
                   }.flatten.uniq
               }
+          }
+        end
+
+        def self.calculate_single_policy_resource(vpc, status, name, policy, scratch)
+          {
+            generate_policy_name(vpc, name, scratch) => {
+                :ensure => status,
+                :policy => policy.kind_of?(Array) ? policy : [policy]
+            }
           }
         end
 
@@ -93,6 +82,36 @@ module PuppetX
                   }}
         end 
 
+        def self.calculate_lambda_policies(services)
+          services.select { |service, properties| properties.key? 'lambdas' }  
+                  .map{ |_service, properties| properties['lambdas'] } 
+                  .flatten
+                  .map { |lambda_func| lambda_func['policies']}
+                  .flatten
+        end
+
+        def self.calculate_sns_content_retriever_log_role(vpc, status, services, scratch)
+          return [] unless SNSHelpers.sns_content_retrievers?(services)
+          [{
+            generate_role_name(vpc, 'SNSContentRetrieverLogRole', scratch) => {
+              :ensure => status,
+              :policies => ['AmazonSNSRole'],
+              :trust => ['sns']
+            }
+          }]
+        end
+
+        def self.calculate_code_deploy_role(status, server_roles, scratch)
+          return [] unless DeploymentGroupHelper.DeploymentGroups?(server_roles)
+          [{
+            "#{scratch[:code_deploy_service_role]}" => {
+              :ensure => status,
+              :policies => [ "AWSCodeDeployRole" ],
+              :trust => [ "codedeploy" ],
+            }
+          }]
+        end
+
         def self.generate_role_name(name, role, scratch)
           sprintf(scratch[:label_iam_role], {
                     :vpc => name,
@@ -101,7 +120,7 @@ module PuppetX
                     :role => role,
                     :ROLE => role.upcase,
                     :Role => role.capitalize,
-                })
+                }).truncate(64)
         end
 
         def self.generate_lambda_role_name(name, lambda_function, scratch)

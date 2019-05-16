@@ -53,6 +53,14 @@ module PuppetX
                   }) } }
                   .flatten
         end
+
+        def self.sns_content_retrievers?(services)
+          services.select { |service, properties| properties.key? 'content_retriever' }
+                  .map { |service, properties| properties['content_retriever'] }
+                  .flatten
+                  .map { |content_retriever| !content_retriever.empty? }
+                  .any?
+        end
       end
     end
   end

@@ -1027,6 +1027,26 @@ describe 'define_environment_resources' do
     }
   }
 
+  iam_role6 = {
+    "resource_type"=>"iam_role",
+    "resources"=>{
+      "demotestrole" => {
+        :ensure=>"present",
+        :policies=>['demoadmin_policy']
+      },
+      "lambda_name-demo" => {
+        :ensure=>"present",
+        :policies=>['demoDefaultPolicy'],
+        :trust=>['lambda']
+      },
+      "demoSNSContentRetrieverLogRole" => {
+        :ensure=>"present",
+        :policies=>['AmazonSNSRole'],
+        :trust=>['sns']
+      }
+    }
+  }
+
   iam_policies_1 = {
       "resource_type" => "iam_policy",
       "resources" => {
@@ -2007,7 +2027,7 @@ describe 'define_environment_resources' do
             launch_configuration2,
             autoscaling_group2,
             deployment_group1,
-            iam_role5,
+            iam_role6,
             iam_policies_3,
             iam_instance_profile2,
             s3_bucket1,
