@@ -1179,7 +1179,9 @@ describe 'define_environment_resources' do
     "resources" => {
       "my_srv-AwesomeContent" => {
         :ensure => 'present', 
-        :region => 'us-east-1'
+        :region => 'us-east-1',
+        :sqs_success_feedback_role => 'demoSNSContentRetrieverLogRole',
+        :sqs_failure_feedback_role => 'demoSNSContentRetrieverLogRole'
       }
     }
   }

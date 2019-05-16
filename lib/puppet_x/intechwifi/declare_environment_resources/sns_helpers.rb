@@ -30,7 +30,9 @@ module PuppetX
         def self.generate_resource(vpc, region, status, sns, scratch)
           { generate_sns_name(vpc, sns['name'], sns['service_name'], scratch) => {
             :ensure => status, 
-            :region => region
+            :region => region,
+            :sqs_success_feedback_role => sns['sqs_success_feedback_role'],
+            :sqs_failure_feedback_role => sns['sqs_failure_feedback_role']
           }}
         end
 
@@ -49,7 +51,9 @@ module PuppetX
           services.select { |service, properties| properties.key? 'content_retriever' }
                   .map { |service, properties| properties['content_retriever'].map { |retriever| retriever.merge({ 
                     'service_name' => service,
-                    'name' => retriever['content']
+                    'name' => retriever['content'],
+                    'sqs_success_feedback_role' => IAMHelpers.generate_role_name(vpc, 'SNSContentRetrieverLogRole', scratch),
+                    'sqs_failure_feedback_role' => IAMHelpers.generate_role_name(vpc, 'SNSContentRetrieverLogRole', scratch)
                   }) } }
                   .flatten
         end

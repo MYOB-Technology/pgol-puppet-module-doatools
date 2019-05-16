@@ -28,12 +28,27 @@ Puppet::Type.type(:sns).provide(:awscli) do
         '--name', resource[:name],
         '--region', resource[:region]
     ]
+    
+    attributes = {}
+    
+    attributes.merge!({ 'SQSSuccessFeedbackRoleArn' => find_iam_role_arn(resource[:sqs_success_feedback_role]) }) unless resource[:sqs_success_feedback_role].nil?
+    attributes.merge!({ 'SQSFailureFeedbackRoleArn' => find_iam_role_arn(resource[:sqs_failure_feedback_role]) }) unless resource[:sqs_failure_feedback_role].nil?
 
-    args << ['--attributes', resource[:topic_attributes].to_json] unless resource[:topic_attributes].empty?
+    args << ['--attributes', resource[:attributes].to_json]
 
     awscli(args.flatten)
 
     @property_hash[:name] = resource[:name]
+    @property_hash[:sqs_success_feedback_role] = resource[:sqs_success_feedback_role]
+    @property_hash[:sqs_failure_feedback_role] = resource[:sqs_failure_feedback_role]
+
+  rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+    debug(e)
+    false
+
+  rescue PuppetX::IntechWIFI::Exceptions::MultipleMatchesError => e
+    fail(e)
+    false
   end
 
   def destroy
@@ -50,7 +65,9 @@ Puppet::Type.type(:sns).provide(:awscli) do
     debug("searching for sns=#{resource[:name]}\n")
 
     search = PuppetX::IntechWIFI::AwsCmds.find_sns_by_name(resource[:region], resource[:name]){ | *arg | awscli(*arg) }
-    @property_hash[:topic_attributes] = search
+    
+    @property_hash[:sqs_success_feedback_role] = get_role_name(search['SQSSuccessFeedbackRoleArn'])
+    @property_hash[:sqs_failure_feedback_role] = get_role_name(search['SQSFailureFeedbackRoleArn'])
 
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -62,12 +79,31 @@ Puppet::Type.type(:sns).provide(:awscli) do
     false
   end
 
-  def flush
-    if @property_flush and @property_flush.length > 0
-        new_attributes = @property_flush[:topic_attributes].merge(resource[:topic_attributes])
-        topic_arn = new_attributes['TopicArn']
+  def find_iam_role_arn(role_name)
+    PuppetX::IntechWIFI::AwsCmds.find_iam_role_by_name(resource[:sqs_success_feedback_role]){ | *arg | awscli(*arg) }['Arn']
+  end
 
-        new_attributes.each { |name, value| awscli(["sns", "set-topic-attributes", '--topic-arn', topic_arn, '--attribute-name', key, '--attribute-value', 'value'])}
+  def get_role_name(arn)
+    return '' if arn.nil?
+    arn.match(/role\/(.*)/)[1]
+  end
+
+  def flush
+    data = PuppetX::IntechWIFI::AwsCmds.find_sns_by_name(resource[:region], resource[:name]){ | *arg | awscli(*arg) }
+    topic_arn = data['TopicArn']
+
+    if @property_flush and @property_flush.length > 0
+      args = ["sns", "set-topic-attributes", 
+             '--topic-arn', topic_arn, 
+             '--attribute-name', 'SQSSuccessFeedbackRoleArn', 
+             '--attribute-value', find_iam_role_arn(@property_flush[:sqs_success_feedback_role])]
+      awscli(args) unless @property_flush[:sqs_success_feedback_role].nil?
+
+      args = ["sns", "set-topic-attributes", 
+             '--topic-arn', topic_arn, 
+             '--attribute-name', 'SQSFailureFeedbackRoleArn', 
+             '--attribute-value', find_iam_role_arn(@property_flush[:sqs_failure_feedback_role])]
+      awscli(args) unless @property_flush[:sqs_failure_feedback_role].nil?
     end
   end
 
@@ -78,7 +114,11 @@ Puppet::Type.type(:sns).provide(:awscli) do
 
   mk_resource_methods
 
-  def topic_attributes=(value)
-    @property_flush[:topic_attributes] = value
+  def sqs_success_feedback_role=(value)
+    @property_flush[:sqs_success_feedback_role] = value
+  end
+
+  def sqs_failure_feedback_role=(value)
+    @property_flush[:sqs_failure_feedback_role] = value
   end
 end

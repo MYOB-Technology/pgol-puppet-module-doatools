@@ -26,7 +26,10 @@ Puppet::Type.newtype(:sns) do
     defaultto 'ap-southeast-2'
   end
 
-  newproperty(:topic_attributes) do
-    defaultto {}
+  newproperty(:sqs_success_feedback_role) do
   end
+
+  newproperty(:sqs_failure_feedback_role) do
+  end
+
 end
