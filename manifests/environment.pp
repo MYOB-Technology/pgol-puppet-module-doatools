@@ -98,6 +98,10 @@ define doatools::environment (
 
   }),
 
+  $pg_sites = {
+
+  },
+
   $options = lookup('doatools::environment::options', Hash, 'deep', {
     'coalesce_sg_per_role' => false
   })
@@ -123,6 +127,7 @@ define doatools::environment (
     $tags_vpc,
     $policies,
     $label_formats,
+    $pg_sites,
     $options
   ).each |$r| {
     $rt = $r['resource_type']

@@ -42,6 +42,7 @@ module PuppetX
           tags_vpc,
           policies,
           label_formats,
+          pg_sites,
           options
       )
 
