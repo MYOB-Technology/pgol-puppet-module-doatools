@@ -43,6 +43,7 @@ module PuppetX
           policies,
           label_formats,
           pg_sites,
+          domains,
           options
       )
 

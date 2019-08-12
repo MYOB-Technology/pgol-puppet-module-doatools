@@ -102,6 +102,10 @@ define doatools::environment (
 
   },
 
+  $domains = {
+
+  },
+
   $options = lookup('doatools::environment::options', Hash, 'deep', {
     'coalesce_sg_per_role' => false
   })
@@ -128,6 +132,7 @@ define doatools::environment (
     $policies,
     $label_formats,
     $pg_sites,
+    $domains,
     $options
   ).each |$r| {
     $rt = $r['resource_type']
