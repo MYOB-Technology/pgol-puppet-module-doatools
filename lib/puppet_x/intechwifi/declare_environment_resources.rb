@@ -23,6 +23,7 @@ require 'puppet_x/intechwifi/declare_environment_resources/security_group_genera
 require 'puppet_x/intechwifi/declare_environment_resources/network_rules_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/launch_configuration_generator'
 require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/route53_record_set_helper'
 
 module PuppetX
   module IntechWIFI
@@ -225,6 +226,7 @@ module PuppetX
           },
           launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
           AutoscalingGroupHelpers.generate(name, services, server_roles, zones, status, region, label_formats['instance'], network, scratch),
+          Route53RecordSetHelper.generate(name, status, region, pg_sites, domains, scratch),
           {
             'resource_type' => "deployment_group",
             'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(name, server_roles, status, region, zones, scratch)
