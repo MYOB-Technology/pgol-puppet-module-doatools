@@ -83,10 +83,10 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
 
     resource_record_sets = JSON.parse(awscli(args.flatten))['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
     things = resource_record_sets.map { |resource_record_set| {
-                                    'Name' => resource_record_set['Name'],
-                                    'Type' => resource_record_set['Type'],
-                                    'Ttl' => resource_record_set['TTL'],
-                                    'Values' => resource_record_set['ResourceRecords'].map { |record| record['Value'] }
+                                    :Name => resource_record_set['Name'],
+                                    :Type => resource_record_set['Type'],
+                                    :Ttl => resource_record_set['TTL'],
+                                    :Values => resource_record_set['ResourceRecords'].map { |record| record['Value'] }
                                   }}
     puts "RESOURCE RECORDS #{things}"
     otherthings = things.sort_by { |record_set| record_set['Name']}
