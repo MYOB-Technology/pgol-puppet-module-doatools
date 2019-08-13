@@ -72,6 +72,8 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
   end
 
   def exists?
+    puts "THIS IS RESOURCE #{resource[:record_set]}"
+    puts "THIS IS PROP HASH #{@property_hash[:record_set]}"
     hosted_zone_id = PuppetX::IntechWIFI::AwsCmds.find_hosted_zone_id_by_name(resource[:region], resource[:hosted_zone]) { |*arg| awscli(*arg) }['Id']
     resource_record_set = []
     args = [
@@ -80,13 +82,17 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
     ]
 
     resource_record_sets = JSON.parse(awscli(args.flatten))['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
-    @property_hash[:record_set] = resource_record_sets.map { |resource_record_set| {
-                                                        'Name' => resource_record_set['Name'],
-                                                        'Type' => resource_record_set['Type'],
-                                                        'Ttl' => resource_record_set['TTL'],
-                                                        'Values' => resource_record_set['ResourceRecords'].map { |record| record['Value'] }
-                                                      }}
-                                                      .sort_by { |record_set| record_set['Name']}
+    things = resource_record_sets.map { |resource_record_set| {
+                                    'Name' => resource_record_set['Name'],
+                                    'Type' => resource_record_set['Type'],
+                                    'Ttl' => resource_record_set['TTL'],
+                                    'Values' => resource_record_set['ResourceRecords'].map { |record| record['Value'] }
+                                  }}
+    puts "RESOURCE RECORDS #{things}"
+    otherthings = things.sort_by { |record_set| record_set['Name']}
+    puts "SORTED RECORDS #{otherthings}"
+
+    @property_hash[:record_set] = otherthings
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     debug(e)
