@@ -42,11 +42,6 @@ Puppet::Type.newtype(:route53_record_set) do
 
   newproperty(:record_set, :array_matching => :all) do
     def insync?(is)
-      puts "THIS IS IS #{is}"
-      puts "THIS IS SHOULD #{should}"
-      puts "THIS IS SORTED IS #{is.sort_by { |record| record[:Name] }}"
-      puts "THIS IS SORTED SHOULD #{should.sort_by { |record| record[:Name] }}"
-      puts "RESULT #{is.sort_by { |record| record[:Name] } == should.sort_by { |record| record[:Name] } }"
       is.sort_by { |record| record[:Name] } == should.sort_by { |record| record[:Name] } 
     end
   end
