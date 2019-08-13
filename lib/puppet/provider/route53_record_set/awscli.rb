@@ -34,15 +34,19 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
 
 
   def generate_change_set(record_set, hosted_zone_id, action)
-    changes_array = record_set.map { |record| {
-      'Action' => action,
-      'ResourceRecordSet' => {
-        'Name' => record['Name'],
-        'Type' => record['Type'],
-        'TTL'  => record['Ttl'],
-        'ResourceRecords' => record['Values'].map { |value| { 'Value' => value } } 
+    puts "GENERATE CHANGE SET"
+    changes_array = record_set.map { |record|
+      puts record
+      {
+        'Action' => action,
+        'ResourceRecordSet' => {
+          'Name' => record[:Name],
+          'Type' => record[:Type],
+          'TTL'  => record[:Ttl],
+          'ResourceRecords' => record[:Values].map { |value| { 'Value' => value } } 
+        }
       }
-    }}
+    }
     {
       'Changes' => changes_array,
       'Comment' => "Resource record set changes for Hosted Zone #{hosted_zone_id}"
@@ -78,6 +82,7 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
     ]
 
     resource_record_sets = JSON.parse(awscli(args.flatten))['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
+    puts "EXISTS #{resource_record_sets}"
     @property_hash[:record_set] = resource_record_sets.map { |resource_record_set| {
       'Name' => resource_record_set['Name'],
       'Type' => resource_record_set['Type'],
