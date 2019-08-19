@@ -258,10 +258,10 @@ module PuppetX
         }
       end
 
-      def AwsCmds.find_hosted_zone_id_by_name(region, hosted_zone_name, &aws_command)
-        zones = JSON.parse(aws_command.call('route53', 'list-hosted-zones', '--region', region))['HostedZones']
-
-        result = zones.select { |zone| zone['Name'] == hosted_zone_name } 
+      def AwsCmds.find_hosted_zone_id_by_name(region, hosted_zone_name, hosted_zone_comment, &aws_command)
+        result = JSON.parse(aws_command.call('route53', 'list-hosted-zones', '--region', region))['HostedZones']
+                     .select { |zone| zone['Name'] == hosted_zone_name}
+                     .select { |shits| shits['Config']['Comment'] == hosted_zone_comment }
 
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches

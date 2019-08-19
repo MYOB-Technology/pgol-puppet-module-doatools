@@ -51,7 +51,8 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
     }
   end
 
-  def update_record_set(region, hosted_zone, record_set, action)
+  def update_record_set(region, hosted_zone, record_set, resource_name, action)
+    hosted_zone_comment = resource_name.gsub(/-record-set$/, '')
     hosted_zone_id = PuppetX::IntechWIFI::AwsCmds.find_hosted_zone_id_by_name(region, hosted_zone) { |*arg| awscli(*arg) }['Id']
 
     record_change_set_file = Tempfile.new('record_change_set_file')
@@ -68,22 +69,20 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
   end
 
   def destroy
-    update_record_set(resource[:region], resource[:hosted_zone], resource[:record_set], 'DELETE')
+    update_record_set(resource[:region], resource[:hosted_zone], resource[:record_set], resource[:name], 'DELETE')
   end
 
   def exists?
-    hosted_zone_id = PuppetX::IntechWIFI::AwsCmds.find_hosted_zone_id_by_name(resource[:region], resource[:hosted_zone]) { |*arg| awscli(*arg) }['Id']
+    hosted_zone_comment = resource[:name].gsub(/-record-set$/, '')
+    hosted_zone_id = PuppetX::IntechWIFI::AwsCmds.find_hosted_zone_id_by_name(resource[:region], resource[:hosted_zone], hosted_zone_comment) { |*arg| awscli(*arg) }['Id']
+
     resource_record_set = []
     args = [
       'route53', 'list-resource-record-sets',
       '--hosted-zone-id', hosted_zone_id
     ]
 
-    thing = JSON.parse(awscli(args.flatten))
-
-    puts thing
-
-    resource_record_sets = thing['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
+    resource_record_sets = JSON.parse(awscli(args.flatten))['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
     @property_hash[:record_set] = resource_record_sets.map { |resource_record_set| {
                                     :Name => resource_record_set['Name'],
                                     :Type => resource_record_set['Type'],
