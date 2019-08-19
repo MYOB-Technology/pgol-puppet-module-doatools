@@ -79,7 +79,11 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
       '--hosted-zone-id', hosted_zone_id
     ]
 
-    resource_record_sets = JSON.parse(awscli(args.flatten))['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
+    thing = JSON.parse(awscli(args.flatten))
+
+    puts thing
+
+    resource_record_sets = thing['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
     @property_hash[:record_set] = resource_record_sets.map { |resource_record_set| {
                                     :Name => resource_record_set['Name'],
                                     :Type => resource_record_set['Type'],
