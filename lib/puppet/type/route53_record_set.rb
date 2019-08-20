@@ -42,7 +42,8 @@ Puppet::Type.newtype(:route53_record_set) do
 
   newproperty(:record_set, :array_matching => :all) do
     def insync?(is)
-      is.sort_by { |record| record[:Name] } == should.sort_by { |record| record[:Name] } 
+      #is.sort_by { |record| record[:Name] } == should.sort_by { |record| record[:Name] } 
+      @should.all?{|v| is.include? v}
     end
   end
 end
