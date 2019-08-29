@@ -107,15 +107,7 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
   end
 
   mk_resource_methods
-
-  def region=(value)
-    @property_flush[:region] = value
-  end
-
-  def hosted_zone=(value)
-    @property_flush[:hosted_zone] = value
-  end
-
+  
   def record_set=(value)
     @property_flush[:record_set] = value
   end
