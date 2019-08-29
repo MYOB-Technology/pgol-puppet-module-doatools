@@ -110,7 +110,7 @@ define doatools::environment (
     'coalesce_sg_per_role' => false
   }),
 
-  $resource_filter = all,
+  $resourcetype_filter = all,
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
 #  $network=lookup('environment::network', Data, 'first', { }),
