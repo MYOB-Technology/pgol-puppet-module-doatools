@@ -108,7 +108,9 @@ define doatools::environment (
 
   $options = lookup('doatools::environment::options', Hash, 'deep', {
     'coalesce_sg_per_role' => false
-  })
+  }),
+
+  $resourcetype_filter = all,
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
 #  $network=lookup('environment::network', Data, 'first', { }),
@@ -139,7 +141,14 @@ define doatools::environment (
     $rts = $r['resources'].keys
     info("declaring resources: ${rt} ${rts}")
     debug($r['resources'])
-    create_resources($r['resource_type'], $r['resources'], {})
+
+    if (($resourcetype_filter == all) or ($rt in $resourcetype_filter))
+    {
+      # need to change this back to info...
+      notice("declaring resources: ${rt} ${rts}")
+      debug($r['resources'])
+      create_resources($r['resource_type'], $r['resources'], {})
+    }
   }
 }
 
