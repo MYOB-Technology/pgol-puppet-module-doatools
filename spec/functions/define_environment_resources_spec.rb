@@ -1076,7 +1076,7 @@ describe 'define_environment_resources' do
       'demo-fs.pgol-record-set' => {
         :ensure       => 'present',
         :region       => 'us-east-1',
-        :hosted_zone  => 'fs.pgol.',
+        :hosted_zone  => 'fs.pgol.wrger',
         :record_set   => [
           {
             :Name =>  'pg1000nz.fs.pgol.',
