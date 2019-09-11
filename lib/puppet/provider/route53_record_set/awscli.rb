@@ -26,9 +26,7 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
 
   def create
     update_record_set(resource[:region], resource[:hosted_zone], resource[:record_set], resource[:name], 'UPSERT')
-    @property_hash[:region] = resource[:region]
     @property_hash[:name] = resource[:name]
-    @property_hash[:hosted_zone] = resource[:hosted_zone]
     @property_hash[:record_set] = resource[:record_set]
   end
 
