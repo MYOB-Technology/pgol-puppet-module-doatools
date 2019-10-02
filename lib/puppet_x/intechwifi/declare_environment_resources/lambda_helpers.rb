@@ -20,12 +20,9 @@ module PuppetX
   module IntechWIFI
     module DeclareEnvironmentResources
       module LambdaHelpers
-        def self.generate_lambda_resources(services, vpc, status, region, scratch)
-          resources = services.select { |service, properties| properties.key? 'lambdas' }
-                              .map { |_service, properties| properties['lambdas'] }
-                              .flatten
-                              .map { |lambda_func| generate_lambda_resource(status, region, vpc, scratch, lambda_func)}
-                              .reduce({}){ | hash, kv| hash.merge(kv) }
+        def self.generate_lambda_resources(lambdas, vpc, status, region, scratch)
+          resources = lambdas.map { |lambda_func| generate_lambda_resource(status, region, vpc, scratch, lambda_func)}
+                             .reduce({}){ | hash, kv| hash.merge(kv) }
           { 'resource_type' => 'lambda', 'resources' => resources }
         end
 

@@ -106,6 +106,10 @@ define doatools::environment (
 
   },
 
+  $lambdas = lookup('doatools::environment::lambdas', Data, 'deep', {
+
+  }),
+
   $options = lookup('doatools::environment::options', Hash, 'deep', {
     'coalesce_sg_per_role' => false
   }),
@@ -135,6 +139,7 @@ define doatools::environment (
     $label_formats,
     $pg_sites,
     $domains,
+    $lambdas,
     $options
   ).each |$r| {
     $rt = $r['resource_type']

@@ -49,6 +49,7 @@ module PuppetX
           label_formats,
           pg_sites,
           domains,
+          lambdas,
           options
       )
 
@@ -271,7 +272,7 @@ module PuppetX
 
               }
           },
-          LambdaHelpers.generate_lambda_resources(services, name, status, region, scratch),
+          LambdaHelpers.generate_lambda_resources(lambdas, name, status, region, scratch),
           S3EventNotificationHelpers.generate_resources(services, name, status, region, scratch, options),
           SNSHelpers.generate_resources(services, name, status, region, scratch)
         ]

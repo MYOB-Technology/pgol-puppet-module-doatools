@@ -18,6 +18,7 @@ Puppet::Functions.create_function('define_environment_resources') do
     label_formats,
     pg_sites,
     domains,
+    lambdas,
     options
   )
     PuppetX::IntechWIFI::DeclareEnvironmentResources.define_environment_resources(
@@ -36,6 +37,7 @@ Puppet::Functions.create_function('define_environment_resources') do
         label_formats,
         pg_sites,
         domains,
+        lambdas,
         options
     )
   end
