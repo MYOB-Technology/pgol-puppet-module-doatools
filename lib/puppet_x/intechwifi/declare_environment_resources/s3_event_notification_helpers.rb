@@ -20,19 +20,18 @@ module PuppetX
   module IntechWIFI
     module DeclareEnvironmentResources
       module S3EventNotificationHelpers
-        def self.generate_resources(services, vpc, status, region, scratch, options)
-          resources = generate_content_retriever_notifications(vpc, services, scratch, options)
-                        .map { |s3_notification| generate_resource(vpc, region, status, s3_notification, scratch)}
+        def self.generate_resources(s3_event_notifications, vpc, status, region, scratch, options)
+          resources =  s3_event_notifications.map { |notification| generate_resource(vpc, region, status, notification, scratch)}
                         .reduce({}){ | hash, kv| hash.merge(kv) }
           { 'resource_type' => 's3_event_notification', 'resources' => resources }
         end
 
         def self.generate_resource(vpc, region, status, notification, scratch)
-          { generate_notification_name(vpc, notification['name'], notification['service_name'], scratch) => {
+          { notification['name'] => {
             :ensure => status, 
             :region => region, 
             :bucket => notification['s3_bucket'], 
-            :endpoint => notification['endpoint'], 
+            :endpoint => generate_endpoint_name(vpc, notification, scratch), 
             :endpoint_type => notification['endpoint_type'],
             :events => notification['events'],
             :key_prefixs => check?(notification['key_prefixs']),
@@ -40,29 +39,8 @@ module PuppetX
           }}
         end
 
-        def self.generate_notification_name(vpc, name, service, scratch)
-          sprintf(scratch[:label_s3_event_notification], {
-            :service => service,
-            :SERVICE => service.upcase,
-            :Service => service.capitalize,
-            :s3_event_notification => name,
-            :S3_EVENT_NOTIFICATIONN => name.upcase,
-            :S3_Event_Notification => name.capitalize
-          })
-        end
-
-        def self.generate_content_retriever_notifications(vpc, services, scratch, options)
-          services.select { |service, properties| properties.key? 'content_retriever' }
-                  .map { |service, properties| properties['content_retriever'].map { |retriever| retriever.merge({ 
-                    'service_name' => service,
-                    'events' => ['s3:ReducedRedundancyLostObject', 's3:ObjectCreated:*', 's3:ObjectRemoved:*', 's3:ObjectRestore:Post', 
-                                 's3:ObjectRestore:Completed'],
-                    'endpoint' => LambdaHelpers.generate_lambda_name(vpc, options['content_retriever_lambda_name'], scratch),
-                    'endpoint_type' => 'lambda',
-                    'key_prefixs' => retriever['s3_location'],
-                    'name' => retriever['content']
-                  }) } }
-                  .flatten
+        def self.generate_endpoint_name(vpc, notification, scratch)
+          LambdaHelpers.generate_lambda_name(vpc, notification['endpoint'], scratch) if notification['endpoint_type'] === 'lambda'
         end
 
         def self.check?(property)

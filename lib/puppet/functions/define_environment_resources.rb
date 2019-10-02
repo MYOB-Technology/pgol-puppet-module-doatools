@@ -20,6 +20,7 @@ Puppet::Functions.create_function('define_environment_resources') do
     domains,
     lambdas,
     sns_topics,
+    s3_event_notifications,
     options
   )
     PuppetX::IntechWIFI::DeclareEnvironmentResources.define_environment_resources(
@@ -40,6 +41,7 @@ Puppet::Functions.create_function('define_environment_resources') do
         domains,
         lambdas,
         sns_topics,
+        s3_event_notifications,
         options
     )
   end

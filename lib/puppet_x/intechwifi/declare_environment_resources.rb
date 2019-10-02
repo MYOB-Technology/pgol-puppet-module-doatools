@@ -51,6 +51,7 @@ module PuppetX
           domains,
           lambdas,
           sns_topics,
+          s3_event_notifications,
           options
       )
 
@@ -274,7 +275,7 @@ module PuppetX
               }
           },
           LambdaHelpers.generate_lambda_resources(lambdas, name, status, region, scratch),
-          S3EventNotificationHelpers.generate_resources(services, name, status, region, scratch, options),
+          S3EventNotificationHelpers.generate_resources(s3_event_notifications, name, status, region, scratch, options),
           SNSHelpers.generate_resources(sns_topics, name, status, region, scratch)
         ]
       end

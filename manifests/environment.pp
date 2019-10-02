@@ -114,6 +114,10 @@ define doatools::environment (
 
   },
 
+  $s3_event_notifications = {
+
+  },
+
   $options = lookup('doatools::environment::options', Hash, 'deep', {
     'coalesce_sg_per_role' => false
   }),
@@ -145,6 +149,7 @@ define doatools::environment (
     $domains,
     $lambdas,
     $sns_topics,
+    $s3_event_notifications,
     $options
   ).each |$r| {
     $rt = $r['resource_type']

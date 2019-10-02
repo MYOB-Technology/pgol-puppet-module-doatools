@@ -1260,6 +1260,7 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1312,6 +1313,7 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
         {},
         {},
         {},
@@ -1376,6 +1378,7 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
         {},
         {},
         {},
@@ -1449,6 +1452,7 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1510,6 +1514,7 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
         {},
         {},
         {},
@@ -1589,6 +1594,7 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
         {},
         {},
         {},
@@ -1690,6 +1696,7 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
         {},
         {},
         {},
@@ -1801,6 +1808,7 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1894,6 +1902,7 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
         {},
         {},
         {},
@@ -2188,6 +2197,7 @@ describe 'define_environment_resources' do
             'Resource' => '*'
           }
         },
+        {},
         {},
         {},
         {},
