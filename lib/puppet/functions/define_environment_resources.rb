@@ -19,6 +19,7 @@ Puppet::Functions.create_function('define_environment_resources') do
     pg_sites,
     domains,
     lambdas,
+    sns_topics,
     options
   )
     PuppetX::IntechWIFI::DeclareEnvironmentResources.define_environment_resources(
@@ -38,6 +39,7 @@ Puppet::Functions.create_function('define_environment_resources') do
         pg_sites,
         domains,
         lambdas,
+        sns_topics,
         options
     )
   end

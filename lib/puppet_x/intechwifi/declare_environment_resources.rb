@@ -50,6 +50,7 @@ module PuppetX
           pg_sites,
           domains,
           lambdas,
+          sns_topics,
           options
       )
 
@@ -242,7 +243,7 @@ module PuppetX
           },
           {
               'resource_type' => "iam_role",
-              'resources' => IAMHelpers.calculate_all_role_resources(name, status, server_roles , services, scratch)
+              'resources' => IAMHelpers.calculate_all_role_resources(name, status, server_roles , services, sns_topics, scratch)
           },
           {
               'resource_type' => "iam_policy",
@@ -274,7 +275,7 @@ module PuppetX
           },
           LambdaHelpers.generate_lambda_resources(lambdas, name, status, region, scratch),
           S3EventNotificationHelpers.generate_resources(services, name, status, region, scratch, options),
-          SNSHelpers.generate_resources(services, name, status, region, scratch)
+          SNSHelpers.generate_resources(sns_topics, name, status, region, scratch)
         ]
       end
 

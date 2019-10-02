@@ -20,15 +20,15 @@ module PuppetX
   module IntechWIFI
     module DeclareEnvironmentResources
       module SNSHelpers
-        def self.generate_resources(services, vpc, status, region, scratch)
-          resources = generate_content_retriever_topics(vpc, services, scratch)
+        def self.generate_resources(sns_topics, vpc, status, region, scratch)
+          resources = generate_sns_topics(vpc, sns_topics, scratch)
                         .map { |sns| generate_resource(vpc, region, status, sns, scratch)}
                         .reduce({}){ | hash, kv| hash.merge(kv) }
           { 'resource_type' => 'sns', 'resources' => resources }
         end
 
         def self.generate_resource(vpc, region, status, sns, scratch)
-          { generate_sns_name(vpc, sns['name'], sns['service_name'], scratch) => {
+          { sns['name'] => {
             :ensure => status, 
             :region => region,
             :sqs_success_feedback_role => sns['sqs_success_feedback_role'],
@@ -36,34 +36,13 @@ module PuppetX
           }}
         end
 
-        def self.generate_sns_name(vpc, name, service, scratch)
-          sprintf(scratch[:label_sns], {
-            :service => service,
-            :SERVICE => service.upcase,
-            :Service => service.capitalize,
-            :sns => name,
-            :SNS => name.upcase,
-            :Sns => name.capitalize
-          })
-        end
-
-        def self.generate_content_retriever_topics(vpc, services, scratch)
-          services.select { |service, properties| properties.key? 'content_retriever' }
-                  .map { |service, properties| properties['content_retriever'].map { |retriever| retriever.merge({ 
-                    'service_name' => service,
-                    'name' => retriever['content'],
-                    'sqs_success_feedback_role' => IAMHelpers.generate_role_name(vpc, 'SNSContentRetrieverLogRole', scratch),
-                    'sqs_failure_feedback_role' => IAMHelpers.generate_role_name(vpc, 'SNSContentRetrieverLogRole', scratch)
-                  }) } }
+        def self.generate_sns_topics(vpc, sns_topics, scratch)
+          sns_topics.map { |topic| { 
+                    'name' => topic,
+                    'sqs_success_feedback_role' => IAMHelpers.generate_role_name(vpc, 'SNSLogRole', scratch),
+                    'sqs_failure_feedback_role' => IAMHelpers.generate_role_name(vpc, 'SNSLogRole', scratch)
+                  } }
                   .flatten
-        end
-
-        def self.sns_content_retrievers?(services)
-          services.select { |service, properties| properties.key? 'content_retriever' }
-                  .map { |service, properties| properties['content_retriever'] }
-                  .flatten
-                  .map { |content_retriever| !content_retriever.empty? }
-                  .any?
         end
       end
     end

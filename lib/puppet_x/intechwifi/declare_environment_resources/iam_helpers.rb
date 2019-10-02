@@ -27,10 +27,10 @@ module PuppetX
                           .reduce({}){|hash, kv| hash.merge(kv)}
         end
 
-        def self.calculate_all_role_resources(name, status, server_roles, services, scratch)
+        def self.calculate_all_role_resources(name, status, server_roles, services, sns_topics, scratch)
           roles = server_roles.map{|role_label, role_data| calculate_single_role_resource(name, status, role_label, role_data, services, scratch) }
                               .concat(calculate_lambda_roles(name, status, services, scratch))
-                              .concat(calculate_sns_content_retriever_log_role(name, status, services, scratch))
+                              .concat(calculate_sns_log_role(name, status, sns_topics, scratch))
                               .concat(calculate_code_deploy_role(status, server_roles, scratch)) 
                               .reduce({}){|hash, kv| hash.merge(kv)}
         end
@@ -90,10 +90,10 @@ module PuppetX
                   .flatten
         end
 
-        def self.calculate_sns_content_retriever_log_role(vpc, status, services, scratch)
-          return [] unless SNSHelpers.sns_content_retrievers?(services)
+        def self.calculate_sns_log_role(vpc, status, sns_topics, scratch)
+          return [] if sns_topics.empty?
           [{
-            generate_role_name(vpc, 'SNSContentRetrieverLogRole', scratch) => {
+            generate_role_name(vpc, 'SNSLogRole', scratch) => {
               :ensure => status,
               :policies => ['AmazonSNSRole'],
               :trust => ['sns']
