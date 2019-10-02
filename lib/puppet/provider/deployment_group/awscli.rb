@@ -35,14 +35,17 @@ Puppet::Type.type(:deployment_group).provide(:awscli) do
 
     awscli(args.flatten)
 
+    @property_hash[:region] = @resource[:region]
+    @property_hash[:name] = @resource[:name]
+    @property_hash[:application_name] = @resource[:application_name]
   end
 
   def destroy
     args = [
         'deploy', 'delete-deployment-group',
-        '--region', @property_flush[:region],
-        '--deployment-group-name', @property_flush[:name],
-        '--application-name', @property_flush[:application_name],
+        '--region', @property_hash[:region],
+        '--deployment-group-name', @property_hash[:name],
+        '--application-name', @property_hash[:application_name],
     ]
 
     awscli(args.flatten)
@@ -93,10 +96,11 @@ Puppet::Type.type(:deployment_group).provide(:awscli) do
 
     end
 
+    @property_hash[:name] = resource[:name]
     @property_hash[:application_name] = resource[:application_name]
     @property_hash[:region] = resource[:region]
     @property_hash[:autoscaling_groups] = search_results[:data]['deploymentGroupInfo']['autoScalingGroups'].map{|data| data["name"] }
-
+    
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e

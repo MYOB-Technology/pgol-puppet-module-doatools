@@ -107,12 +107,14 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   end
 
   def get_ami_block_device_mapping(region, image)
-    JSON.parse(awscli([
+    images = JSON.parse(awscli([
       'ec2',
       'describe-images',
       '--region', value(:region),
       '--image-ids', value(:image)
-    ]))['Images'].first['BlockDeviceMappings']
+    ]))['Images']
+    raise "AWS AMI #{image} is not available. This AMI has likely been deleted by Amazon and replaced with an upgraded AMI. Update hiera to use the upgraded AMI" if images.first.nil?
+    images.first['BlockDeviceMappings']
       .select { |mapping| mapping.key? 'Ebs' }
   end
 

@@ -15,29 +15,11 @@
 
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
-require 'puppet_x/intechwifi/tags_property'
 
-Puppet::Type.newtype(:security_group) do
+Puppet::Type.newtype(:route53_record_set) do
   ensurable
 
-  autobefore(:vpc) do
-    if self[:ensure] == :absent
-      self[:vpc]
-    end
-  end
-
-  autorequire(:vpc) do
-    if self[:ensure] == :present
-      self[:vpc]
-    end
-  end
-
-
   newparam(:name, :namevar => true) do
-  end
-
-  newproperty(:vpc) do
-
   end
 
   #  read only properties...
@@ -48,22 +30,21 @@ Puppet::Type.newtype(:security_group) do
     but it may create a new resource in the new region, and will completely ignore the existing resource in the old
     region
     DESC
-    defaultto 'us-east-1'
+    defaultto 'ap-southeast-2'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions
       fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
     end
   end
 
-  newparam(:description) do
+  newproperty(:hosted_zone) do
   end
 
-  newproperty(:tags) do
-    validate do | value|
-      PuppetX::IntechWIFI::Tags_Property.validate_value(value)
-    end
+  newproperty(:record_set, :array_matching => :all) do
     def insync?(is)
-      @should.any?{|x| PuppetX::IntechWIFI::Tags_Property.insync?(is, x)}
+      #is.sort_by { |record| record[:Name] } == should.sort_by { |record| record[:Name] } 
+      @should.all?{|v| is.include? v}
     end
   end
 end
+

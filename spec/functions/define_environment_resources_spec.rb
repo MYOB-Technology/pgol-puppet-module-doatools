@@ -1185,6 +1185,55 @@ describe 'define_environment_resources' do
       }
     }
   }
+  
+  route53_record_set1 = {
+    "resource_type" => "route53_record_set",
+    "resources" => {}
+  }
+
+  route53_record_set2 = {
+    "resource_type" => "route53_record_set",
+    "resources" => {
+      'demo-fs.pgol-record-set' => {
+        :ensure       => 'present',
+        :region       => 'us-east-1',
+        :hosted_zone  => 'fs.pgol.',
+        :record_set   => [
+          {
+            :Name =>  'pg1000nz.fs.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          },
+          {
+            :Name =>  'pg1001nz.fs.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          }
+        ]
+      },
+      'demo-db.pgol-record-set' => {
+        :ensure       => 'present',
+        :region       => 'us-east-1',
+        :hosted_zone  => 'db.pgol.',
+        :record_set   => [
+          {
+            :Name =>  'pg1000nz.db.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          },
+          {
+            :Name =>  'pg1001nz.db.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          }
+        ]
+      }
+    }
+  }
 
 
   context 'creating an environment with a public zone' do
@@ -1207,6 +1256,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1225,6 +1276,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
             deployment_group1,
             iam_role1,
             iam_policies_1,
@@ -1261,6 +1313,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1279,6 +1333,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
             deployment_group1,
             iam_role1,
             iam_policies_1,
@@ -1320,6 +1375,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1338,6 +1395,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
             deployment_group1,
             iam_role1,
             iam_policies_1,
@@ -1380,6 +1438,8 @@ describe 'define_environment_resources' do
         },
         {},
         {},
+        {},        
+        {},
         {},
         {
             'coalesce_sg_per_role' => false
@@ -1399,6 +1459,7 @@ describe 'define_environment_resources' do
             rds2,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
             deployment_group1,
             iam_role1,
             iam_policies_1,
@@ -1444,6 +1505,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1462,6 +1525,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
             deployment_group1,
             iam_role1,
             iam_policies_1,
@@ -1518,6 +1582,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1536,6 +1602,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration2,
             autoscaling_group2,
+            route53_record_set1,
             deployment_group1,
             iam_role2,
             iam_policies_1,
@@ -1614,6 +1681,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1632,6 +1701,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration2,
             autoscaling_group2,
+            route53_record_set1,
             deployment_group1,
             iam_role2,
             iam_policies_1,
@@ -1713,6 +1783,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -1731,6 +1803,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration3,
             autoscaling_group2,
+            route53_record_set1,
             deployment_group2,
             iam_role3,
             iam_policies_1,
@@ -1808,6 +1881,8 @@ describe 'define_environment_resources' do
         {},
         {},
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => true
         }
@@ -1826,6 +1901,7 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration4,
             autoscaling_group2,
+            route53_record_set1,
             deployment_group1,
             iam_role2,
             iam_policies_1,
@@ -2091,6 +2167,8 @@ describe 'define_environment_resources' do
           }
         },
         {},
+        {},
+        {},
         {
             'coalesce_sg_per_role' => false
         }
@@ -2109,6 +2187,7 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration2,
             autoscaling_group2,
+            route53_record_set1,
             deployment_group1,
             iam_role4,
             iam_policies_2,
@@ -2122,5 +2201,91 @@ describe 'define_environment_resources' do
     }
   end
 
+  context 'creating an environment with a public zone and route53 record sets' do
+    it { is_expected.to run.with_params(
+        'demo', 'present', 'us-east-1',
+        {
+            'cidr' => "192.168.0.0/24",
+            'availability' => [ "a", "b", "c"]
+        },
+        {
+            'public' => { }
+        },
+        {
+            "testrole" => {
+                "ec2" => {
+                    "instance_type" => 't2.micro',
+                    "image" => 'ami-6d1c2007',
+                },
+                "zone" => 'public',
+                "services" => [
+                    "my_srv"
+                ],
+            }
+        },
+        {
+            "my_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                    ]
+                },
+                'policies' => ['admin_policy']
+            }
+        },
+        {},
+        {},
+        {
+            'Environment' => 'demo'
+        },
+        {},
+        {
+          'admin_policy' => {
+            'Effect' => 'Allow',
+            'Action' => '*',
+            'Resource' => '*'
+          }
+        },
+        {},
+        {
+          'PG1000NZ' => { 'site_database_server' => 'sy1-db1.internal.myobpayglobal.com', 'site_filesystem_server' => 'sy1-db1.internal.myobpayglobal.com' },
+          'PG1001NZ' => { 'site_database_server' => 'sy1-db1.internal.myobpayglobal.com', 'site_filesystem_server' => 'sy1-db1.internal.myobpayglobal.com' },
+        },
+        {
+          'filesystem_domain' => 'fs.pgol',
+          'database_domain' => 'db.pgol'
+        },
+        {
+            'coalesce_sg_per_role' => false
+        }
+    ).and_return(
+        [
+            vpc1,
+            routetable1,
+            subnets1,
+            security_group2,
+            security_group_rules2,
+            internet_gateway1,
+            nat_gateway1,
+            route_table_routes1,
+            load_balancers1,
+            rds_subnet_group1,
+            rds1,
+            launch_configuration2,
+            autoscaling_group2,
+            route53_record_set2,
+            deployment_group1,
+            iam_role4,
+            iam_policies_2,
+            iam_instance_profile2,
+            s3_bucket1,
+            s3_key1
+        ])
+    }
+  end
 end
 
