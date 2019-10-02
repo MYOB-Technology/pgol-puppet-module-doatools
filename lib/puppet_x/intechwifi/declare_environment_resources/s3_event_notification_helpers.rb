@@ -21,6 +21,7 @@ module PuppetX
     module DeclareEnvironmentResources
       module S3EventNotificationHelpers
         def self.generate_resources(s3_event_notifications, vpc, status, region, scratch, options)
+          puts "THIS IS  NOTIFI #{s3_event_notifications}"
           resources =  s3_event_notifications.map { |notification| generate_resource(vpc, region, status, notification, scratch)}
                         .reduce({}){ | hash, kv| hash.merge(kv) }
           { 'resource_type' => 's3_event_notification', 'resources' => resources }
@@ -30,7 +31,7 @@ module PuppetX
           { notification['name'] => {
             :ensure => status, 
             :region => region, 
-            :bucket => notification['s3_bucket'], 
+            :bucket => notification['bucket'], 
             :endpoint => generate_endpoint_name(vpc, notification, scratch), 
             :endpoint_type => notification['endpoint_type'],
             :events => notification['events'],

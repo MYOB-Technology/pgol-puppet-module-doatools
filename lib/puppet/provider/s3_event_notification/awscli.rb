@@ -59,6 +59,8 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
   end
 
   def exists?
+    puts "IM IN EXISTS"
+    puts "IM IN EXISTS #{resource[:bucket]}"
     debug("searching for S3 Event Notification=#{resource[:name]}\n")
 
     bucket_config = PuppetX::IntechWIFI::AwsCmds.find_s3_bucket_notification_config(resource[:region], resource[:bucket]){ | *arg | awscli(*arg) }
