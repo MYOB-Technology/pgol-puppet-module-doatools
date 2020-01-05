@@ -28,7 +28,8 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
     @property_hash[:name] = resource[:name]
     @property_hash[:region] = resource[:region]
     @property_hash[:record_set] = resource[:record_set]
-    update_record_set(property_hash[:region], resource[:hosted_zone], resource[:record_set], resource[:name], 'UPSERT')
+    @property_hash[:hosted_zone] = resource[:hosted_zone]
+    update_record_set(@property_hash[:region], @property_hash[:hosted_zone], resource[:record_set], resource[:name], 'UPSERT')
   end
 
 
@@ -68,13 +69,14 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
   end
 
   def destroy
-    update_record_set(property_hash[:region], resource[:hosted_zone], resource[:record_set], resource[:name], 'DELETE')
+    update_record_set(@property_hash[:region], @property_hash[:hosted_zone], resource[:record_set], resource[:name], 'DELETE')
   end
 
   def exists?
     @property_hash[:region] = resource[:region]
+    @property_hash[:hosted_zone] = resource[:hosted_zone]
     hosted_zone_comment = resource[:name].gsub(/-record-set$/, '')
-    hosted_zone_id = PuppetX::IntechWIFI::AwsCmds.find_hosted_zone_id_by_name(@property_hash[:region], resource[:hosted_zone], hosted_zone_comment) { |*arg| awscli(*arg) }['Id']
+    hosted_zone_id = PuppetX::IntechWIFI::AwsCmds.find_hosted_zone_id_by_name(@property_hash[:region], @property_hash[:hosted_zone], hosted_zone_comment) { |*arg| awscli(*arg) }['Id']
 
     resource_record_set = []
     args = [
@@ -82,7 +84,7 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
       '--hosted-zone-id', hosted_zone_id
     ]
 
-    resource_record_sets = JSON.parse(awscli(args.flatten))['ResourceRecordSets'].reject { |record| record['Name'] == resource[:hosted_zone] } 
+    resource_record_sets = JSON.parse(awscli(args.flatten))['ResourceRecordSets'].reject { |record| record['Name'] == @property_hash[:hosted_zone] } 
     @property_hash[:record_set] = resource_record_sets.map { |resource_record_set| {
                                     :Name => resource_record_set['Name'],
                                     :Type => resource_record_set['Type'],
@@ -97,7 +99,7 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
 
   def flush
     if @property_flush and @property_flush.length > 0
-      update_record_set(@property_hash[:region], resource[:hosted_zone], resource[:record_set], resource[:name], 'UPSERT')
+      update_record_set(@property_hash[:region], @property_hash[:hosted_zone], resource[:record_set], resource[:name], 'UPSERT')
     end
   end
 
@@ -114,5 +116,9 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
 
   def region=(value)
     @property_flush[:region] = value
+  end
+
+  def hosted_zone=(value)
+    @property_flush[:hosted_zone] = value
   end
 end
