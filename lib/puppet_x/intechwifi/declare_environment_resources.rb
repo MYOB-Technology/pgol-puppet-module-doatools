@@ -43,7 +43,7 @@ module PuppetX
           tags_vpc,
           policies,
           label_formats,
-          pg_sites,
+          route_53_records,
           domains,
           options
       )
@@ -226,7 +226,7 @@ module PuppetX
           },
           launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
           AutoscalingGroupHelpers.generate(name, services, server_roles, zones, status, region, label_formats['instance'], network, scratch),
-          Route53RecordSetHelper.generate(name, status, region, pg_sites, domains, scratch),
+          Route53RecordSetHelper.generate(name, status, region, route_53_records, scratch),
           {
             'resource_type' => "deployment_group",
             'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(name, server_roles, status, region, zones, scratch)
