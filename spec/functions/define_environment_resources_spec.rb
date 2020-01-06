@@ -1899,8 +1899,30 @@ describe 'define_environment_resources' do
         },
         {},
         {
-          'PG1000NZ' => { 'site_database_server' => 'sy1-db1.internal.myobpayglobal.com', 'site_filesystem_server' => 'sy1-db1.internal.myobpayglobal.com' },
-          'PG1001NZ' => { 'site_database_server' => 'sy1-db1.internal.myobpayglobal.com', 'site_filesystem_server' => 'sy1-db1.internal.myobpayglobal.com' },
+          'PG1000NZ.fs.pgol.' => {
+            'hosted_zone' => 'fs.pgol',
+            'type' => 'CNAME',
+            'ttl' => 60,
+            'value' => 'sy1-db1.internal.myobpayglobal.com'
+          },
+          'PG1000NZ.db.pgol.' => {
+            'hosted_zone' => 'db.pgol',
+            'type' => 'CNAME',
+            'ttl' => 60,
+            'value' => 'sy1-db1.internal.myobpayglobal.com'
+          },
+          'PG1001NZ.fs.pgol.' => {
+            'hosted_zone' => 'fs.pgol',
+            'type' => 'CNAME',
+            'ttl' => 60,
+            'value' => 'sy1-db1.internal.myobpayglobal.com'
+          },
+          'PG1001NZ.db.pgol.' => {
+            'hosted_zone' => 'db.pgol',
+            'type' => 'CNAME',
+            'ttl' => 60,
+            'value' => 'sy1-db1.internal.myobpayglobal.com'
+          }
         },
         {
           'filesystem_domain' => 'fs.pgol',

@@ -16,7 +16,7 @@ Puppet::Functions.create_function('define_environment_resources') do
     tags_vpc,
     policies,
     label_formats,
-    pg_sites,
+    route_53_records,
     domains,
     options
   )
@@ -34,7 +34,7 @@ Puppet::Functions.create_function('define_environment_resources') do
         tags_vpc,
         policies,
         label_formats,
-        pg_sites,
+        route_53_records,
         domains,
         options
     )
