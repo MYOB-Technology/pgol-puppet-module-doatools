@@ -22,20 +22,21 @@ module PuppetX
     module DeclareEnvironmentResources
       module LoadBalancerHelper
         def self.generate_loadbalancer_resources(name, status, region, roles, services, scratch)
+          load_balancer_role_service_hash = generate_services_with_loadbalanced_ports_by_role(roles, services)
           resources = get_role_names_with_load_balancers(roles, services).map{|role_name|
-            generate_load_balancer(name, status, region, role_name, services, scratch)
+            generate_load_balancer(name, status, region, role_name, services, load_balancer_role_service_hash, scratch)
           }.reduce({}){|hash, kv| hash.merge(kv) }
           puts "RESOURCES #{resources}"
           { 'resource_type' => 'load_balancer', 'resources' => resources }
         end
 
-        def self.generate_load_balancer(name, status, region, role_name, services, scratch)
+        def self.generate_load_balancer(name, status, region, role_name, services, load_balancer_role_service_hash, scratch)
           {
               "#{generate_loadbalancer_name(name, role_name)}" => {
                   :ensure => status,
                   :region => region,
                   :subnets => scratch[:subnet_data].select{|data| data[:zone] == 'public' }.map{|data| data[:name] },
-                  :listeners => scratch[:loadbalancer_role_service_hash][role_name].map{|service|
+                  :listeners => load_balancer_role_service_hash[role_name].map{|service|
                     service['loadbalanced_ports'].map{|port| parse_shared_port(port)}
                   }.flatten.map{|porthash|
                     (porthash.has_key?(:certificate) and porthash.has_key?(:protocol) and porthash[:protocol] == 'https') ?
