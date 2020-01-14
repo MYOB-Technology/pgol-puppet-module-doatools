@@ -50,6 +50,13 @@ module PuppetX
                               .map { |mapping| mapping['Ebs'] }
         end
 
+        def self.get_extra_disks_from_block_device_hash(block_device_mapping, ami_image_hash)
+          block_device_mapping.select { | mapping|
+            !ami_image_heys.keys?(mapping[DEVICE_NAME))
+          }.map { |mapping| mapping['Ebs'] }
+        end
+
+
         def self.get_ami_image_device_names(ami_image_mapping)
           ami_image_device_names = ami_image_mapping.map { |mapping| mapping[DEVICE_NAME] }
         end
