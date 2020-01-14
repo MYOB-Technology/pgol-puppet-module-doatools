@@ -30,6 +30,7 @@ module PuppetX
               .merge(get_loadbalancers(name, roles, role, services))
           } }
           .reduce({}){|hash, kv| hash.merge(kv)}
+          puts "RESOURCES #{resources}"
           { 'resource_type' => "autoscaling_group", 'resources' => resources }
         end
 
