@@ -418,9 +418,25 @@ describe 'define_environment_resources' do
             :description => "database security group"
         }
     }
-}
+  }
 
+  security_group5 = {
+    "resource_type" => "security_group", 
+    "resources" => {
+      "demo_my_srv"=>{:ensure=>"present", :region=>"us-east-1", :vpc=>"demo", :tags=>{"Environment"=>"demo"}, :description=>"Service security group"}, 
+      "demo_testrole_elb"=>{:ensure=>"present", :region=>"us-east-1", :vpc=>"demo", :tags=>{"Environment"=>"demo"}, :description=>"load balancer security group"}, 
+      "demo"=>{:ensure=>"present", :region=>"us-east-1", :vpc=>"demo", :tags=>{"Environment"=>"demo"}}
+    }
+  }
 
+  security_group_rules5 = {
+    "resource_type" => "security_group_rules", 
+    "resources" => {
+      "demo" => {:ensure=>"present", :region=>"us-east-1", :in=>[], :out=>[]}, 
+      "demo_my_srv"=>{:ensure=>"present", :region=>"us-east-1", :in=>["tcp|22|cidr|0.0.0.0/0"], :out=>["tcp|80|cidr|0.0.0.0/0", "tcp|443|cidr|0.0.0.0/0"]}, 
+      "demo_testrole_elb"=>{:ensure=>"present", :region=>"us-east-1", :in=>["tcp|443|cidr|0.0.0.0/0"], :out=>["tcp|443|sg|demo_my_srv"]}} 
+  }
+  
 
   security_group_rules1 = {
       "resource_type" => "security_group_rules",
@@ -717,6 +733,20 @@ describe 'define_environment_resources' do
       }
   }
 
+  load_balancers2 = {
+    "resource_type"=>"load_balancer", 
+    "resources"=> {
+      "demo-testrole" => {
+        :ensure=>"present", 
+        :region=>"us-east-1", 
+        :subnets=>["demopublica", "demopublicb", "demopublicc"], 
+        :listeners=>["https://demo-testrole:443"], 
+        :targets=>[{"name"=>"demo-testrole", "port"=>80, "check_interval"=>30, "timeout"=>5, "healthy"=>5, "failed"=>2, "vpc"=>"demo"}], 
+        :security_groups=>["demo_testrole_elb"]
+      }
+    }
+  } 
+
   rds_subnet_group1 = {
       "resource_type" => "rds_subnet_group",
       "resources" => {
@@ -947,6 +977,23 @@ describe 'define_environment_resources' do
               "desired_instances"=>2,
           }
       }
+  }
+
+  autoscaling_group3 = { 
+    "resource_type"=>"autoscaling_group", 
+    "resources"=>{
+      "demotestrole"=>{
+        "ensure"=>"present", 
+        "region"=>"us-east-1", 
+        "launch_configuration"=>"demotestrole", 
+        "subnets"=>["demopublica", "demopublicb", "demopublicc"], 
+        "tags"=>{"Role"=>"testrole", "Name"=>"testrole_demo"}, 
+        "minimum_instances"=>0, 
+        "desired_instances"=>2, 
+        "maximum_instances"=>2, 
+        "load_balancer"=>"demo-testrole" 
+      }
+    }
   }
 
   deployment_group1 = {
@@ -1477,6 +1524,80 @@ describe 'define_environment_resources' do
     }
   end
 
+  context 'creating an environment with a public zone, a role and a loadbalancer' do
+    it { is_expected.to run.with_params(
+        'demo', 'present', 'us-east-1',
+        {
+            'cidr' => "192.168.0.0/24",
+            'availability' => [ "a", "b", "c"]
+        },
+        {
+            'public' => { }
+        },
+        {
+            "testrole" => {
+                "ec2" => {
+                    "instance_type" => 't2.micro',
+                    "image" => 'ami-6d1c2007',
+                },
+                "zone" => 'public',
+                "services" => [
+                    "my_srv"
+                ],
+            }
+        },
+        {
+            "my_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                    ]
+                },
+                "loadbalanced_ports" => [ 'https|443=>443']
+            }
+        },
+        {},
+        {},
+        {
+            'Environment' => 'demo'
+        },
+        {},
+        {},
+        {},
+        {},
+        {},
+        {
+            'coalesce_sg_per_role' => false
+        }
+    ).and_return(
+        [
+            vpc1,
+            routetable1,
+            subnets1,
+            security_group5,
+            security_group_rules5,
+            internet_gateway1,
+            nat_gateway1,
+            route_table_routes1,
+            load_balancers2,
+            rds_subnet_group1,
+            rds1,
+            launch_configuration2,
+            autoscaling_group3,
+            route53_record_set1,
+            deployment_group1,
+            iam_role2,
+            iam_policies_1,
+            iam_instance_profile2,
+            s3_bucket1,
+            s3_key1
+        ])
+    }
+  end
 
   context 'creating an environment with a public zone, a role and some more complex networking rules' do
     it { is_expected.to run.with_params(

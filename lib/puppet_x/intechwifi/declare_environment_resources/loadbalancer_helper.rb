@@ -26,7 +26,6 @@ module PuppetX
           resources = get_role_names_with_load_balancers(roles, services).map{|role_name|
             generate_load_balancer(name, status, region, role_name, services, load_balancer_role_service_hash, scratch)
           }.reduce({}){|hash, kv| hash.merge(kv) }
-          puts "RESOURCES #{resources}"
           { 'resource_type' => 'load_balancer', 'resources' => resources }
         end
 
