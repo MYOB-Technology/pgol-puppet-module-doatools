@@ -102,26 +102,21 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:security_groups] = launch_config["SecurityGroups"].map {|id|
       PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'security-group', id ){| *arg | awscli(*arg) }
     }
-    puts "EEEEEEEEEEEEEEEEEEE"
 
     @property_hash[:userdata] = Base64.decode64(launch_config["UserData"])
     @property_hash[:ssh_key_name] = launch_config["KeyName"]
     @property_hash[:iam_instance_profile] = launch_config["IamInstanceProfile"]
     @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(launch_config["AssociatePublicIpAddress"]) if launch_config.has_key?("AssociatePublicIpAddress")
-    puts "DDDDDDDDDDDDDDDDDDDD"
 
     ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(@property_hash[:region], @property_hash[:image]) {| *arg | awscli(*arg) }
-    puts "CCCCCCCCCCCCCCCCCCCC"
 
     # ami_block_device_mapping = get_ami_block_device_mapping(@property_hash[:region], @property_hash[:image])
     block_device_mapping = launch_config['BlockDeviceMappings']
     @property_hash[:image_disks] = ami_block_device_hash
-    puts "BBBBBBBBBBBBBBBBBBBB"
     @property_hash[:extra_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_extra_disks_from_block_device_hash(block_device_mapping, ami_block_device_hash)
 
     #@property_hash[:image_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_image_disks_from_block_device_mapping(block_device_mapping, ami_block_device_mapping)
     #@property_hash[:extra_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_extra_disks_from_block_device_mapping(block_device_mapping, ami_block_device_mapping)
-    puts "AAAAAAAAAAAAAAAAAAAA"
 
     true
 
@@ -153,6 +148,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
   def flush
     if @property_flush and @property_flush.length > 0
+      notice("Flushing new property values to launch configuration")
       # We need to create a new launch configuration here every time there is a property change
       @property_flush[:index] = @property_hash[:index] + 1
       new_name = [@property_hash[:name], PuppetX::IntechWIFI::Autoscaling_Rules.encode_index(@property_flush[:index])].join
@@ -167,6 +163,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
           "--image-id", value(:image),
           "--instance-type", value(:instance_type)
       ]
+
+      puts "EEEEEEEEEEEEEEEEEEE"
+
       #  Add in security groups
       if (value(:security_groups).nil? == false) and (value(:security_groups).length > 0)
         args << [
@@ -176,6 +175,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
             }
         ]
       end
+      puts "DDDDDDDDDDDDDDDDDDDD"
+
       if (value(:userdata).nil? == false) and (value(:userdata).length > 0)
         userdata_temp_file = Tempfile.new('userdata')
         userdata_temp_file.write(value(:userdata))
@@ -185,6 +186,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
             "--user-data", "file://#{userdata_temp_file.path}"
         ]
       end
+      puts "CCCCCCCCCCCCCCCCCCCC"
+
       if (value(:ssh_key_name).nil? == false) and (value(:ssh_key_name).length > 0)
         args << [
             "--key-name", "#{value(:ssh_key_name)}"
@@ -201,7 +204,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
       extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
-      ami_disks_configured = value(:image_disks).nil? ? [] : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
+      ami_disks_configured = value(:image_disks).nil? ? {} : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
+      puts "BBBBBBBBBBBBBBBBBBBBBBB"
+
       ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
 
       merged_ami_disks = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, ami_disks_configured 
@@ -214,6 +219,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
       #  Create the new launch_configuration
       awscli(args)
+      puts "AAAAAAAAABBBBBBBBBBBBB"
 
       userdata_temp_file.unlink if !userdata_temp_file.nil?
 
@@ -225,6 +231,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
           awscli("autoscaling", "delete-launch-configuration", '--region', value(:region), "--launch-configuration-name", lc)
         }
       end
+      puts "AAAAAAAAAAAAAAAAAAAA"
 
     end
   end
