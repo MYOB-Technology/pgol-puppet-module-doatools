@@ -47,13 +47,12 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     puts "resource[:region]=#{resource[:region]}"
     puts "XXXXXXXXXXXXXXXXX"
 
-    {
+    begin
       self.image_disks = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(resource[:region], resource[:image]) {| *arg | awscli(*arg) }
 
-    rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+    rescue PuppetX::IntechWIFI::Exceptions::NotFoundError
       fail("the AMI '#{resource[:image]}' is not known by AWS.  Has it been deleted? or retired?")
-      raise PuppetX::IntechWIFI::Exceptions::UnknownAmiError, resource[:image]
-    }
+    end
     self.extra_disks = resource[:extra_disks]
 
 
