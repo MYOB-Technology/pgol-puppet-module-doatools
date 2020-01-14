@@ -122,13 +122,13 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     if @property_flush and @property_flush.length > 0
       set_subnets(@property_flush[:subnets]) if !@property_flush[:subnets].nil?
       puts "creating targets"
-      @property_flush[:targets].select{|x| !@property_hash[:targets].any?{|y| same_target_name(x, y)}}.each{|x| create_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
+      @property_flush[:targets].select{|x| !@property_hash[:targets].any?{|y| same_target_name(x, y)}}.each{|x| create_target(@property_hash[:region], x)} unless @property_flush[:targets].nil?
       puts "creating listeners"
-      @property_flush[:listeners].select{|x| !@property_hash[:listeners].include?(x)}.each{|x| create_listener(x)} if !@property_flush[:listeners].nil?
+      @property_flush[:listeners].select{|x| !@property_hash[:listeners].include?(x)}.each{|x| create_listener(x)} unless @property_flush[:listeners].nil?
       puts "destroying listeners"
-      @property_hash[:listeners].select{|x| !@property_flush[:listeners].include?(x)}.each{|x| destroy_listener(x)} if !@property_flush[:listeners].nil?
+      @property_hash[:listeners].select{|x| !@property_flush[:listeners].include?(x)}.each{|x| destroy_listener(x)} unless @property_flush[:listeners].nil?
       puts "destorying targets"
-      @property_hash[:targets].select{|x| !@property_flush[:targets].any?{|y| same_target_name(x, y)}}.each{|x| destroy_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
+      @property_hash[:targets].select{|x| !@property_flush[:targets].any?{|y| same_target_name(x, y)}}.each{|x| destroy_target(@property_hash[:region], x)} unless @property_flush[:targets].nil?
 
       puts "modifying targets"
       @property_flush[:targets].select{|x| @property_hash[:targets].any?{|y| same_target_name(x, y) and x != y } }.each{|x| modify_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
@@ -161,7 +161,9 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def create_listener(source)
+    puts 'CREATING LISTENER'
     match = /^(http[s]?):\/\/([a-z1-9\-]{3,255}):([0-9]{2,4})/.match(source)
+    puts "MATCH #{match}"
     proto = match[1]
     target = match[2]
     port = match[3]
@@ -177,7 +179,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--port', port,
         '--default-actions', "Type=forward,TargetGroupArn=#{PuppetX::IntechWIFI::AwsCmds.find_elb_target_by_name(target, @property_hash[:region]){|*args| awscli(*args)}}"
     ]
-    args << ['--certificates', "CertificateArn=#{certificate}"] if proto=="https" and !certificate.nil?
+    args << ['--certificates', "CertificateArn=#{certificate}"] if proto=="https" && !certificate.nil?
     awscli(args.flatten)
 
   end
