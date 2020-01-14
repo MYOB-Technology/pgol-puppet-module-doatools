@@ -88,7 +88,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(launch_config["AssociatePublicIpAddress"]) if launch_config.has_key?("AssociatePublicIpAddress")
 
 
-    ami_block_device_hash AwsCmds.find_disks_by_ami(@property_hash[:region], @property_hash[:image]) {| *arg | awscli(*arg) }
+    ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(@property_hash[:region], @property_hash[:image]) {| *arg | awscli(*arg) }
     # ami_block_device_mapping = get_ami_block_device_mapping(@property_hash[:region], @property_hash[:image])
     block_device_mapping = launch_config['BlockDeviceMappings']
     @property_hash[:image_disks] = ami_block_device_hash
