@@ -26,6 +26,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
+    puts "called launch_configuration.create"
+    notice("called launch_configuration.create")
+
     #  Since we cannot update properties after creating a launch configuration, we actually create the new launch configuration
     #  when we flush the properties.
     @property_hash[:index] = 0
@@ -61,6 +64,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   end
 
   def exists?
+    puts "called launch_configuration.exists?"
+    notice("called launch_configuration.exists?")
+
     #
     #  If the puppet manifest is delcaring the existance of a subnet then we know its region.
     #
@@ -70,7 +76,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     #  If we don't know the region, then we have to search each region in turn.
     #
     regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
-
     debug("searching regions=#{regions} for launch_configuration=#{resource[:name]}\n")
 
     #  launch configurations cannot be modified in place. When we change properties we have to create a new one. to handle this
