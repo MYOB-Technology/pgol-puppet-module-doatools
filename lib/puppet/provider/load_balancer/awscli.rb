@@ -92,14 +92,18 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
     data = search_results[:data][0]
     @arn = data["LoadBalancerArn"]
+    puts "ARN #{@arn}"
     @property_hash[:subnets] = data["AvailabilityZones"].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'subnet', subnet["SubnetId"]){|*arg| awscli(*arg)} }
+    puts "Subnets #{@property_hash[:subnets]}"
     @property_hash[:listeners] = JSON.parse(awscli('elbv2', 'describe-listeners', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["Listeners"].map do |x|
       "#{x["Protocol"].downcase}://#{target_from_arn x["DefaultActions"][0]["TargetGroupArn"]}:#{x["Port"]}#{x["Certificates"].nil? ? "" : ("?certificate=" + x["Certificates"][0]["CertificateArn"])}"
     end
+    puts "listeners #{@property_hash[:listeners]}"
     @property_hash[:targets] = list_elb_targets()
+    puts "targets #{@property_hash[:targets]}"
 
     @property_hash[:security_groups] = data["SecurityGroups"].map{|sg| PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'security-group', sg){| *arg | awscli(*arg)} }
-
+    puts "security_groups #{@property_hash[:security_groups]}"
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
