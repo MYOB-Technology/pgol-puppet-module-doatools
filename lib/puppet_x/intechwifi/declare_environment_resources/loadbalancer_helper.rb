@@ -38,7 +38,7 @@ module PuppetX
                   :listeners => load_balancer_role_service_hash[role_name].map{|service|
                     service['loadbalanced_ports'].map{|port| parse_shared_port(port)}
                   }.flatten.map{|porthash|
-                    (porthash.has_key?(:certificate) and porthash.has_key?(:protocol) and porthash[:protocol] == 'https') ?
+                    (porthash.has_key?(:certificate) && porthash.has_key?(:protocol) && porthash[:protocol] === 'https') ?
                         "https://#{generate_loadbalancer_target_name(name, role_name)}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
                         "#{porthash[:protocol]}://#{generate_loadbalancer_target_name(name, role_name)}:#{porthash[:listen_port]}"
                   }.uniq,
@@ -66,7 +66,7 @@ module PuppetX
         end
 
         def self.generate_loadbalancer_target_name(name, role_name)
-          transcode_loadbalancer_name("#{name}-#{role_name}")
+          transcode_loadbalancer_name("#{name}-#{role_name}").downcase
         end
 
         def self.transcode_loadbalancer_name(name)
