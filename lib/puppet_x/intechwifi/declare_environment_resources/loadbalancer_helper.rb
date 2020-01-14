@@ -62,7 +62,7 @@ module PuppetX
         end
 
         def self.generate_loadbalancer_name(name, role_name)
-          transcode_loadbalancer_name("#{name}-#{role_name}")
+          transcode_loadbalancer_name("#{name}-#{role_name}").downcase
         end
 
         def self.generate_loadbalancer_target_name(name, role_name)
