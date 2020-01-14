@@ -101,6 +101,11 @@ Puppet::Type.newtype(:launch_configuration) do
 
   newproperty(:image_disks) do
     defaultto {}
+    def insync?(is)
+      # make sure that all hash keys defined are set on the resource, and are the same value
+      @should.keys.all?{|v| @is.has_key v} and @should.keys.all?{|v| is[v] == @should[v]}
+    end
+
   end
 
   newproperty(:extra_disks, :array_matching => :all) do
