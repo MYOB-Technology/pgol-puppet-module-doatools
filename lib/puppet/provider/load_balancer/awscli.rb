@@ -116,15 +116,23 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def flush
+    puts "IM IN FLUSH"
+    puts "PROPERTY_FLISH #{@property_flish}"
     if @property_flush and @property_flush.length > 0
       set_subnets(@property_flush[:subnets]) if !@property_flush[:subnets].nil?
+      puts "creating targets"
       @property_flush[:targets].select{|x| !@property_hash[:targets].any?{|y| same_target_name(x, y)}}.each{|x| create_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
+      puts "creating listeners"
       @property_flush[:listeners].select{|x| !@property_hash[:listeners].include?(x)}.each{|x| create_listener(x)} if !@property_flush[:listeners].nil?
+      puts "destroying listeners"
       @property_hash[:listeners].select{|x| !@property_flush[:listeners].include?(x)}.each{|x| destroy_listener(x)} if !@property_flush[:listeners].nil?
+      puts "destorying targets"
       @property_hash[:targets].select{|x| !@property_flush[:targets].any?{|y| same_target_name(x, y)}}.each{|x| destroy_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
 
+      puts "modifying targets"
       @property_flush[:targets].select{|x| @property_hash[:targets].any?{|y| same_target_name(x, y) and x != y } }.each{|x| modify_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
 
+      puts 'executing aws clie code'
       awscli([
           'elbv2', 'set-security-groups',
           '--region', @property_hash[:region],
@@ -132,6 +140,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
           '--security-groups', @property_flush[:security_groups].map{|x| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'security-group', x){|*arg| awscli(*arg)}  }
       ].flatten) if !@property_flush[:security_groups].nil?
 
+      puts ' finished flush'
     end
   end
 
