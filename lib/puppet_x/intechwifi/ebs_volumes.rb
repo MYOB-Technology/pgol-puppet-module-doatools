@@ -52,7 +52,7 @@ module PuppetX
 
         def self.get_extra_disks_from_block_device_hash(block_device_mapping, ami_image_hash)
           block_device_mapping.select { | mapping|
-            !ami_image_heys.keys?(mapping[DEVICE_NAME))
+            !ami_image_hash.keys?(mapping[DEVICE_NAME])
           }.map { |mapping| mapping['Ebs'] }
         end
 
