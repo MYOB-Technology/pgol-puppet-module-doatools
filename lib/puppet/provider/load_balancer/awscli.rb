@@ -23,6 +23,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
+    puts "IM IN CREATE"
     args = [
         'elbv2', 'create-load-balancer',
         '--region', @resource[:region],
@@ -67,6 +68,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def exists?
+    puts "IM IN EXISTS"
     #
     #  If the puppet manifest is delcaring the existance of a VPC then we know its region.
     #
@@ -83,6 +85,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     search_results = PuppetX::IntechWIFI::AwsCmds.find_load_balancer_by_name(regions, resource[:name]) do | *arg |
       awscli(*arg)
     end
+    puts "SEARCH RESULTS #{search_results}"
 
     @property_hash[:region] = search_results[:region]
     @property_hash[:name] = resource[:name]
