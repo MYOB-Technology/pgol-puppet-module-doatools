@@ -61,20 +61,26 @@ module PuppetX
       end
 
       def self.get_load_balancer( name, region, &aws_command)
+        puts "#{name} GETTING LOAD BALANCER"
         args = [
             'autoscaling', 'describe-load-balancer-target-groups',
             '--region', region,
             '--auto-scaling-group-name', name
         ]
 
-        result = JSON.parse(aws_command.call(args.flatten))["LoadBalancerTargetGroups"]
 
-        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
-        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
+        result = JSON.parse(aws_command.call(args.flatten))
+        puts "ELB RESULTS #{result}"
+        result2 = result["LoadBalancerTargetGroups"]
+        puts "ELB RESULTS2 #{result2}"
 
-        result.map{|data|
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result2.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result2.length > 1  #  Multiple matches
+
+        shit = result2.map{|data|
           /^arn:aws:elasticloadbalancing:[a-z\-0-9]+:[0-9]+:targetgroup\/([0-9a-z\-]+)\/[0-9a-f]+$/.match(data['LoadBalancerTargetGroupARN'])[1]
         }[0]
+        puts "THE SHIT #{shit}"
       rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
         nil
       end
