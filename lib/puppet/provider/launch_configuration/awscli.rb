@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+require 'puppet'
 require 'json'
 require 'tempfile'
 require 'puppet_x/intechwifi/constants'
@@ -87,6 +88,11 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:iam_instance_profile] = launch_config["IamInstanceProfile"]
     @property_hash[:public_ip] = PuppetX::IntechWIFI::Logical.logical(launch_config["AssociatePublicIpAddress"]) if launch_config.has_key?("AssociatePublicIpAddress")
 
+    puppet.notice "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    puppet.notice "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    puppet.notice "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    puppet.notice "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    puppet.notice "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
     ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(@property_hash[:region], @property_hash[:image]) {| *arg | awscli(*arg) }
     # ami_block_device_mapping = get_ami_block_device_mapping(@property_hash[:region], @property_hash[:image])
