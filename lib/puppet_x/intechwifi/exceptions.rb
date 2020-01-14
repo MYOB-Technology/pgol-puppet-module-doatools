@@ -56,6 +56,13 @@ module PuppetX
         end
       end
 
+      class UnknownAmiError < StandardError
+        def initialize(data)
+          super("the AMI '#{data}' is not known by AWS.  As it been expired?")
+        end
+      end
+
+
     end
   end
 end

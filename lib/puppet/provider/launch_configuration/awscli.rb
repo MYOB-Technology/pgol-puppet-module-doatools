@@ -47,9 +47,15 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     puts "resource[:region]=#{resource[:region]}"
     puts "XXXXXXXXXXXXXXXXX"
 
-    self.image_disks = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(resource[:region], resource[:image]) {| *arg | awscli(*arg) }
+    {
+      self.image_disks = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(resource[:region], resource[:image]) {| *arg | awscli(*arg) }
 
+    rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+      fail("the AMI '#{resource[:image]}' is not known by AWS.  Has it been deleted? or retired?")
+      raise PuppetX::IntechWIFI::Exceptions::UnknownAmiError, resource[:image]
+    }
     self.extra_disks = resource[:extra_disks]
+
 
     @property_hash[:region] = resource[:region]
 
@@ -76,12 +82,14 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     #  If we don't know the region, then we have to search each region in turn.
     #
     regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
-    debug("searching regions=#{regions} for launch_configuration=#{resource[:name]}\n")
+    notice("searching regions=#{regions} for launch_configuration=#{resource[:name]}\n")
 
     #  launch configurations cannot be modified in place. When we change properties we have to create a new one. to handle this
     #  we add a sequential 6 digit number on the end of the launch configuration.
 
+
     launch_config = PuppetX::IntechWIFI::AwsCmds.find_launch_configuration_by_name(regions,resource[:name]) {| *arg | awscli(*arg) }
+    notice("Found the LaunchConfiguration '#{launch_config["LaunchConfigurationName"]}'."
 
     @property_hash[:ensure] = :present
     #!TODO: Region should really be extracted from the ARN value.
@@ -89,6 +97,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:name] = resource[:name]
 
     @property_hash[:index] = PuppetX::IntechWIFI::Autoscaling_Rules.index(launch_config["LaunchConfigurationName"])
+    notice("Found the LaunchConfiguration Index is #{@property_hash[:index]}."
     @property_hash[:image] = launch_config["ImageId"]
     @property_hash[:instance_type] = launch_config["InstanceType"]
     @property_hash[:security_groups] = launch_config["SecurityGroups"].map {|id|
