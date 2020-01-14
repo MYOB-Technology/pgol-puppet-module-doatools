@@ -275,10 +275,13 @@ module PuppetX
             '--region', region,
             '--image-ids', ami
         ))
+        puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+        puts "details=#{details}"
+
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if details.length == 0
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if details.length > 1  #  Multiple matches
 
-        details[0]['BlockDeviceMappings'].select{ |ami|
+        result = details[0]['BlockDeviceMappings'].select{ |ami|
             ami.key?('Ebs')
         }.map{ |ami|
             {
@@ -286,6 +289,11 @@ module PuppetX
             }
         }.reduce({}) { |memo, data| memo.merge(data) }
 
+        puts "result=#{result}"
+        puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+
+
+        result
       end
     end
   end
