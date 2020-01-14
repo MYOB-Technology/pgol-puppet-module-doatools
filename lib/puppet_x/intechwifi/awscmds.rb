@@ -278,10 +278,10 @@ module PuppetX
         puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
         puts "details=#{details}"
 
-        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if details.length == 0
-        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if details.length > 1  #  Multiple matches
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if details['Images'].length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if details['Images'].length > 1  #  Multiple matches
 
-        result = details[0]['BlockDeviceMappings'].select{ |ami|
+        result = details['Images'][0]['BlockDeviceMappings'].select{ |ami|
             ami.key?('Ebs')
         }.map{ |ami|
             {
