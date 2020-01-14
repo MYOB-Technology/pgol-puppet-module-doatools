@@ -162,6 +162,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
   def create_listener(source)
     puts 'CREATING LISTENER'
+    puts "SOURCE #{source}"
     match = /^(http[s]?):\/\/([a-z1-9\-]{3,255}):([0-9]{2,4})/.match(source)
     puts "MATCH #{match}"
     proto = match[1]
