@@ -23,7 +23,6 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
-    puts "IM IN CREATE"
     args = [
         'elbv2', 'create-load-balancer',
         '--region', @resource[:region],
@@ -68,7 +67,6 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def exists?
-    puts "IM IN EXISTS"
     #
     #  If the puppet manifest is delcaring the existance of a VPC then we know its region.
     #
@@ -85,25 +83,19 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     search_results = PuppetX::IntechWIFI::AwsCmds.find_load_balancer_by_name(regions, resource[:name]) do | *arg |
       awscli(*arg)
     end
-    puts "SEARCH RESULTS #{search_results}"
 
     @property_hash[:region] = search_results[:region]
     @property_hash[:name] = resource[:name]
 
     data = search_results[:data][0]
     @arn = data["LoadBalancerArn"]
-    puts "ARN #{@arn}"
     @property_hash[:subnets] = data["AvailabilityZones"].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'subnet', subnet["SubnetId"]){|*arg| awscli(*arg)} }
-    puts "Subnets #{@property_hash[:subnets]}"
     @property_hash[:listeners] = JSON.parse(awscli('elbv2', 'describe-listeners', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["Listeners"].map do |x|
       "#{x["Protocol"].downcase}://#{target_from_arn x["DefaultActions"][0]["TargetGroupArn"]}:#{x["Port"]}#{x["Certificates"].nil? ? "" : ("?certificate=" + x["Certificates"][0]["CertificateArn"])}"
     end
-    puts "listeners #{@property_hash[:listeners]}"
     @property_hash[:targets] = list_elb_targets()
-    puts "targets #{@property_hash[:targets]}"
 
     @property_hash[:security_groups] = data["SecurityGroups"].map{|sg| PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'security-group', sg){| *arg | awscli(*arg)} }
-    puts "security_groups #{@property_hash[:security_groups]}"
     true
 
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
@@ -116,24 +108,15 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def flush
-    puts "IM IN FLUSH"
-    puts "PROPERTY_FLISH #{@property_flush}"
-    puts "PROPERTY_Hash #{@property_hash}"
     if @property_flush and @property_flush.length > 0
       set_subnets(@property_flush[:subnets]) if !@property_flush[:subnets].nil?
-      puts "creating targets"
       @property_flush[:targets].select{|x| !@property_hash[:targets].any?{|y| same_target_name(x, y)}}.each{|x| create_target(@property_hash[:region], x)} unless @property_flush[:targets].nil?
-      puts "creating listeners"
       @property_flush[:listeners].select{|x| !@property_hash[:listeners].include?(x)}.each{|x| create_listener(x)} unless @property_flush[:listeners].nil?
-      puts "destroying listeners"
       @property_hash[:listeners].select{|x| !@property_flush[:listeners].include?(x)}.each{|x| destroy_listener(x)} unless @property_flush[:listeners].nil?
-      puts "destorying targets"
       @property_hash[:targets].select{|x| !@property_flush[:targets].any?{|y| same_target_name(x, y)}}.each{|x| destroy_target(@property_hash[:region], x)} unless @property_flush[:targets].nil?
 
-      puts "modifying targets"
       @property_flush[:targets].select{|x| @property_hash[:targets].any?{|y| same_target_name(x, y) and x != y } }.each{|x| modify_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
 
-      puts 'executing aws clie code'
       awscli([
           'elbv2', 'set-security-groups',
           '--region', @property_hash[:region],
@@ -141,7 +124,6 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
           '--security-groups', @property_flush[:security_groups].map{|x| PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@resource[:region], 'security-group', x){|*arg| awscli(*arg)}  }
       ].flatten) if !@property_flush[:security_groups].nil?
 
-      puts ' finished flush'
     end
   end
 
@@ -161,10 +143,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def create_listener(source)
-    puts 'CREATING LISTENER'
-    puts "SOURCE #{source}"
     match = /^(http[s]?):\/\/([a-z1-9\-]{3,255}):([0-9]{2,4})/.match(source)
-    puts "MATCH #{match}"
     proto = match[1]
     target = match[2]
     port = match[3]
