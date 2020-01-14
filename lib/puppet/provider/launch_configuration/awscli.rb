@@ -88,7 +88,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
 
     launch_config = PuppetX::IntechWIFI::AwsCmds.find_launch_configuration_by_name(regions,resource[:name]) {| *arg | awscli(*arg) }
-    notice("Found the LaunchConfiguration '#{launch_config["LaunchConfigurationName"]}'."
+    notice("Found the LaunchConfiguration '#{launch_config["LaunchConfigurationName"]}'.")
 
     @property_hash[:ensure] = :present
     #!TODO: Region should really be extracted from the ARN value.
