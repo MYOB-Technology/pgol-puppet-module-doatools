@@ -89,13 +89,13 @@ module PuppetX
 
         def self.get_role_names_with_load_balancers(server_roles, services)
           server_roles.select {|role_name, role_data|
-            role_data.has_key?('services') and role_data['services'].any?{|service_name| service_have_loadbalanced_ports?(services, service_name)}
+            role_data.has_key?('services') && role_data['services'].any?{|service_name| service_have_loadbalanced_ports?(services, service_name)}
           }.map{|role_name, role_data| role_name }
         end
 
         def self.generate_services_with_loadbalanced_ports_by_role(server_roles, services)
           server_roles.select {|role_name, role_data|
-            role_data.has_key?('services') and role_data['services'].any?{|service_name| service_have_loadbalanced_ports?(services, service_name)}
+            role_data.has_key?('services') && role_data['services'].any?{|service_name| service_have_loadbalanced_ports?(services, service_name)}
           }.map{|role_name, role_data|
             {
                 role_name => role_data['services'].select{|service_name|
@@ -110,7 +110,7 @@ module PuppetX
             .map{|role_name| { 'name' => calculate_security_group_name(name, role_name), 'description' => 'load balancer security group' } }
         end
 
-        def calculate_security_group_name(name, role_name)
+        def self.calculate_security_group_name(name, role_name)
           "#{name}_#{role_name}_elb"
         end
 
