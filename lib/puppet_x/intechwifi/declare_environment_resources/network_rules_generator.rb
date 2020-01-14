@@ -51,7 +51,7 @@ module PuppetX
         def generate(name, roles, services, label_format, db_servers)
           RoleHelpers.calculate_network_rules(name, roles, services, label_format)
             .concat(RdsHelpers.calculate_role_network_rules(name, roles, services, db_servers, label_format))
-            .concat(LoadBalancerHelper.calculate_service_network_rules(name, roles, services, label_format))
+            .concat(LoadBalancerHelper.calculate_role_network_rules(name, roles, services, label_format))
         end
       end
     end
