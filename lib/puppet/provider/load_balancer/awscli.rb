@@ -117,7 +117,8 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
   def flush
     puts "IM IN FLUSH"
-    puts "PROPERTY_FLISH #{@property_flish}"
+    puts "PROPERTY_FLISH #{@property_flush}"
+    puts "PROPERTY_Hash #{@property_hash}"
     if @property_flush and @property_flush.length > 0
       set_subnets(@property_flush[:subnets]) if !@property_flush[:subnets].nil?
       puts "creating targets"
