@@ -39,13 +39,10 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     self.public_ip = resource[:public_ip]
     #  Use the aws details as the default, and the image disks data as the overrides.
 
-    puppet.notice "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    puppet.notice "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    puppet.notice "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    puppet.notice "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    puppet.notice "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    puppet.notice "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-
+    puts("XXXXXXXXXXXXXXXXX")
+    puts("resource[:image]=#{resource[:image]}"
+    puts("resource[:region]=#{resource[:region]}"
+    puts("XXXXXXXXXXXXXXXXX")
 
     self.image_disks = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(resource[:region], resource[:image]) {| *arg | awscli(*arg) }
 
