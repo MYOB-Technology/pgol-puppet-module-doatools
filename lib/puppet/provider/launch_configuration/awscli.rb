@@ -117,6 +117,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     #@property_hash[:image_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_image_disks_from_block_device_mapping(block_device_mapping, ami_block_device_mapping)
     #@property_hash[:extra_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_extra_disks_from_block_device_mapping(block_device_mapping, ami_block_device_mapping)
+    notice("Successfully exiting exitst?")
 
     true
 
