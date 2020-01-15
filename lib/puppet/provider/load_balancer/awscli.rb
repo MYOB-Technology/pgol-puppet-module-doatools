@@ -260,6 +260,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
   def list_elb_targets()
     JSON.parse(awscli('elbv2', 'describe-target-groups', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["TargetGroups"].map do |x|
+      puts "TARGET GROUP #{x}"
       {
           "name" => x["TargetGroupName"],
           "port" => x["Port"],
