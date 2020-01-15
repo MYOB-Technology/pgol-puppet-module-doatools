@@ -124,7 +124,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:image_disks] = lc_block_device_hash.select { |device, settings| ami_block_device_hash.has_key? device }
 
     #  Extra disks only contain disk info that is not part of the original ami
-    @property_hash[:extra_disks] = lc_block_device_hash.select { |device, settings| !ami_block_device_hash.has_key? device }
+    @property_hash[:extra_disks] = lc_block_device_hash.select { |device, settings| !ami_block_device_hash.has_key? device }.map{ | key, value| value }
 
     notice("Successfully exiting exitst?")
 
