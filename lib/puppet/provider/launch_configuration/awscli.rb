@@ -95,7 +95,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     @property_hash[:name] = resource[:name]
 
     @property_hash[:index] = PuppetX::IntechWIFI::Autoscaling_Rules.index(launch_config["LaunchConfigurationName"])
-    notice("Found the LaunchConfiguration Index is #{@property_hash[:index]}.")
+    debug("Found the LaunchConfiguration Index is #{@property_hash[:index]}.")
     @property_hash[:image] = launch_config["ImageId"]
     @property_hash[:instance_type] = launch_config["InstanceType"]
     @property_hash[:security_groups] = launch_config["SecurityGroups"].map {|id|

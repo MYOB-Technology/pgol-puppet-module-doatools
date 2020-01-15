@@ -102,9 +102,6 @@ Puppet::Type.newtype(:launch_configuration) do
   newproperty(:image_disks) do
     defaultto {}
     def insync?(is)
-      puts "should=#{@should}"
-      puts "is=#{is}"
-
       result = (@should.length == 0 && is.keys.length == 0) ||
         @should.all?{|s|
           # all top level keys are devices. These lists should contain the same keys if we are in sync
@@ -112,15 +109,12 @@ Puppet::Type.newtype(:launch_configuration) do
             # then we need to check each device in turn and make sure that all should keys and value are identical in is.
             s[device].keys.all?{|param|
               is_has_key = is[device].has_key? param
-              puts "device=#{device} testing key param=#{param} is_has_key=#{is_has_key}"
               is_key_present = is[device][param] == s[device][param] if is_has_key
-              puts "device=#{device} testing key param=#{param} is=#{is[device][param]} s=#{s[device][param]}"
 
               is[device].has_key? param and is[device][param] == s[device][param]
             }
           }
         }
-      puts "result=#{result}"
       result
     end
 
