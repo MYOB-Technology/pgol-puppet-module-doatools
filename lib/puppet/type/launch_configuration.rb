@@ -109,8 +109,8 @@ Puppet::Type.newtype(:launch_configuration) do
       result = ( @should.length == 0 and is.keys.length == 0 ) or
         @should.all?{|s|
           # all top level keys are devices. These lists should contain the same keys if we are in sync
-          s.keys.all?{|device| is.has_key device} and
-          is.keys.all?{|device| s.has_key device} and
+          s.keys.all?{|device| is.has_key? device} and
+          is.keys.all?{|device| s.has_key? device} and
           s.keys.all?{|device|
             # then we need to check each device in turn and make sure that all should keys and value are identical in is.
             s[device].keys.all?{|param|
