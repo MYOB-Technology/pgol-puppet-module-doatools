@@ -85,7 +85,6 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
 
   def exists?
-    puts 'IN EXISTS'
     #
     #  If the puppet manifest is delcaring the existance of a subnet then we know its region.
     #
@@ -98,7 +97,6 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
     debug("searching regions=#{regions} for autoscaling_group=#{resource[:name]}\n")
 
-    puts "finding ASG #{resource[:name]}"
     search = PuppetX::IntechWIFI::AwsCmds.find_autoscaling_by_name(regions, resource[:name]) do | *arg |
       awscli(*arg)
     end
@@ -112,14 +110,12 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     @property_hash[:minimum_instances] = Integer(data["MinSize"])
     @property_hash[:maximum_instances] = Integer(data["MaxSize"])
     @property_hash[:launch_configuration] = PuppetX::IntechWIFI::Autoscaling_Rules.base_lc_name(data["LaunchConfigurationName"])
-    puts "finding subnets"
     @property_hash[:subnets] = data["VPCZoneIdentifier"].split(",").map{|subnet|
       PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'subnet', subnet){|*arg| awscli(*arg)}
     }
     @property_hash[:healthcheck_grace] = Integer(data["HealthCheckGracePeriod"])
     @property_hash[:healthcheck_type] = data["HealthCheckType"]
     @property_hash[:tags] = convert_aws_to_puppet_tags(data['Tags'])
-    puts "finding ELB"
     @property_hash[:load_balancer] = PuppetX::IntechWIFI::Autoscaling_Rules.get_load_balancer(@property_hash[:name], @property_hash[:region]){|*arg| awscli(*arg)}
 
 
@@ -129,15 +125,12 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
       @property_hash[:launch_configuration] = @property_hash[:launch_configuration] + "_expired"
     end
 
-    puts 'DONE EXISTS'
     true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
-    puts 'none found'
     debug(e)
     false
 
   rescue PuppetX::IntechWIFI::Exceptions::MultipleMatchesError => e
-    puts 'too many found'
     fail(e)
     false
 
