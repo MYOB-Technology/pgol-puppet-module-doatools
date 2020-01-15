@@ -85,7 +85,6 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
 
   def exists?
-    puts 'IM IN EXISTS'
     #
     #  If the puppet manifest is delcaring the existance of a subnet then we know its region.
     #
@@ -101,34 +100,23 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     search = PuppetX::IntechWIFI::AwsCmds.find_autoscaling_by_name(regions, resource[:name]) do | *arg |
       awscli(*arg)
     end
-    puts "SEARCH #{search}"
 
     data = search[:data]
-    puts "SEARCH #{data}"
 
     @property_hash[:name] = resource[:name]
     @property_hash[:region]= search[:region]
 
     @property_hash[:desired_instances] = data["DesiredCapacity"]
-    puts "desired_instances #{@property_hash[:desired_instances]}"
     @property_hash[:minimum_instances] = Integer(data["MinSize"])
-    puts "minimum_instances #{@property_hash[:minimum_instances]}"
     @property_hash[:maximum_instances] = Integer(data["MaxSize"])
-    puts "maximum_instances #{@property_hash[:maximum_instances]}"
     @property_hash[:launch_configuration] = PuppetX::IntechWIFI::Autoscaling_Rules.base_lc_name(data["LaunchConfigurationName"])
-    puts "launch_configuration #{@property_hash[:launch_configuration]}"
     @property_hash[:subnets] = data["VPCZoneIdentifier"].split(",").map{|subnet|
       PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'subnet', subnet){|*arg| awscli(*arg)}
     }
-    puts "subnets #{@property_hash[:subnets]}"
     @property_hash[:healthcheck_grace] = Integer(data["HealthCheckGracePeriod"])
-    puts "healthcheck_grace #{@property_hash[:healthcheck_grace]}"
     @property_hash[:healthcheck_type] = data["HealthCheckType"]
-    puts "healthcheck_type #{@property_hash[:healthcheck_type]}"
     @property_hash[:tags] = convert_aws_to_puppet_tags(data['Tags'])
-    puts "tags #{@property_hash[:tags]}"
     @property_hash[:load_balancer] = PuppetX::IntechWIFI::Autoscaling_Rules.get_load_balancer(@property_hash[:name], @property_hash[:region]){|*arg| awscli(*arg)}
-    puts "load_balancer #{@property_hash[:load_balancer]}"
 
 
     # Do we need to update the launch_configuration?
@@ -136,7 +124,6 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
       self.launch_configuration = @property_hash[:launch_configuration]
       @property_hash[:launch_configuration] = @property_hash[:launch_configuration] + "_expired"
     end
-    puts 'did i finish exists'
 
     true
 
@@ -151,7 +138,6 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
 
   def flush
-    puts 'AM I IN FLUSH'
     if !@property_flush.nil? and @property_flush.length > 0
       args = [
           "autoscaling", "update-auto-scaling-group", "--region", @property_hash[:region],
@@ -178,13 +164,11 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
 
   def update_loadbalancer(region, autoscaling_name, from, to)
-    puts 'UPDATE LOADBALANCER'
     remove_loadbalancer(region, autoscaling_name, from) if !from.nil?
     add_loadbalancer(region, autoscaling_name, to) if !to.nil?
   end
 
   def add_loadbalancer(region, autoscaling_name, target_group)
-    puts 'ADD LOADBALANCER'
     args = [
         'autoscaling', 'attach-load-balancer-target-groups',
         '--region', region,
