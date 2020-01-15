@@ -129,8 +129,8 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
       @property_hash[:launch_configuration] = @property_hash[:launch_configuration] + "_expired"
     end
 
-    true
     puts 'DONE EXISTS'
+    true
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     puts 'none found'
     debug(e)
