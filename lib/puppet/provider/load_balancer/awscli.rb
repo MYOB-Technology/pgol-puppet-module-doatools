@@ -143,12 +143,15 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def create_listener(source)
+    puts "CREATE LISTENER #{source}"
     match = /^(http[s]?):\/\/([a-zA-Z1-9\-]{3,255}):([0-9]{2,4})/.match(source)
+    puts "MATCH #{match}"
     proto = match[1]
     target = match[2]
     port = match[3]
 
     match_cert = /^http[s]?:\/\/[a-zA-Z1-9\-]{3,255}:[0-9]{2,4}\?certificate=(.+)$/.match(source)
+    puts "MATCH CERT #{match_cert}"
     certificate = match_cert.nil? ? nil : match_cert[1]
 
     args = [
@@ -165,7 +168,9 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def destroy_listener(source)
+    puts "Destory LISTENER #{source}"
     match = /^http[s]?:\/\/([a-zA-Z1-9\-]{3,255}):[0-9]{2,4}/.match(source)
+    puts "MATCH #{match}"
     target = match[1]
 
     listener_arn = JSON.parse(awscli('elbv2', 'describe-listeners', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["Listeners"].select{ |x|

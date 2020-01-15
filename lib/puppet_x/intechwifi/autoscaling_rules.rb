@@ -61,7 +61,6 @@ module PuppetX
       end
 
       def self.get_load_balancer( name, region, &aws_command)
-        puts "#{name} GETTING LOAD BALANCER"
         args = [
             'autoscaling', 'describe-load-balancer-target-groups',
             '--region', region,
