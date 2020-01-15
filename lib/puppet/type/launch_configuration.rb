@@ -106,9 +106,9 @@ Puppet::Type.newtype(:launch_configuration) do
       puts "is=#{is}"
 
       # do we have a disk defined
-      no_disk_defined = @should.length == 0 and is.keys.length == 0
+      no_disk_defined = @should.length == 0 && is.keys.length == 0
 
-      result = ( @should.length == 0 and is.keys.length == 0 ) or
+      result = no_disk_defined ||
         @should.all?{|s|
           # all top level keys are devices. These lists should contain the same keys if we are in sync
           should_devices_present = s.keys.all?{|device| is.has_key? device}
@@ -127,7 +127,8 @@ Puppet::Type.newtype(:launch_configuration) do
             }
           }
           puts "all_keys_match=#{all_keys_match}"
-          should_devices_present and is_devices_present and all_keys_match
+          out = should_devices_present && is_devices_present && all_keys_match
+          out
         }
       puts "result=#{result}"
       result
