@@ -115,9 +115,7 @@ Puppet::Type.newtype(:launch_configuration) do
           is_devices_present = is.keys.all?{|device| s.has_key? device}
           puts "should_devices_present=#{should_devices_present}"
           puts "is_devices_present=#{is_devices_present}"
-          s.keys.all?{|device| is.has_key? device} and
-          is.keys.all?{|device| s.has_key? device} and
-          s.keys.all?{|device|
+          all_keys_match = s.keys.all?{|device|
             # then we need to check each device in turn and make sure that all should keys and value are identical in is.
             s[device].keys.all?{|param|
               is_has_key = is[device].has_key? param
@@ -128,8 +126,11 @@ Puppet::Type.newtype(:launch_configuration) do
               is[device].has_key? param and is[device][param] == s[device][param]
             }
           }
+          puts "all_keys_match=#{all_keys_match}"
+          should_devices_present and is_devices_present and all_keys_match
         }
       puts "result=#{result}"
+      result
     end
 
   end
