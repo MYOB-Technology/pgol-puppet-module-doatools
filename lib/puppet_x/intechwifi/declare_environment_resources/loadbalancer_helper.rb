@@ -136,10 +136,6 @@ module PuppetX
                 "tcp|#{parse_shared_port(port)[:target_port]}|sg|#{RoleHelpers.calculate_security_group_name(name, role_name, label_format)}"
               }
             }.flatten.uniq
-            puts "THIS SHIT #{role_name}"
-            puts "IN RULES #{in_rules}"
-            puts "OUT RULES #{out_rules}"
-            puts "NAME #{calculate_security_group_name(name, role_name)}"
             { :name => calculate_security_group_name(name, role_name), :in => in_rules, :out => out_rules }
           }
         end
