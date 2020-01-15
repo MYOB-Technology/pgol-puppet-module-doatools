@@ -60,7 +60,7 @@ module PuppetX
         output
       end
 
-      def self.get_load_balancer( name, region, &aws_command)
+      def self.get_load_balancer(name, region, &aws_command)
         args = [
             'autoscaling', 'describe-load-balancer-target-groups',
             '--region', region,
@@ -70,6 +70,7 @@ module PuppetX
 
         result = JSON.parse(aws_command.call(args.flatten))["LoadBalancerTargetGroups"]
 
+        puts "RESULT #{result}"
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
 
