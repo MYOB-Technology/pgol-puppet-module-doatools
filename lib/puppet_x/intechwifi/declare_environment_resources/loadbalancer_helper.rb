@@ -35,24 +35,19 @@ module PuppetX
                   :ensure => status,
                   :region => region,
                   :subnets => scratch[:subnet_data].select{|data| data[:zone] == 'public' }.map{|data| data[:name] },
-                  :listeners => load_balancer_role_service_hash[role_name].map{|service|
-                    service['loadbalanced_ports'].map{|port| parse_shared_port(port)}
-                  }.flatten.map{|porthash|
-                    (porthash.has_key?(:certificate) && porthash.has_key?(:protocol) && porthash[:protocol] === 'https') ?
-                        "https://#{generate_loadbalancer_target_name(name, role_name)}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
-                        "#{porthash[:protocol]}://#{generate_loadbalancer_target_name(name, role_name)}:#{porthash[:listen_port]}"
-                  }.uniq,
-                  :targets => [ generate_loadbalancer_target(name, role_name) ],
+                  :listeners => generate_loadbalancer_listeners(load_balancer_role_service_hash, role_name, name),
+                  :targets => generate_loadbalancer_targets(load_balancer_role_service_hash, role_name, name),
                   :security_groups => [ "#{name}_#{role_name}_elb" ],
                   # :internet_gateway => ;
               }
           }
         end
 
-        def self.generate_loadbalancer_target(name, role_name)
+        def self.generate_loadbalancer_target(name, role_name, protocol, listen_port, target_port)
           {
-              "name" => "#{generate_loadbalancer_target_name(name, role_name)}",
-              "port" => 80,
+              "name" => "#{generate_loadbalancer_target_name(name, role_name, protocol, listen_port, target_port)}",
+              "protocol" => protocol,
+              "port" => target_port,
               "check_interval" => 30,
               "timeout" => 5,
               "healthy" => 5,
@@ -65,12 +60,30 @@ module PuppetX
           transcode_loadbalancer_name("#{name}-#{role_name}")
         end
 
-        def self.generate_loadbalancer_target_name(name, role_name)
-          transcode_loadbalancer_name("#{name}-#{role_name}")
+        def self.generate_loadbalancer_target_name(name, role_name, protocol, listen_port, target_port)
+          transcode_loadbalancer_name("#{name}-#{role_name}-#{protocol}-#{listen_port}-to-#{target_port}")
         end
 
         def self.transcode_loadbalancer_name(name)
           name.chars.map{|ch| ['_'].include?(ch) ? '-' : ch }.join
+        end
+
+        def self.generate_loadbalancer_listeners(load_balancer_role_service_hash, role_name, name)
+          load_balancer_role_service_hash[role_name].map{|service|
+            service['loadbalanced_ports'].map{|port| parse_shared_port(port)}
+          }.flatten.map{|porthash|
+            (porthash.has_key?(:certificate) && porthash.has_key?(:protocol) && porthash[:protocol] === 'https') ?
+                "https://#{generate_loadbalancer_target_name(name, role_name, porthash[:protocol], porthash[:listen_port], porthash[:target_port])}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
+                "#{porthash[:protocol]}://#{generate_loadbalancer_target_name(name, role_name, porthash[:protocol], porthash[:listen_port], porthash[:target_port])}:#{porthash[:listen_port]}"
+          }.uniq
+        end
+
+        def self.generate_loadbalancer_targets(load_balancer_role_service_hash, role_name, name)
+          load_balancer_role_service_hash[role_name].map{|service|
+            service['loadbalanced_ports'].map{|port| parse_shared_port(port)}
+          }.flatten.map{|porthash|
+            generate_loadbalancer_target(name, role_name, porthash[:protocol], porthash[:listen_port], porthash[:target_port])
+          }.uniq
         end
 
         def self.service_have_loadbalanced_ports?(services, service_name)

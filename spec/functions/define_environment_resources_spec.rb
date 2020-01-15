@@ -740,8 +740,8 @@ describe 'define_environment_resources' do
         :ensure=>"present", 
         :region=>"us-east-1", 
         :subnets=>["demopublica", "demopublicb", "demopublicc"], 
-        :listeners=>["https://demo-testrole:443"], 
-        :targets=>[{"name"=>"demo-testrole", "port"=>80, "check_interval"=>30, "timeout"=>5, "healthy"=>5, "failed"=>2, "vpc"=>"demo"}], 
+        :listeners=>["https://demo-testrole-https-443-to-443:443"], 
+        :targets=>[{"name"=>"demo-testrole-https-443-to-443", "protocol" => 'https', "port"=>'443', "check_interval"=>30, "timeout"=>5, "healthy"=>5, "failed"=>2, "vpc"=>"demo"}], 
         :security_groups=>["demo_testrole_elb"]
       }
     }
