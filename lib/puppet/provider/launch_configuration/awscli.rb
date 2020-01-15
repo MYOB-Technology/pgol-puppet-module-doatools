@@ -122,11 +122,10 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     #  Image disks only contain disk info that are part of the original ami
     @property_hash[:image_disks] = lc_block_device_hash.select { |device, settings| ami_block_device_hash.has_key? device }
-        
-    #@property_hash[:extra_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_extra_disks_from_block_device_hash(block_device_mapping, ami_block_device_hash)
 
-    #@property_hash[:image_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_image_disks_from_block_device_mapping(block_device_mapping, ami_block_device_mapping)
-    @property_hash[:extra_disks] = PuppetX::IntechWIFI::EBS_Volumes.get_extra_disks_from_block_device_mapping(block_device_mapping, ami_block_device_mapping)
+    #  Extra disks only contain disk info that is not part of the original ami
+    @property_hash[:extra_disks] = lc_block_device_hash.select { |device, settings| !ami_block_device_hash.has_key? device }
+
     notice("Successfully exiting exitst?")
 
     true
