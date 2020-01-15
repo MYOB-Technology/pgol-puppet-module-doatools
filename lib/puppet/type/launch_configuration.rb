@@ -106,14 +106,25 @@ Puppet::Type.newtype(:launch_configuration) do
       puts "is=#{is}"
 
       # do we have a disk defined
+      no_disk_defined = @should.length == 0 and is.keys.length == 0
+
       result = ( @should.length == 0 and is.keys.length == 0 ) or
         @should.all?{|s|
           # all top level keys are devices. These lists should contain the same keys if we are in sync
+          should_devices_present = s.keys.all?{|device| is.has_key? device}
+          is_devices_present = is.keys.all?{|device| s.has_key? device}
+          puts "should_devices_present=#{should_devices_present}"
+          puts "is_devices_present=#{is_devices_present}"
           s.keys.all?{|device| is.has_key? device} and
           is.keys.all?{|device| s.has_key? device} and
           s.keys.all?{|device|
             # then we need to check each device in turn and make sure that all should keys and value are identical in is.
             s[device].keys.all?{|param|
+              is_has_key = is[device].has_key? param
+              puts "device=#{device} testing key param=#{param} is_has_key=#{is_has_key}"
+              is_key_present = is[device][param] == s[device][param] if is_has_key
+              puts "device=#{device} testing key param=#{param} is=#{is[device][param]} s=#{s[device][param]}"
+
               is[device].has_key? param and is[device][param] == s[device][param]
             }
           }
