@@ -91,7 +91,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
     @arn = data["LoadBalancerArn"]
     @property_hash[:subnets] = data["AvailabilityZones"].map{|subnet| PuppetX::IntechWIFI::AwsCmds.find_name_or_id_by_id(@property_hash[:region], 'subnet', subnet["SubnetId"]){|*arg| awscli(*arg)} }
     @property_hash[:listeners] = JSON.parse(awscli('elbv2', 'describe-listeners', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["Listeners"].map do |x|
-      "#{x["Protocol"].downcase}://#{target_from_arn x["DefaultActions"][0]["TargetGroupArn"]}:#{x["Port"]}#{x["Certificates"].nil? ? "" : ("?certificate=" + x["Certificates"][0]["CertificateArn"])}"
+      "#{x["Protocol"]}://#{target_from_arn x["DefaultActions"][0]["TargetGroupArn"]}:#{x["Port"]}#{x["Certificates"].nil? ? "" : ("?certificate=" + x["Certificates"][0]["CertificateArn"])}"
     end
     @property_hash[:targets] = list_elb_targets()
 
@@ -143,12 +143,12 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def create_listener(source)
-    match = /^(http[s]?):\/\/([a-z1-9\-]{3,255}):([0-9]{2,4})/.match(source)
+    match = /^(http[s]?):\/\/([a-zA-Z1-9\-]{3,255}):([0-9]{2,4})/.match(source)
     proto = match[1]
     target = match[2]
     port = match[3]
 
-    match_cert = /^http[s]?:\/\/[a-z1-9\-]{3,255}:[0-9]{2,4}\?certificate=(.+)$/.match(source)
+    match_cert = /^http[s]?:\/\/[a-zA-Z1-9\-]{3,255}:[0-9]{2,4}\?certificate=(.+)$/.match(source)
     certificate = match_cert.nil? ? nil : match_cert[1]
 
     args = [
