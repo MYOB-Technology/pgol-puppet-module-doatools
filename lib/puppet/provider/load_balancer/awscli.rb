@@ -165,7 +165,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   end
 
   def destroy_listener(source)
-    match = /^http[s]?:\/\/([a-z1-9\-]{3,255}):[0-9]{2,4}/.match(source)
+    match = /^http[s]?:\/\/([a-zA-Z1-9\-]{3,255}):[0-9]{2,4}/.match(source)
     target = match[1]
 
     listener_arn = JSON.parse(awscli('elbv2', 'describe-listeners', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["Listeners"].select{ |x|
@@ -279,7 +279,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
 
   def target_from_arn(target_arn)
-    /^arn:aws:elasticloadbalancing:[a-z_\-0-9]+:[0-9]{12}:targetgroup\/([a-z_\-0-9]+)\/[0-9a-f]{16}$/.match(target_arn)[1]
+    /^arn:aws:elasticloadbalancing:[a-zA-Z_\-0-9]+:[0-9]{12}:targetgroup\/([a-zA-Z_\-0-9]+)\/[0-9a-f]{16}$/.match(target_arn)[1]
   end
 
   def same_target_name(a, b)
