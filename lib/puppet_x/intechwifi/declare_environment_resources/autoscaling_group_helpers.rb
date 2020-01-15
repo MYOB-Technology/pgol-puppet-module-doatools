@@ -58,9 +58,10 @@ module PuppetX
         end
 
         def self.get_loadbalancers(name, roles, role_name, services)
-          LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(roles, services).key?(role_name) ? {
-            'load_balancer' => LoadBalancerHelper.generate_loadbalancer_name(name, role_name)
-          } : {}
+          load_balancer_role_service_hash = LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(roles, services)
+          targets = load_balancer_role_service_hash.key?(role_name) ? 
+                    LoadBalancerHelper.generate_loadbalancer_targets(load_balancer_role_service_hash, role_name, name).map { |target| target['name'] } : []
+          { 'load_balancer' => targets }
         end 
 
         def self.generate_auto_scaler_name(env_name, role, zones, z, scratch)

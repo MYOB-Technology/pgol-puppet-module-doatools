@@ -975,6 +975,7 @@ describe 'define_environment_resources' do
               "minimum_instances"=>0,
               "maximum_instances"=>2,
               "desired_instances"=>2,
+              "load_balancer" => []
           }
       }
   }
@@ -991,7 +992,7 @@ describe 'define_environment_resources' do
         "minimum_instances"=>0, 
         "desired_instances"=>2, 
         "maximum_instances"=>2, 
-        "load_balancer"=>"demo-testrole" 
+        "load_balancer"=>["testrole-https-443-to-443"] 
       }
     }
   }

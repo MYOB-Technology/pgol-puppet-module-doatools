@@ -71,11 +71,10 @@ module PuppetX
         result = JSON.parse(aws_command.call(args.flatten))["LoadBalancerTargetGroups"]
 
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
-        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result.length > 1  #  Multiple matches
 
         result.map{|data|
           /^arn:aws:elasticloadbalancing:[a-z\-0-9A-Z]+:[0-9]+:targetgroup\/([0-9a-zA-Z\-]+)\/[0-9a-f]+$/.match(data['LoadBalancerTargetGroupARN'])[1]
-        }[0]
+        }
       rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
         nil
       end

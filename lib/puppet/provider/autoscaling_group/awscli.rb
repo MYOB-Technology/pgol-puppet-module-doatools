@@ -163,8 +163,8 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
 
   def update_loadbalancer(region, autoscaling_name, from, to)
-    remove_loadbalancer(region, autoscaling_name, from) if !from.nil?
-    add_loadbalancer(region, autoscaling_name, to) if !to.nil?
+    remove_loadbalancer(region, autoscaling_name, from) unless from.nil?
+    add_loadbalancer(region, autoscaling_name, to) unless to.nil?
   end
 
   def add_loadbalancer(region, autoscaling_name, target_group)
