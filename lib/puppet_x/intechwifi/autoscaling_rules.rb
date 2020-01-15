@@ -78,7 +78,7 @@ module PuppetX
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if result2.length > 1  #  Multiple matches
 
         shit = result2.map{|data|
-          /^arn:aws:elasticloadbalancing:[a-z\-0-9A-Z]+:[0-9]+:targetgroup\/([0-9a-z\-]+)\/[0-9a-f]+$/.match(data['LoadBalancerTargetGroupARN'])[1]
+          /^arn:aws:elasticloadbalancing:[a-z\-0-9A-Z]+:[0-9]+:targetgroup\/([0-9a-zA-Z\-]+)\/[0-9a-f]+$/.match(data['LoadBalancerTargetGroupARN'])[1]
         }[0]
         puts "THE SHIT #{shit}"
       rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
