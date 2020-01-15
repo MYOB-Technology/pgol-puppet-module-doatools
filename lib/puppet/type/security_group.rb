@@ -15,6 +15,7 @@
 
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
+require 'puppet_x/intechwifi/tags_property'
 
 Puppet::Type.newtype(:security_group) do
   ensurable

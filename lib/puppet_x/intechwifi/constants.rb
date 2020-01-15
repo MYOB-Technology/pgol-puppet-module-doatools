@@ -72,6 +72,7 @@ module PuppetX
 
       @@principal_map = [
           {:key => 'ec2', :value => "ec2.amazonaws.com" },
+          {:key => 'codedeploy', :value => "codedeploy.amazonaws.com" },
       ]
 
       def self.PrincipalKey value
@@ -83,7 +84,7 @@ module PuppetX
       end
 
       def self.PrincipalKeys
-        @@principal_map.keys
+        @@principal_map.map{|p| p[:key]}
       end
 
 

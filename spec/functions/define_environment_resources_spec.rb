@@ -18,7 +18,7 @@ describe 'define_environment_resources' do
   routetable1 = {
       "resource_type" => "route_table",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure=>"present",
               :region=>"us-east-1",
               :vpc=>"demo",
@@ -33,7 +33,7 @@ describe 'define_environment_resources' do
   routetable2 = {
       "resource_type" => "route_table",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure=>"present",
               :region=>"us-east-1",
               :vpc=>"demo",
@@ -56,7 +56,7 @@ describe 'define_environment_resources' do
   routetable3 = {
       "resource_type" => "route_table",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure=>"present",
               :region=>"us-east-1",
               :vpc=>"demo",
@@ -104,7 +104,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demopublicb"=>{
@@ -116,7 +116,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }, "demopublicc" => {
               :ensure=>"present",
@@ -127,7 +127,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }
       }
@@ -145,7 +145,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demopublicb"=>{
@@ -157,7 +157,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }, "demopublicc" => {
               :ensure=>"present",
@@ -168,7 +168,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demonata"=>{
@@ -221,7 +221,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demopublicb"=>{
@@ -233,7 +233,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           }, "demopublicc" => {
               :ensure=>"present",
@@ -244,7 +244,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo"
               },
-              :route_table=>"demo",
+              :route_table=>"demopublicall",
               :public_ip=>true
           },
           "demonata"=>{
@@ -388,6 +388,38 @@ describe 'define_environment_resources' do
       }
   }
 
+  security_group4 = {
+    "resource_type" => "security_group",
+    "resources" => {
+        "demo" => {
+            :ensure => "present",
+            :region => "us-east-1",
+            :vpc => "demo",
+            :tags => {
+                "Environment" => "demo"
+            }
+        },
+        "demo_testrole" => {
+            :ensure => "present",
+            :region => "us-east-1",
+            :vpc => "demo",
+            :tags => {
+                "Environment" => "demo"
+            },
+            :description => "Role security group"
+        },
+        "demo_testdb" => {
+            :ensure => "present",
+            :region => "us-east-1",
+            :vpc => "demo",
+            :tags => {
+                "Environment" => "demo"
+            },
+            :description => "database security group"
+        }
+    }
+}
+
 
 
   security_group_rules1 = {
@@ -490,6 +522,41 @@ describe 'define_environment_resources' do
       }
   }
 
+  security_group_rules4= {
+    "resource_type" => "security_group_rules",
+    "resources" => {
+        "demo" => {
+            :ensure => "present",
+            :region => "us-east-1",
+            :in => [],
+            :out => [],
+        },
+        "demo_testrole" => {
+          :ensure => 'present',
+          :region => 'us-east-1',
+          :in => [
+            "tcp|22|cidr|0.0.0.0/0",
+            "tcp|80|sg|demo_testrole_elb",
+            "tcp|8000|sg|demo_testrole"
+          ],
+          :out => [
+            "tcp|80|cidr|0.0.0.0/0",
+            "tcp|443|cidr|0.0.0.0/0",
+            "tcp|3306|sg|demo_testdb",
+            "tcp|8000|sg|demo_testrole"
+          ]
+        },
+        "demo_testdb" => {
+            :ensure => "present",
+            :region => "us-east-1",
+            :in => [
+                "tcp|3306|sg|demo_testrole"
+            ],
+            :out => [],
+        }
+    }
+}
+
 
 
   internet_gateway1 = {
@@ -542,7 +609,8 @@ describe 'define_environment_resources' do
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.1",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demopublica"
           }
       }
   }
@@ -554,19 +622,22 @@ describe 'define_environment_resources' do
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.1",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demopublica",
           },
           "demonatb" => {
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.2",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demopublicb",
           },
           "demonatc" => {
               :ensure => "present",
               :region => "us-east-1",
               :elastic_ip => "148.88.8.3",
-              :internet_gateway => 'demo'
+              :internet_gateway => 'demo',
+              :subnet => "demopublicc",
           }
       }
   }
@@ -574,7 +645,7 @@ describe 'define_environment_resources' do
   route_table_routes1 = {
       "resource_type" => "route_table_routes",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure => "present",
               :region => "us-east-1",
               :routes => [
@@ -587,7 +658,7 @@ describe 'define_environment_resources' do
   route_table_routes2 = {
       "resource_type" => "route_table_routes",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure => "present",
               :region => "us-east-1",
               :routes => [
@@ -607,7 +678,7 @@ describe 'define_environment_resources' do
   route_table_routes3 = {
       "resource_type" => "route_table_routes",
       "resources" => {
-          "demo"=>{
+          "demopublicall"=>{
               :ensure => "present",
               :region => "us-east-1",
               :routes => [
@@ -781,12 +852,12 @@ describe 'define_environment_resources' do
               "public_access"=>"false",
               "instance_type"=>"db.t2.micro",
               "storage_size"=>"50",
-              "rds_subnet_group"=>"demo-public",
               "ensure"=>"present",
               "region"=>"us-east-1",
               "security_groups"=>[
                   "demo_testdb"
-              ]
+              ],
+              "rds_subnet_group"=>"demo-public"
           }
       }
   }
@@ -802,7 +873,7 @@ describe 'define_environment_resources' do
   launch_configuration2 = {
       "resource_type" => "launch_configuration",
       "resources" => {
-          "demo_testrole" => {
+          "demotestrole" => {
               "instance_type"=>"t2.micro",
               "image"=>"ami-6d1c2007",
               "ensure"=>"present",
@@ -810,9 +881,7 @@ describe 'define_environment_resources' do
               "security_groups"=>[
                   "demo_my_srv"
               ],
-              "iam_instance_profile"=>[
-                  "demo_testrole"
-              ],
+              "iam_instance_profile"=> "demotestrole",
               "public_ip"=> :enabled
           }
       }
@@ -821,7 +890,7 @@ describe 'define_environment_resources' do
   launch_configuration3 = {
       "resource_type" => "launch_configuration",
       "resources" => {
-          "demo_testrole" => {
+          "demotestrole" => {
               "instance_type"=>"t2.micro",
               "image"=>"ami-6d1c2007",
               "ensure"=>"present",
@@ -830,35 +899,49 @@ describe 'define_environment_resources' do
                   "demo_my_srv",
                   "demo_my_other_srv"
               ],
-              "iam_instance_profile"=>[
-                  "demo_testrole"
-              ],
+              "iam_instance_profile"=> "demotestrole",
               "public_ip"=> :enabled
           }
       }
   }
+
+  launch_configuration4 = {
+    "resource_type" => "launch_configuration",
+    "resources" => {
+        "demotestrole" => {
+            "instance_type"=>"t2.micro",
+            "image"=>"ami-6d1c2007",
+            "ensure"=>"present",
+            "region"=>"us-east-1",
+            "security_groups"=> "demo_testrole",
+            "iam_instance_profile"=> "demotestrole",
+            "public_ip"=> :enabled
+        }
+    }
+}
 
 
 
   autoscaling_group1 = {
       "resource_type" => "autoscaling_group",
       "resources" => {
-
+    
       }
   }
 
   autoscaling_group2 = {
       "resource_type" => "autoscaling_group",
       "resources" => {
-          "demo_testrole" => {
+          "demotestrole" => {
               "ensure"=>"present",
               "region"=>"us-east-1",
-              "launch_configuration"=>"demo_testrole",
+              "launch_configuration"=>"demotestrole",
               "subnets"=>[
                   "demopublica",
                   "demopublicb",
                   "demopublicc",
               ],
+              "tags" => { "Role" => "testrole", "Name" => "testrole_demo" },
               "minimum_instances"=>0,
               "maximum_instances"=>2,
               "desired_instances"=>2,
@@ -866,6 +949,25 @@ describe 'define_environment_resources' do
       }
   }
 
+  deployment_group1 = {
+      "resource_type" => "deployment_group",
+      "resources" => {}
+  }
+
+  deployment_group2 = {
+      "resource_type" => "deployment_group",
+      "resources" => {
+        "demodeploy" => {
+            "ensure"=>"present",
+            "region"=>"us-east-1",
+            "application_name"=>"appname",
+            "service_role"=>"democodedeploy",
+            "autoscaling_groups"=>[
+              "demotestrole"
+            ],
+        }
+      }
+  }
 
 
   iam_role1 = {
@@ -878,15 +980,37 @@ describe 'define_environment_resources' do
   iam_role2 = {
       "resource_type"=>"iam_role",
       "resources"=>{
-          "demo_testrole" => {
+          "demotestrole" => {
               :ensure=>"present",
               :policies=>[]
           }
       }
   }
 
+  iam_role3 = {
+      "resource_type"=>"iam_role",
+      "resources"=>{
+          "demotestrole" => {
+              :ensure=>"present",
+              :policies=>[]
+          },
+          "democodedeploy" => {
+              :ensure=>"present",
+              :policies=>[ "AWSCodeDeployRole"],
+              :trust=>["codedeploy"],
+          }
+      }
+  }
 
-
+  iam_role4 = {
+    "resource_type"=>"iam_role",
+    "resources"=>{
+      "demotestrole" => {
+        :ensure=>"present",
+        :policies=>['demoadmin_policy']
+      }
+    }
+  }
 
   iam_policies_1 = {
       "resource_type" => "iam_policy",
@@ -894,6 +1018,21 @@ describe 'define_environment_resources' do
 
       }
   }
+
+  iam_policies_2 = {
+    "resource_type" => "iam_policy",
+    "resources" => {
+      "demoadmin_policy" => {
+        :ensure => "present",
+        :policy => [{
+          "Effect" => "Allow",
+          "Action" => "*",
+          "Resource" => "*"
+        }]
+      }
+    }
+  }
+
   iam_instance_profile1 = {
       "resource_type" => "iam_instance_profile",
       "resources" => {
@@ -904,9 +1043,9 @@ describe 'define_environment_resources' do
   iam_instance_profile2 = {
       "resource_type" => "iam_instance_profile",
       "resources" => {
-          "demo_testrole"=>{
+          "demotestrole"=>{
               :ensure=>"present",
-              :iam_role=>"demo_testrole"
+              :iam_role=>"demotestrole"
           }
       }
   }
@@ -924,6 +1063,55 @@ describe 'define_environment_resources' do
       "resources" => {
 
       }
+  }
+
+  route53_record_set1 = {
+    "resource_type" => "route53_record_set",
+    "resources" => {}
+  }
+
+  route53_record_set2 = {
+    "resource_type" => "route53_record_set",
+    "resources" => {
+      'demo-fs.pgol-record-set' => {
+        :ensure       => 'present',
+        :region       => 'us-east-1',
+        :hosted_zone  => 'fs.pgol.',
+        :record_set   => [
+          {
+            :Name =>  'pg1000nz.fs.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          },
+          {
+            :Name =>  'pg1001nz.fs.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          }
+        ]
+      },
+      'demo-db.pgol-record-set' => {
+        :ensure       => 'present',
+        :region       => 'us-east-1',
+        :hosted_zone  => 'db.pgol.',
+        :record_set   => [
+          {
+            :Name =>  'pg1000nz.db.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          },
+          {
+            :Name =>  'pg1001nz.db.pgol.',
+            :Type => 'CNAME',
+            :Ttl => 60,
+            :Values => ['sy1-db1.internal.myobpayglobal.com']
+          }
+        ]
+      }
+    }
   }
 
 
@@ -944,12 +1132,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -966,6 +1155,8 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -995,12 +1186,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1017,6 +1209,8 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1051,12 +1245,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1073,6 +1268,8 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1109,12 +1306,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},        
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1131,6 +1329,8 @@ describe 'define_environment_resources' do
             rds2,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1169,12 +1369,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1191,6 +1392,8 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration1,
             autoscaling_group1,
+            route53_record_set1,
+            deployment_group1,
             iam_role1,
             iam_policies_1,
             iam_instance_profile1,
@@ -1240,13 +1443,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1263,6 +1466,8 @@ describe 'define_environment_resources' do
             rds1,
             launch_configuration2,
             autoscaling_group2,
+            route53_record_set1,
+            deployment_group1,
             iam_role2,
             iam_policies_1,
             iam_instance_profile2,
@@ -1334,13 +1539,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-
-        },
-        {
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1357,6 +1562,8 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration2,
             autoscaling_group2,
+            route53_record_set1,
+            deployment_group1,
             iam_role2,
             iam_policies_1,
             iam_instance_profile2,
@@ -1366,7 +1573,7 @@ describe 'define_environment_resources' do
     }
   end
 
-  context 'creating an environment with a public zone, a role and some more complex networking rules' do
+  context 'creating an environment with a public zone, a role and some more complex networking rules and a deployment group' do
     it { is_expected.to run.with_params(
         'demo', 'present', 'us-east-1',
         {
@@ -1387,6 +1594,10 @@ describe 'define_environment_resources' do
                     "my_srv",
                     "my_other_srv"
                 ],
+                "deploy" => {
+                  "group" => "deploy",
+                  "application" => "appname",
+                },
             }
         },
         {
@@ -1427,14 +1638,13 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
+        {},
+        {},
+        {},
+        {},
+        {},
         {
-
-        },
-        {
-
-        },
-        {
-
+            'coalesce_sg_per_role' => false
         }
     ).and_return(
         [
@@ -1451,6 +1661,103 @@ describe 'define_environment_resources' do
             rds3,
             launch_configuration3,
             autoscaling_group2,
+            route53_record_set1,
+            deployment_group2,
+            iam_role3,
+            iam_policies_1,
+            iam_instance_profile2,
+            s3_bucket1,
+            s3_key1
+        ])
+    }
+  end
+
+  context 'creating an environment with a public zone, a role and some more complex networking rules and coalesced security groups' do
+    it { is_expected.to run.with_params(
+        'demo', 'present', 'us-east-1',
+        {
+            'cidr' => "192.168.0.0/24",
+            'availability' => [ "a", "b", "c"]
+        },
+        {
+            'public' => { }
+        },
+        {
+            "testrole" => {
+                "ec2" => {
+                    "instance_type" => 't2.micro',
+                    "image" => 'ami-6d1c2007',
+                },
+                "zone" => 'public',
+                "services" => [
+                    "my_srv",
+                    "my_other_srv"
+                ]
+            }
+        },
+        {
+            "my_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                        "tcp|80|rss|elb"
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                        "tcp|3306|rds|testdb"
+                    ]
+                }
+            },
+            "my_other_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                        "tcp|8000|service|my_other_srv"
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                        "tcp|8000|service|my_other_srv"
+                    ]
+                }
+            }
+        },
+        {
+            'testdb' => {
+                'zone' => 'public',
+                'master_password' => 'fred'
+            },
+        },
+        {},
+        {
+            'Environment' => 'demo'
+        },
+        {},
+        {},
+        {},
+        {},
+        {},
+        {
+            'coalesce_sg_per_role' => true
+        }
+    ).and_return(
+        [
+            vpc1,
+            routetable1,
+            subnets1,
+            security_group4,
+            security_group_rules4,
+            internet_gateway1,
+            nat_gateway1,
+            route_table_routes1,
+            load_balancers1,
+            rds_subnet_group6,
+            rds3,
+            launch_configuration4,
+            autoscaling_group2,
+            route53_record_set1,
+            deployment_group1,
             iam_role2,
             iam_policies_1,
             iam_instance_profile2,
@@ -1460,7 +1767,172 @@ describe 'define_environment_resources' do
     }
   end
 
+  context 'creating an environment with a public zone and a role with an IAM Policy' do
+    it { is_expected.to run.with_params(
+        'demo', 'present', 'us-east-1',
+        {
+            'cidr' => "192.168.0.0/24",
+            'availability' => [ "a", "b", "c"]
+        },
+        {
+            'public' => { }
+        },
+        {
+            "testrole" => {
+                "ec2" => {
+                    "instance_type" => 't2.micro',
+                    "image" => 'ami-6d1c2007',
+                },
+                "zone" => 'public',
+                "services" => [
+                    "my_srv"
+                ],
+            }
+        },
+        {
+            "my_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                    ]
+                },
+                'policies' => ['admin_policy']
+            }
+        },
+        {},
+        {},
+        {
+            'Environment' => 'demo'
+        },
+        {},
+        {
+          'admin_policy' => {
+            'Effect' => 'Allow',
+            'Action' => '*',
+            'Resource' => '*'
+          }
+        },
+        {},
+        {},
+        {},
+        {
+            'coalesce_sg_per_role' => false
+        }
+    ).and_return(
+        [
+            vpc1,
+            routetable1,
+            subnets1,
+            security_group2,
+            security_group_rules2,
+            internet_gateway1,
+            nat_gateway1,
+            route_table_routes1,
+            load_balancers1,
+            rds_subnet_group1,
+            rds1,
+            launch_configuration2,
+            autoscaling_group2,
+            route53_record_set1,
+            deployment_group1,
+            iam_role4,
+            iam_policies_2,
+            iam_instance_profile2,
+            s3_bucket1,
+            s3_key1
+        ])
+    }
+  end
 
-
+  context 'creating an environment with a public zone and route53 record sets' do
+    it { is_expected.to run.with_params(
+        'demo', 'present', 'us-east-1',
+        {
+            'cidr' => "192.168.0.0/24",
+            'availability' => [ "a", "b", "c"]
+        },
+        {
+            'public' => { }
+        },
+        {
+            "testrole" => {
+                "ec2" => {
+                    "instance_type" => 't2.micro',
+                    "image" => 'ami-6d1c2007',
+                },
+                "zone" => 'public',
+                "services" => [
+                    "my_srv"
+                ],
+            }
+        },
+        {
+            "my_srv" => {
+                "network" => {
+                    "in" => [
+                        "tcp|22|cidr|0.0.0.0/0",
+                    ],
+                    "out" => [
+                        "tcp|80|cidr|0.0.0.0/0",
+                        "tcp|443|cidr|0.0.0.0/0",
+                    ]
+                },
+                'policies' => ['admin_policy']
+            }
+        },
+        {},
+        {},
+        {
+            'Environment' => 'demo'
+        },
+        {},
+        {
+          'admin_policy' => {
+            'Effect' => 'Allow',
+            'Action' => '*',
+            'Resource' => '*'
+          }
+        },
+        {},
+        {
+          'PG1000NZ' => { 'site_database_server' => 'sy1-db1.internal.myobpayglobal.com', 'site_filesystem_server' => 'sy1-db1.internal.myobpayglobal.com' },
+          'PG1001NZ' => { 'site_database_server' => 'sy1-db1.internal.myobpayglobal.com', 'site_filesystem_server' => 'sy1-db1.internal.myobpayglobal.com' },
+        },
+        {
+          'filesystem_domain' => 'fs.pgol',
+          'database_domain' => 'db.pgol'
+        },
+        {
+            'coalesce_sg_per_role' => false
+        }
+    ).and_return(
+        [
+            vpc1,
+            routetable1,
+            subnets1,
+            security_group2,
+            security_group_rules2,
+            internet_gateway1,
+            nat_gateway1,
+            route_table_routes1,
+            load_balancers1,
+            rds_subnet_group1,
+            rds1,
+            launch_configuration2,
+            autoscaling_group2,
+            route53_record_set2,
+            deployment_group1,
+            iam_role4,
+            iam_policies_2,
+            iam_instance_profile2,
+            s3_bucket1,
+            s3_key1
+        ])
+    }
+  end
 end
 

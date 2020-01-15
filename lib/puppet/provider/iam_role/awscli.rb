@@ -104,7 +104,7 @@ Puppet::Type.type(:iam_role).provide(:awscli) do
 
   def set_trust(new_trust)
     statement = generate_role_statement(new_trust)
-    aws("iam", "update-assume-role-policy", @property_hash[:name], "--policy-document", statement.to_json)
+    awscli("iam", "update-assume-role-policy", "--role-name", @property_hash[:name], "--policy-document", statement.to_json)
   end
 
   def set_policies(o, n)

@@ -16,34 +16,8 @@
 require 'puppet_x/intechwifi/logical'
 require 'puppet_x/intechwifi/constants'
 
-Puppet::Type.newtype(:launch_configuration) do
+Puppet::Type.newtype(:route53_record_set) do
   ensurable
-
-  autorequire(:security_group) do
-    if self[:ensure] == :present
-      self[:security_groups]
-    end
-  end
-
-  autobefore(:security_group) do
-    if self[:ensure] == :absent
-      self[:security_groups]
-    end
-  end
-
-  autorequire(:iam_instance_profile) do
-    if self[:ensure] == :present
-      self[:iam_instance_profile]
-    end
-  end
-
-  autobefore(:iam_instance_profile) do
-    if self[:ensure] == :absent
-      self[:iam_instance_profile]
-    end
-  end
-
-
 
   newparam(:name, :namevar => true) do
   end
@@ -56,56 +30,21 @@ Puppet::Type.newtype(:launch_configuration) do
     but it may create a new resource in the new region, and will completely ignore the existing resource in the old
     region
     DESC
-    defaultto 'us-east-1'
+    defaultto 'ap-southeast-2'
     validate do |value|
       regions = PuppetX::IntechWIFI::Constants.Regions
       fail("Unsupported AWS Region #{value} we support the following regions #{regions}") unless regions.include? value
     end
   end
 
-  newproperty(:revision) do
-    validate do |value|
-      fail("revision is a read only property")
-    end
+  newproperty(:hosted_zone) do
   end
 
-  newproperty(:image) do
-  end
-
-  newproperty(:instance_type) do
-  end
-
-  newproperty(:iam_instance_profile) do
-  end
-
-
-  newproperty(:security_groups, :array_matching => :all) do
+  newproperty(:record_set, :array_matching => :all) do
     def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+      #is.sort_by { |record| record[:Name] } == should.sort_by { |record| record[:Name] } 
+      @should.all?{|v| is.include? v}
     end
   end
-
-  newproperty(:userdata) do
-  end
-
-  newproperty(:ssh_key_name) do
-  end
-
-  newproperty(:public_ip) do
-    newvalues(:enabled, :disabled)
-    munge do |value|
-      PuppetX::IntechWIFI::Logical.logical(value)
-    end
-
-  end
-
-  newproperty(:image_disks) do
-    defaultto {}
-  end
-
-  newproperty(:extra_disks, :array_matching => :all) do
-    defaultto []
-  end
-
 end
 

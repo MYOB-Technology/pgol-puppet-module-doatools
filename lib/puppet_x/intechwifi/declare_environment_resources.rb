@@ -16,10 +16,18 @@
 require 'json'
 require 'puppet_x/intechwifi/exceptions'
 require 'puppet_x/intechwifi/awscmds'
+require 'puppet_x/intechwifi/declare_environment_resources/rds_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/service_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/loadbalancer_helper'
+require 'puppet_x/intechwifi/declare_environment_resources/security_group_generator'
+require 'puppet_x/intechwifi/declare_environment_resources/network_rules_generator'
+require 'puppet_x/intechwifi/declare_environment_resources/launch_configuration_generator'
+require 'puppet_x/intechwifi/declare_environment_resources/autoscaling_group_helpers'
+require 'puppet_x/intechwifi/declare_environment_resources/route53_record_set_helper'
 
 module PuppetX
   module IntechWIFI
-    module Declare_Environment_Resources
+    module DeclareEnvironmentResources
 
       def self.define_environment_resources(
           name,
@@ -34,7 +42,10 @@ module PuppetX
           tags,
           tags_vpc,
           policies,
-          label_formats
+          label_formats,
+          pg_sites,
+          domains,
+          options
       )
 
         # Validation of inputs.
@@ -43,545 +54,270 @@ module PuppetX
         # Our scratch pad for storing and passing all our dynamically generated data.
         scratch = { }
 
-
         scratch[:public_zone?] = zones.has_key?('public')
         scratch[:nat_zone?] = zones.has_key?('nat')
         scratch[:private_zone?] = zones.has_key?('private')
         scratch[:tags_with_environment] = tags.merge({'Environment' => name})
         scratch[:label_subnet] = label_formats.has_key?('subnet') ? label_formats['subnet'] : '%{vpc}%{zone}%{az}'
+        scratch[:label_routetable] = label_formats.has_key?('routetable') ? label_formats['routetable'] : '%{vpc}%{zone}%{az}'
         scratch[:label_zone_literals] = label_formats.has_key?('zone_literals') ? label_formats['zone_literals'] : { 'private' => 'private', 'nat' => 'nat', 'public' => 'public'}
+        scratch[:label_natgw] = label_formats.has_key?('nat_gateway') ? label_formats['nat_gateway'] : '%{vpc}%{zone}%{az}'
+        scratch[:label_autoscaling_group] = label_formats.has_key?('autoscaling_group') ? label_formats['autoscaling_group'] : '%{vpc}%{role}'
+        scratch[:label_launch_configuration] = label_formats.has_key?('launch_configuration') ? label_formats['launch_configuration'] : '%{vpc}%{role}'
+        scratch[:label_deployment_group] = label_formats.has_key?('deployment_group') ? label_formats['deployment_group'] : '%{vpc}%{deploy}'
+        scratch[:label_iam_role] = label_formats.has_key?('iam_role') ? label_formats['iam_role'] : '%{vpc}%{role}'
+        scratch[:label_iam_instance_profile] = label_formats.has_key?('iam_instance_profile') ? label_formats['iam_instance_profile'] : '%{vpc}%{role}'
+        scratch[:label_iam_policy] = label_formats.has_key?('iam_policy') ? label_formats['iam_policy'] : '%{vpc}%{policy}'
 
         # Get our subnet sizes
         scratch[:subnet_data] = SubnetHelpers.CalculateSubnetData(name, network, zones, scratch)
 
-
-
         scratch[:nat_list] = NatHelpers.CalculateNatDetails(name, network, zones, scratch)
         scratch[:route_table_data] = RouteTableHelpers.CalculateRouteTablesRequired(name, network, zones, scratch)
 
-
         # The array of rds_zones needed...
         scratch[:rds_default_zone] = ['private', 'nat', 'public'].select{ |zone| zones.has_key?(zone) }.first
-        scratch[:rds_zones] = RdsHelpers.CalculateRdsZones(name, network, zones, db_servers)
+        scratch[:rds_zones] = RdsHelpers.calculate_rds_zones(name, network, zones, db_servers)
 
-        scratch[:service_security_groups] = ServiceHelpers.CalculateServiceSecurityGroups(name, server_roles, services)
-        scratch[:loadbalancer_security_groups] = LoadBalancerHelper.CalculateSecurityGroups(name, server_roles, services)
-        scratch[:loadbalancer_role_service_hash] = LoadBalancerHelper.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
+        scratch[:code_deploy_service_role] = IAMHelper.GenerateRoleName(name, "codedeploy", scratch)
 
+        vpc_resources = {
+            name => {
+                :ensure => status,
+                :region => region,
+                :cidr   => network['cidr'],
+                :tags => tags_vpc.merge(scratch[:tags_with_environment]),
+                :dns_hostnames => network.has_key?('dns_hostnames') ? network['dns_hostnames'] : false,
+                :dns_resolution => network.has_key?('dns_resolution') ? network['dns_resolution'] : true,
+            }
+        }
+
+        route_table_resources = {
+        }.merge(scratch[:route_table_data].select{|rt| status == 'present' or rt[:zone] != 'public'}.reduce({}){ |hash, rt|
+          hash.merge(
+              {
+                  rt[:name] => {
+                    :ensure=> status,
+                    :region => region,
+                    :vpc => name,
+                    :tags => scratch[:tags_with_environment]
+                  }
+              }
+          )
+        })
+
+        subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
+
+        security_group_generator = SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
+        security_group_rules_generator = NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
+        launch_configuration_generator = LaunchConfigurationGenerator.new(options['coalesce_sg_per_role'])
+
+        internet_gateway_resources = {
+            name => {
+                :ensure => (scratch[:public_zone?] and status == 'present') ? 'present' : 'absent',
+                :region => region,
+                :vpc   => name,
+                :nat_gateways => scratch[:nat_list].map{|nat| nat[:name]},
+            }
+        }
 
         #  This is the data structure that we need to return, defining all resource types and  their properties.
         [
-            {
-                'resource_type' => "vpc",
-                'resources' => {
-                    name => {
+          {
+              'resource_type' => "vpc",
+              'resources' => vpc_resources
+          },
+          {
+              'resource_type' => "route_table",
+              'resources' => route_table_resources
+          },
+          subnet_resources_hash,
+          security_group_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, scratch[:tags_with_environment], db_servers),
+          security_group_rules_generator.generate(name, server_roles, services, label_formats['security_group'], status, region, db_servers),
+          {
+              'resource_type' => "internet_gateway",
+              'resources' => internet_gateway_resources
+          },
+          {
+              'resource_type' => "nat_gateway",
+              'resources' => scratch[:nat_list].map{|nat|
+                {
+                    nat[:name] => {
                         :ensure => status,
                         :region => region,
-                        :cidr   => network['cidr'],
-                        :tags => tags_vpc.merge(scratch[:tags_with_environment]),
-                        :dns_hostnames => network.has_key?('dns_hostnames') ? network['dns_hostnames'] : false,
-                        :dns_resolution => network.has_key?('dns_resolution') ? network['dns_resolution'] : true,
+                        :elastic_ip => nat[:ip_addr],
+                        :internet_gateway => name,
+                        :subnet => nat[:subnet],
                     }
                 }
-            },
-            {
-                'resource_type' => "route_table",
-                'resources' => {}.merge(scratch[:route_table_data].select{|rt| status == 'present' or rt[:zone] != 'public'}.reduce({}){ |hash, rt|
-                  hash.merge(
-                      {
-                          rt[:name] => {
-                            :ensure=> status,
-                            :region => region,
-                            :vpc => name,
-                            :tags => scratch[:tags_with_environment]
-                          }
-                      }
-                  )
-                })
-            },
-            SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags),
-            {
-                'resource_type' => "security_group",
-                'resources' => (status == 'present' ? {
-                    #  We can only
-                    name => {
+              }.reduce({}){|hash, item| hash.merge(item) }
+          },
+          {
+              'resource_type' => "route_table_routes",
+              'resources' => scratch[:route_table_data].map{|rt_data|
+                {
+                    rt_data[:name] => {
                         :ensure => status,
                         :region => region,
-                        :vpc   => name,
-                        :tags => scratch[:tags_with_environment],
+                        :routes => RouteTableHelpers.CalculateRoutes(name, network, zones, scratch, rt_data)
                     }
-                } : {}
-                ).merge(
-                    # Merge in the security group declarations for the services
-                    scratch[:service_security_groups].map{|key, value|
-                      {
-                          key => {
-                              :ensure => status,
-                              :region => region,
-                              :vpc => name,
-                              :tags => scratch[:tags_with_environment],
-                              :description => "Service security group"
-
-                          }
-                      }
-                    }.reduce({}){| hash, kv| hash.merge(kv)}
-                ).merge(
-                     # Merge in the security group declarations for the databases.
-                     db_servers.map{|key, value|
-                       {
-                           "#{name}_#{key}" => {
-                               :ensure => status,
-                               :region => region,
-                               :vpc => name,
-                               :tags => scratch[:tags_with_environment],
-                               :description => "database security group"
-                           }
-                       }
-                     }.reduce({}){| hash, kv| hash.merge(kv)}
-                ).merge(
-                    scratch[:loadbalancer_security_groups].map{|sg|
-                      {
-                          "#{sg}" => {
-                              :ensure => status,
-                              :region => region,
-                              :vpc => name,
-                              :tags => scratch[:tags_with_environment],
-                              :description => "load balancer security group"
-                          }
-                      }
-                    }.reduce({}){| hash, kv| hash.merge(kv)}
-                )
-            },
-            {
-                'resource_type' => "security_group_rules",
-                'resources' => (status == 'present' ? {
-                    name => {
-                        :ensure => status,
-                        :region => region,
-                        :in => [],
-                        :out => [],
-                    }
-
-                } : {}
-                ).merge(
-                    #  Need to merge in the security group rule declarations for the roles.
-                    scratch[:service_security_groups].map{|key, value|
-                      {
-                          key => {
-                              :ensure => status,
-                              :region => region,
-                              :in => value[:in],
-                              :out => value[:out],
-                          }
-                      }
-                    }.reduce({}){| hash, kv| hash.merge(kv)}
-                ).merge(
-                    # Merge in the security group declarations for the databases.
-                    db_servers.map{|key, value|
-                      {
-                          "#{name}_#{key}" => {
-                              :ensure => status,
-                              :region => region,
-                              :in =>  RdsHelpers::CalculateNetworkRules(name, services, key, value["engine"]),
-                              :out => [],
-                          }
-                      }
-                    }.reduce({}){| hash, kv| hash.merge(kv)}
-                ).merge(
-                    scratch[:loadbalancer_role_service_hash].map{|role_name, service_array|
-                      {
-                          "#{name}_#{role_name}_elb" => {
-                              :ensure => status,
-                              :region => region,
-                              :in => service_array.map{|service| service['loadbalanced_ports']}.flatten.uniq.map{|raw_rule| "tcp|#{LoadBalancerHelper.ParseSharedPort(raw_rule)[:listen_port]}|cidr|0.0.0.0/0"},
-                              :out => service_array.map{|service|
-                                service['loadbalanced_ports'].map { |port|
-                                  "tcp|#{LoadBalancerHelper.ParseSharedPort(port)[:target_port]}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service["service_name"])}"
-                                }
-                              }.flatten.uniq,
+                }
+              }.reduce({}){|hash, kv|
+                hash.merge(kv)
+              }
+          },
+          LoadBalancerHelper.generate_loadbalancer_resources(name, status, region, server_roles, services, scratch),
+          {
+              'resource_type' => "rds_subnet_group",
+              'resources' => [
+                  # The RDS subnets that should be present.
+                  scratch[:rds_zones].map{ |zone|
+                    {
+                        "#{name}-#{zone}" => {
+                            :ensure  => status,
+                            :region  => region,
+                            :subnets => scratch[:subnet_data].select{|s|
+                              s[:zone] == zone
+                            }.map{|s|
+                              s[:name]
                             }
-                      }
-                    }.reduce({}){| hash, kv| hash.merge(kv)}
-                )
-            },
-            {
-                'resource_type' => "internet_gateway",
-                'resources' => {
-                    name => {
-                        :ensure => (scratch[:public_zone?] and status == 'present') ? 'present' : 'absent',
+                        }
+                    }
+                  },
+                  # The RDS subnets that should not be present.
+                  zones.keys.select{|zone_names|
+                    !scratch[:rds_zones].include?(zone_names)
+                  }.map{ |zone_name|
+                    {
+                        "#{name}-#{zone_name}" => {
+                            :ensure  => 'absent',
+                            :region  => region,
+                        }
+                    }
+                  }
+              ].flatten.reduce({}){|hash, kv| hash.merge(kv)  }
+          },
+          {
+              'resource_type' => "rds",
+              'resources' => db_servers.keys.map{|db|
+                {
+                    "#{name}-#{db}" => {
+                        'master_username' => 'admin',
+                        'master_password' => 'password!',
+                        'database' => "#{db}",
+                        'multi_az' => 'false',
+                        'public_access' => 'false',
+                        'instance_type' => 'db.t2.micro',
+                        'storage_size' => '50',
+                    }.merge(
+                        {
+                            'ensure' => status,
+                            'region' => region,
+                            'security_groups' => [
+                                "#{name}_#{db}"
+                            ],
+                            'rds_subnet_group' => db_servers[db].has_key?('zone') ? "#{name}-#{db_servers[db]['zone']}"  :  "#{name}-#{scratch[:rds_default_zone]}",
+                        }
+                    ).merge(
+                      db_servers[db].dup.keep_if{|k, v| k != 'zone' }
+                    )
+                }
+              }.flatten.reduce({}){|hash, kv| hash.merge(kv)}
+          },
+          launch_configuration_generator.generate(name, services, server_roles, zones, status, region, label_formats['security_group'], scratch),
+          AutoscalingGroupHelpers.generate(name, services, server_roles, zones, status, region, label_formats['instance'], network, scratch),
+          Route53RecordSetHelper.generate(name, status, region, pg_sites, domains, scratch),
+          {
+            'resource_type' => "deployment_group",
+            'resources' => DeploymentGroupHelper.GenerateDeploymentGroupResources(name, server_roles, status, region, zones, scratch)
+          },
+          {
+              'resource_type' => "iam_role",
+              'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services, scratch)
+          },
+          {
+              'resource_type' => "iam_policy",
+              'resources' => IAMHelper.CalculatePolicyResources(name, status, policies, scratch)
+          },
+          {
+              'resource_type' => "iam_instance_profile",
+              'resources' => IAMHelper.CalculateInstanceProfileResources(name, status, server_roles, scratch)
+          },
+          {
+              'resource_type' => "s3_bucket",
+              'resources' => s3.map{|bucket_name, data|
+                {
+                    bucket_name => {
+                        :ensure => status,
                         :region => region,
-                        :vpc   => name,
-                        :nat_gateways => scratch[:nat_list].map{|nat| nat[:name]},
+                        :policy => data['policy'],
+                        :grants => data['grants'],
+                        :cors => data['cors'],
                     }
-
                 }
-            },
-            {
-                'resource_type' => "nat_gateway",
-                'resources' => scratch[:nat_list].map{|nat|
-                  {
-                      nat[:name] => {
-                          :ensure => status,
-                          :region => region,
-                          :elastic_ip => nat[:ip_addr],
-                          :internet_gateway => name,
+              }.reduce({}){|hash, kv| hash.merge(kv)}
+          },
+          {
+              'resource_type' => "s3_key",
+              'resources' => {
 
-                      }
-                  }
-                }.reduce({}){|hash, item| hash.merge(item) }
-            },
-            {
-                'resource_type' => "route_table_routes",
-                'resources' => scratch[:route_table_data].map{|rt_data|
-                  {
-                      rt_data[:name] => {
-                          :ensure => status,
-                          :region => region,
-                          :routes => RouteTableHelpers.CalculateRoutes(name, network, zones, scratch, rt_data)
-                      }
-                  }
-                }.reduce({}){|hash, kv|
-                  hash.merge(kv)
-                }
-            },
-            {
-                'resource_type' => "load_balancer",
-                'resources' => LoadBalancerHelper.GenerateLoadbalancerResources(name, status, region, server_roles, services, scratch)
-            },
-            {
-                'resource_type' => "rds_subnet_group",
-                'resources' => [
-                    # The RDS subnets that should be present.
-                    scratch[:rds_zones].map{ |zone|
-                      {
-                          "#{name}-#{zone}" => {
-                              :ensure  => status,
-                              :region  => region,
-                              :subnets => scratch[:subnet_data].select{|s|
-                                s[:zone] == zone
-                              }.map{|s|
-                                s[:name]
-                              }
-                          }
-                      }
-                    },
-                    # The RDS subnets that should not be present.
-                    zones.keys.select{|zone_names|
-                      !scratch[:rds_zones].include?(zone_names)
-                    }.map{ |zone_name|
-                      {
-                          "#{name}-#{zone_name}" => {
-                              :ensure  => 'absent',
-                              :region  => region,
-                          }
-                      }
-                    }
-                ].flatten.reduce({}){|hash, kv| hash.merge(kv)  }
-            },
-            {
-                'resource_type' => "rds",
-                'resources' => db_servers.keys.map{|db|
-                  {
-                      "#{name}-#{db}" => {
-                          'master_username' => 'admin',
-                          'master_password' => 'password!',
-                          'database' => "#{db}",
-                          'multi_az' => 'false',
-                          'public_access' => 'false',
-                          'instance_type' => 'db.t2.micro',
-                          'storage_size' => '50',
-                      }.merge(
-                          {
-                              'ensure' => status,
-                              'region' => region,
-                              'security_groups' => [
-                                  "#{name}_#{db}"
-                              ],
-                              'rds_subnet_group' => db_servers[db].has_key?('zone') ? "#{name}-#{db_servers[db]['zone']}"  :  "#{name}-#{scratch[:rds_default_zone]}",
-                          }
-                      ).merge(
-                          db_servers[db].keep_if{|key, value|
-                            key != 'zone'
-                          }
-                      )
-                  }
-                }.flatten.reduce({}){|hash, kv| hash.merge(kv)}
-            },
-            {
-                'resource_type' => "launch_configuration",
-                'resources' => server_roles.to_a.map{|role|
-                  serverrole = {}.update(role[1])
-                  {
-                      "#{name}_#{role[0]}" => {
-                          # Defaults
-
-                      }.merge(
-                          serverrole['ec2']
-                      ).merge(
-                          serverrole.keep_if{|key, value|
-                            ["ssh_key_name", "userdata"].include?(key)
-                          }
-                      ).merge(
-                           # Forced values
-                           {
-                               'ensure' => status,
-                               'region' => region,
-                               'security_groups' => ServiceHelpers.Services(role[1]).map{|service|
-                                 sg = ServiceHelpers.CalculateServiceSecurityGroupName(name, service)
-                               }.select{|sg|
-                                 scratch[:service_security_groups].has_key?(sg)
-                               },
-                               'iam_instance_profile' => [
-                                   IAMHelper.GenerateInstanceProfileName(name, role[0])
-                               ],
-                               'public_ip' => role[1]['zone'] == 'public' ? :enabled : :disabled
-                           }
-                      )
-                  }
-                }.reduce({}){|hash, kv| hash.merge(kv)}
-            },
-            {
-                'resource_type' => "autoscaling_group",
-                'resources' => server_roles.map{|role_name, role_data|
-
-                  {
-                      "#{name}_#{role_name}" => {
-                          'ensure' => status,
-                          'region' => region,
-                          'launch_configuration' => "#{name}_#{role_name}",
-                          'subnets' => scratch[:subnet_data].select{|sn|
-                            sn[:zone] == role_data['zone']
-                          }.map{|sn| sn[:name] },
-                          #TODO: We need to set the internet gateway
-                          #'internet_gateway' => nil,
-                          #TODO: We need to set the nat gateway
-                          #'nat_gateway' => nil,
-                      }.merge(AutoScalerHelper.ConvertScalingToAutoScaleValues(
-                          AutoScalerHelper.GetDefaultScaling().merge(AutoScalerHelper.CopyScalingValues(role_data.has_key?('scaling') ? role_data["scaling"] : {}))
-                      )).merge(
-                          scratch[:loadbalancer_role_service_hash].has_key?(role_name) ? {
-                              'load_balancer' => LoadBalancerHelper.GenerateLoadBalancerName(name, role_name)
-                          } : {}
-                      )
-                  }
-                }.reduce({}){|hash, kv| hash.merge(kv)}
-
-            },
-            {
-                'resource_type' => "iam_role",
-                'resources' => IAMHelper.CalculateAllRoleResources(name, status, server_roles , services)
-            },
-            {
-                'resource_type' => "iam_policy",
-                'resources' => IAMHelper.CalculatePolicyResources(name, status, policies)
-            },
-            {
-                'resource_type' => "iam_instance_profile",
-                'resources' => IAMHelper.CalculateInstanceProfileResources(name, status, server_roles)
-            },
-            {
-                'resource_type' => "s3_bucket",
-                'resources' => s3.map{|bucket_name, data|
-                  {
-                      bucket_name => {
-                          :ensure => status,
-                          :region => region,
-                          :policy => data['policy'],
-                          :grants => data['grants'],
-                          :cors => data['cors'],
-                      }
-                  }
-                }.reduce({}){|hash, kv| hash.merge(kv)}
-            },
-            {
-                'resource_type' => "s3_key",
-                'resources' => {
-
-                }
-            }
+              }
+          }
         ]
       end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      module LoadBalancerHelper
-        def self.GenerateLoadbalancerResources(name, status, region, roles, services, scratch)
-          GetRoleNamesWithLoadBalancers(roles, services).map{|role_name|
-            GenerateLoadBalancer(name, status, region, role_name, services, scratch)
-          }.reduce({}){|hash, kv| hash.merge(kv) }
+      module DeploymentGroupHelper
+        def self.GenerateDeploymentGroupName(env_name, deploy, appname, scratch)
+          sprintf(scratch[:label_deployment_group], {
+                    :vpc => env_name,
+                    :deploy => deploy,
+                    :app => appname,
+                    :VPC => env_name.upcase,
+                    :DEPLOY => deploy.upcase,
+                    :APP => appname.upcase,
+                    :Vpc => env_name.capitalize,
+                    :Deploy => deploy.capitalize,
+                    :App => appname.capitalize,
+                })
         end
 
-        def self.GenerateLoadBalancer(name, status, region, role_name, services, scratch)
-          {
-              "#{GenerateLoadBalancerName(name, role_name)}" => {
-                  :ensure => status,
-                  :region => region,
-                  :subnets => scratch[:subnet_data].select{|data| data[:zone] == 'public' }.map{|data| data[:name] },
-                  :listeners => scratch[:loadbalancer_role_service_hash][role_name].map{|service|
-                    service['loadbalanced_ports'].map{|port| ParseSharedPort(port)}
-                  }.flatten.map{|porthash|
-                    (porthash.has_key?(:certificate) and porthash.has_key?(:protocol) and porthash[:protocol] == 'https') ?
-                        "https://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}?certificate=#{porthash[:certificate]}" :
-                        "#{porthash[:protocol]}://#{GenerateLoadBalancerTargetName(name, role_name)}:#{porthash[:listen_port]}"
-                  }.uniq,
-                  :targets => [ GenerateLoadBalancerTarget(name, role_name) ],
-                  :security_groups => [ "#{name}_#{role_name}_elb" ],
-                  # :internet_gateway => ;
-              }
-          }
+        def self.DeploymentGroups?(server_roles)
+          server_roles.any?{| role_name, role_data | role_data.has_key?('deploy') }
         end
 
-        def self.GenerateLoadBalancerTarget(name, role_name)
-          {
-              "name" => "#{GenerateLoadBalancerTargetName(name, role_name)}",
-              "port" => 80,
-              "check_interval" => 30,
-              "timeout" => 5,
-              "healthy" => 5,
-              "failed" => 2,
-              "vpc" => name
-          }
-        end
-
-        def self.GenerateLoadBalancerName(name, role_name)
-          TranscodeLoadBalancerName("#{name}-#{role_name}")
-        end
-
-        def self.GenerateLoadBalancerTargetName(name, role_name)
-          TranscodeLoadBalancerName("#{name}-#{role_name}")
-        end
-
-        def self.TranscodeLoadBalancerName(name)
-          name.chars.map{|ch| ['_'].include?(ch) ? '-' : ch }.join
-        end
-
-        def self.DoesServiceHaveLoadbalancedPorts(services, service_name)
-          return false if !services.has_key?(service_name)
-          return false if !services[service_name].has_key?('loadbalanced_ports')
-          return false if services[service_name]['loadbalanced_ports'].length == 0
-          true
-        end
-
-        def self.GetRoleLoadBalancedPorts(role, services)
-          return [] if !role.has_key?('services')
-
-          role['services'].map{ |service_name|
-            services[service_name].select{|service|
-              service.has_key?('loadbalanced_ports') and service['loadbalanced_ports'].length > 0
-            }.map{|service|
-              service['loadbalanced_ports']
-            }
-          }
-        end
-
-
-
-        def self.GetRoleNamesWithLoadBalancers(server_roles, services)
-          server_roles.select {|role_name, role_data|
-            role_data.has_key?('services') and role_data['services'].any?{|service_name| DoesServiceHaveLoadbalancedPorts(services, service_name)}
-          }.map{|role_name, role_data| role_name }
-        end
-
-        def self.GenerateServicesWithLoadBalancedPortsByRoleHash(server_roles, services)
-          server_roles.select {|role_name, role_data|
-            role_data.has_key?('services') and role_data['services'].any?{|service_name| DoesServiceHaveLoadbalancedPorts(services, service_name)}
-          }.map{|role_name, role_data|
+        def self.GenerateDeploymentGroupResources(env_name, server_roles, status, region, zones, scratch)
+          server_roles.select{| role_name, role_data | role_data.has_key?('deploy') }.map{ | role_name, role_data |
             {
-                role_name => role_data['services'].select{|service_name|
-                  DoesServiceHaveLoadbalancedPorts(services, service_name)
-                }.map{|service_name| services[service_name].merge({'service_name' => service_name})}
+              'deploy_group' => role_data['deploy']['group'],
+              'role_name' => role_name,
+              'deploy_application' => role_data['deploy']['application']
             }
-          }.reduce({}){|hash, kv| hash.merge(kv)}
-        end
-
-        def self.CalculateSecurityGroups(name, server_roles, services)
-          GetRoleNamesWithLoadBalancers(server_roles, services).map{|role_name| "#{name}_#{role_name}_elb"}
-        end
-
-        def self.ParseSharedPort(shared_port)
-          source_target_split = /^(.+)=>([0-9]{1,5})$/.match(shared_port)
-
-          # no =>
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_target_split.nil?
-          # Destination port a number?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, source_target_split[2] if /^[0-9]{1,5}$/.match(source_target_split[2]).nil?
-
-          source_split = source_target_split[1].split('|')
-
-          # Was it properly split?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_target_split.nil?
-          # too few segments?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_split.length < 2
-          # too many segments?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if source_split.length > 3
-
-          # Is the source port a number?
-          raise PuppetX::IntechWIFI::Exceptions::SharedPortFormatError, shared_port if /^[0-9]{1,5}$/.match(source_split[1]).nil?
-
-          {
-              :protocol => source_split[0],
-              :listen_port => source_split[1],
-              :target_port => source_target_split[2]
-          }.merge(source_split.length == 3 ? {
-              :certificate => source_split[2]
-          } : {})
-
+          }.reduce({}) {| m, v |
+            # if the deploy key already exists, we add the role to the array, otherwise we create it.
+            m[v['deploy_group']]['roles'] << v['role_name'] if m.key?(v['deploy_group'])
+            m[v['deploy_group']] = { 'roles' => [v['role_name']], 'deploy_application' => v['deploy_application'] } unless m.key?(v['deploy_group'])
+            m
+          }.map { |deploy , data|
+            [
+                GenerateDeploymentGroupName(env_name, deploy, data['deploy_application'], scratch),
+                {
+                    "ensure" => status,
+                    "region" => region,
+                    "application_name" => data['deploy_application'],
+                    "service_role" => scratch[:code_deploy_service_role],
+                    "autoscaling_groups" => data['roles'].map{|r|  AutoscalingGroupHelpers.generate_auto_scaler_name(env_name, r, zones, server_roles[r]['zone'], scratch) }
+                }
+            ]
+          }.reduce({}) {|m, v| m[v[0]] = v[1]; m }
         end
 
       end
-
-
-      module AutoScalerHelper
-        def self.GetDefaultScaling()
-          {
-              # Defaults
-              'min' => 0,
-              'max' => 2,
-              'desired' => 2,
-          }
-        end
-
-        def self.CopyScalingValues(src)
-          {}.merge(src).keep_if{|key, value|
-            ["min", "max", "desired"].include?(key)
-          }
-        end
-
-        def self.ConvertScalingToAutoScaleValues(src)
-          {
-              'minimum_instances' => src['min'],
-              'desired_instances' => src['desired'],
-              'maximum_instances' => src['max'],
-          }
-        end
-      end
-
-
 
       module IAMHelper
-        def self.CalculatePolicyResources(name, status, policies)
+        def self.CalculatePolicyResources(name, status, policies, scratch)
           policies.map{|key,value|
             {
-                GeneratePolicyName(name, key) => {
+                GeneratePolicyName(name, key, scratch) => {
                     :ensure => status,
                     :policy => value.kind_of?(Array) ? value : [value]
                 }
@@ -589,173 +325,101 @@ module PuppetX
           }.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
-        def self.CalculateAllRoleResources(name, status, server_roles, services)
-          server_roles.map{|role_label, role_data|
-            CalculateSingleRoleResource(name, status, role_label, role_data, services)
-          }.reduce({}){|hash, kv| hash.merge(kv)}
+        def self.CalculateAllRoleResources(name, status, server_roles, services, scratch)
+          roles = server_roles.map{|role_label, role_data|
+            CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
+          }
+
+          roles <<  {
+             "#{scratch[:code_deploy_service_role]}" => {
+               :ensure => status,
+               :policies => [ "AWSCodeDeployRole" ],
+               :trust => [ "codedeploy" ],
+             }
+           } if DeploymentGroupHelper.DeploymentGroups?(server_roles)
+
+          roles.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
-        def self.CalculateSingleRoleResource(name, status, role_label, role_data, services)
+        def self.CalculateSingleRoleResource(name, status, role_label, role_data, services, scratch)
           {
-              GenerateRoleName(name, role_label) => {
+              GenerateRoleName(name, role_label, scratch) => {
                   :ensure => status,
                   :policies => role_data['services'].map{|service_label|
                     service  = services[service_label]
-                    service.has_key?('policies') ? service['policies'].map{|policy_label| GeneratePolicyName(name, policy_label)} : []
+                    service.has_key?('policies') ? service['policies'].map{|policy_label| GeneratePolicyName(name, policy_label, scratch)} : []
                   }.flatten.uniq
               }
           }
         end
 
-        def self.CalculateInstanceProfileResources(name, status, server_roles)
+        def self.CalculateInstanceProfileResources(name, status, server_roles, scratch)
           server_roles.map{|role_label, role_data|
             {
-                GenerateInstanceProfileName(name, role_label) => {
+                GenerateInstanceProfileName(name, role_label, scratch) => {
                     :ensure => status,
-                    :iam_role => GenerateRoleName(name, role_label)
+                    :iam_role => GenerateRoleName(name, role_label, scratch)
                 }
             }
           }.reduce({}){|hash, kv| hash.merge(kv)}
         end
 
-        def self.GenerateRoleName(name, server_role_label)
-          "#{name}_#{server_role_label}"
+        def self.GenerateRoleName(name, role, scratch)
+          sprintf(scratch[:label_iam_role], {
+                    :vpc => name,
+                    :VPC => name.upcase,
+                    :Vpc => name.capitalize,
+                    :role => role,
+                    :ROLE => role.upcase,
+                    :Role => role.capitalize,
+                })
+
         end
 
-        def self.GeneratePolicyName(name, policy_label)
-          "#{name}_#{policy_label}"
+        def self.GeneratePolicyName(name, policy, scratch)
+          sprintf(scratch[:label_iam_policy], {
+                    :vpc => name,
+                    :VPC => name.upcase,
+                    :Vpc => name.capitalize,
+                    :policy => policy,
+                    :POLICY => policy.upcase,
+                    :Policy => policy.capitalize,
+                })
+
         end
 
-        def self.GenerateInstanceProfileName(name, instance_profile_label)
-          "#{name}_#{instance_profile_label}"
+        def self.GenerateInstanceProfileName(name, role, scratch)
+          sprintf(scratch[:label_iam_instance_profile], {
+                    :vpc => name,
+                    :VPC => name.upcase,
+                    :Vpc => name.capitalize,
+                    :role => role,
+                    :ROLE => role.upcase,
+                    :Role => role.capitalize,
+                })
+
         end
 
 
       end
-
-
-
-
-
-      module RdsHelpers
-        def self.CalculateRdsZones(name, network, zones, db_servers)
-          # Get the zones needed for all database server declarations.
-          zone_list = db_servers.keys.select{|s| db_servers[s].has_key?('zone') }.map{|s| db_servers[s]['zone']}
-
-          # Add the default zone as well, if needed.
-          zone_list << [
-              'private',
-              'nat',
-              'public'
-          ].select{ |zone|
-            zones.has_key?(zone)
-          }.first if db_servers.keys.select{|s| !db_servers[s].has_key?('zone') }.length > 0
-
-          zone_list.flatten.uniq
-        end
-
-        def self.CalculateNetworkRules(name, services, db_server_name, db_server_engine)
-          # First we need to find the port(s) to enable...
-          ports = {
-              'mysql' => [3306],
-              'mariadb' =>  [3306],
-              'oracle-se1' => [1525],
-              'oracle-se2' => [1526],
-              'oracle-se' => [1526],
-              'oracle-ee' => [1526],
-              'sqlserver-ee' => [1433],
-              'sqlserver-se' => [1433],
-              'sqlserver-ex' => [1433],
-              'sqlserver-web' => [1433],
-              'postgres' => [5432,5433],
-              'aurora' => [3306],
-          }[db_server_engine.nil? ? 'mysql' : db_server_engine]
-
-            # Then we need the list of services that talk to this database.
-            services.select{|service_name, service|
-              service['network']['out'].flatten.any?{|rule|
-                segments = rule.split('|')
-                segments[2] == 'rds' and segments[3] == db_server_name
-              }
-            }.keys.map{|service_name|
-              ports.map{|port| "tcp|#{port}|sg|#{ServiceHelpers.CalculateServiceSecurityGroupName(name, service_name)}"}
-            }.flatten
-
-        end
-      end
-
-      module ServiceHelpers
-        def self.CalculateServiceSecurityGroups(name, roles, services)
-          services.map{|key, value|
-            {
-                CalculateServiceSecurityGroupName(name, key) => {
-                    :service => key,
-                    :in => GetPathValue(value, ["network", "in"], []).map{|rule|
-                      TranscodeRule(name, roles, key, rule)
-                    }.flatten,
-                    :out => GetPathValue(value, ["network", "out"], []).map{|rule| TranscodeRule(name, roles, key, rule)}.flatten
-                }
-            }
-          }.reduce({}){|hash,kv| hash.merge(kv)}
-        end
-
-        def self.GetPathValue(data, path, nodata)
-          path = [path] if !path.kind_of?(Array)
-          if !data.has_key?(path[0])
-            nodata
-          elsif path.length > 1
-            GetPathValue(data[path[0]], path[1..-1], nodata)
-          else
-            data[path[0]]
-          end
-        end
-
-        def self.CalculateServiceSecurityGroupName(name, service_name)
-          sprintf("%{name}_%{service}", { :name => name, :service => service_name})
-        end
-
-        def self.TranscodeRule(name, roles, service, env_format)
-          segments = env_format.split('|')
-
-          case segments[2]
-            when 'rss'
-              location_type = 'sg'
-
-              case segments[3]
-                when 'elb'
-                  # This is the fun one!
-                  location_ident = roles.select{|role_name, role_data|
-                    role_data['services'].include?(service)
-                  }.map{|role_name, role_data|
-                    "#{name}_#{role_name}_elb"
-                  }
-
-
-              end
-
-            when 'service'
-              location_type = 'sg'
-              location_ident = [CalculateServiceSecurityGroupName(name, segments[3])]
-            when 'rds'
-              location_type = 'sg'
-              location_ident = ["#{name}_#{segments[3]}"]
-            else
-              location_type = segments[2]
-              location_ident = [segments[3]]
-          end
-
-          location_ident.map{|loc_ident|  "#{segments[0]}|#{segments[1]}|#{location_type}|#{loc_ident}" }
-        end
-
-        def self.Services(role)
-          role.has_key?("services") ? role["services"] : []
-        end
-
-      end
-
 
       module NatHelpers
-        def self.CalculateNatDetails(name, network, zones, scratch)
+        def self.GenerateNatName(env_name, zones, z, az, azi, scratch)
+          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_natgw', scratch), {
+                    :vpc => env_name,
+                    :zone => SubnetHelpers.ZoneLiteral(z, scratch),
+                    :az => az,
+                    :index => azi.to_s,
+                    :VPC => name.upcase,
+                    :AZ => az.upcase,
+                    :ZONE => SubnetHelpers.ZoneLiteral(z, scratch).upcase,
+                    :Vpc => name.capitalize,
+                    :Az => az.capitalize,
+                    :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize
+                })
+        end
+
+        def self.CalculateNatDetails(env_name, network, zones, scratch)
 
           #  First we ensure we have an array of nat IP addresses (that may be zero long)
           (zones.has_key?('nat') ?
@@ -767,14 +431,10 @@ module PuppetX
           }.map.with_index{|ipaddr, index|
             # Map into a hash, containing all the details of this nat.
             {
-                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format', scratch), {
-                    :vpc => name,
-                    :zone => 'nat',
-                    :az => network['availability'][index],
-                    :index => index.to_s,
-                }),
+                :name => GenerateNatName(env_name, zones, 'nat', network['availability'][index], index, scratch),
                 :az => network['availability'][index],
-                :ip_addr => ipaddr
+                :ip_addr => ipaddr,
+                :subnet => SubnetHelpers.GenerateSubnetName(env_name, zones, 'public', network['availability'][index], index, scratch)
             }
           }
         end
@@ -786,7 +446,7 @@ module PuppetX
           zone.has_key?(value) ? zone[value] : default.nil? ? GetDefaultZoneValue(value, scratch) : default
         end
 
-        def self.DefaltZoneValues
+        def self.DefaultZoneValues
           {
               'ipaddr_weighting' => 1,
               'format' => "%{vpc}%{zone}%{az}",
@@ -796,39 +456,53 @@ module PuppetX
         end
 
         def self.GetDefaultZoneValue(value, scratch)
-          self.DefaltZoneValues.merge({'format' => scratch[:label_subnet] })[value]
+          self.DefaultZoneValues.merge({
+            'format_subnet' => scratch[:label_subnet],
+            'format_routetable' => scratch[:label_routetable],
+            'format_natgw' => scratch[:label_natgw],
+            'format_autoscaling' => scratch[:label_autoscaling_group],
+            'format_launch_configuration' => scratch[:label_launch_configuration],
+            'format_iam_role' => scratch[:label_iam_role],
+            'format_iam_instance_profile' => scratch[:label_iam_instance_profile],
+            'format_iam_policy' => scratch[:label_iam_policy],
+          })[value]
         end
       end
 
       module RouteTableHelpers
+        def self.GenerateRouteTableName(name, zones, z, az, azi, scratch)
+          sprintf(ZoneHelpers.ZoneValue(zones[z], 'format_routetable', scratch), {
+                    :vpc => name,
+                    :zone => SubnetHelpers.ZoneLiteral(z, scratch),
+                    :az => az,
+                    :index => azi.to_s,
+                    :VPC => name.upcase,
+                    :AZ => az.upcase,
+                    :ZONE => SubnetHelpers.ZoneLiteral(z, scratch).upcase,
+                    :Vpc => name.capitalize,
+                    :Az => az.capitalize,
+                    :Zone => SubnetHelpers.ZoneLiteral(z, scratch).capitalize
+                })
+        end
+
         def self.CalculateRouteTablesRequired(name, network, zones, scratch)
           route_tables  = []
 
           route_tables << {
-              :name => name,
+              :name => GenerateRouteTableName(name, zones, 'public', 'all', 0, scratch),
               :zone => 'public',
               :az => nil
           } if scratch[:public_zone?]
 
           route_tables << scratch[:nat_list].map.with_index{|nat, index|
             {
-                :name => sprintf(ZoneHelpers.ZoneValue(zones['nat'], 'format', scratch), {
-                    :vpc => name,
-                    :zone => 'nat',
-                    :az => network['availability'][index],
-                    :index => index.to_s,
-                }),
+                :name => GenerateRouteTableName(name, zones, 'nat', network['availability'][index], index, scratch),
                 :zone => 'nat',
                 :az => network['availability'][index]
             }
           } if scratch[:nat_zone?] and scratch[:nat_list].length > 0
           route_tables << {
-              :name => sprintf(ZoneHelpers.ZoneValue(zones['private'], 'format', scratch), {
-                  :vpc => name,
-                  :zone => 'private',
-                  :az => "",
-                  :index => "",
-              }),
+              :name => GenerateRouteTableName(name, zones, 'private', 'all', 0, scratch),
               :zone => 'private',
               :az => nil
           } if scratch[:private_zone?]
@@ -899,7 +573,7 @@ module PuppetX
 
         def self.GenerateSubnetName(name, zones, zone, az, index, scratch)
           zone_literal = SubnetHelpers.ZoneLiteral(zone, scratch)
-          sprintf(ZoneHelpers.ZoneValue(zones[zone], 'format', scratch), {
+          sprintf(ZoneHelpers.ZoneValue(zones[zone], 'format_subnet', scratch), {
               :vpc => name,
               :az  => az,
               :index => index,
