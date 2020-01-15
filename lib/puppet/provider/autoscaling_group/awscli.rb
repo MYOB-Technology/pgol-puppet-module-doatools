@@ -85,7 +85,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
   end
 
   def exists?
-    put 'IN EXISTS'
+    puts 'IN EXISTS'
     #
     #  If the puppet manifest is delcaring the existance of a subnet then we know its region.
     #
