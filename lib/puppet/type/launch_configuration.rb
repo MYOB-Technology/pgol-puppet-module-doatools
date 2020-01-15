@@ -114,7 +114,7 @@ Puppet::Type.newtype(:launch_configuration) do
           s.keys.all?{|device|
             # then we need to check each device in turn and make sure that all should keys and value are identical in is.
             s[device].keys.all?{|param|
-              is[device]._has_key? param and is[device][param] == s[device][param]
+              is[device].has_key? param and is[device][param] == s[device][param]
             }
           }
         }
