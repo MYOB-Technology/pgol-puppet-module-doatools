@@ -110,11 +110,10 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
   def flush
     if @property_flush and @property_flush.length > 0
       set_subnets(@property_flush[:subnets]) if !@property_flush[:subnets].nil?
-      @property_flush[:targets].select{|x| !@property_hash[:targets].any?{|y| same_target_name(x, y)}}.each{|x| create_target(@property_hash[:region], x)} unless @property_flush[:targets].nil?
-      @property_flush[:listeners].select{|x| !@property_hash[:listeners].include?(x)}.each{|x| create_listener(x)} unless @property_flush[:listeners].nil?
       @property_hash[:listeners].select{|x| !@property_flush[:listeners].include?(x)}.each{|x| destroy_listener(x)} unless @property_flush[:listeners].nil?
+      @property_flush[:listeners].select{|x| !@property_hash[:listeners].include?(x)}.each{|x| create_listener(x)} unless @property_flush[:listeners].nil?
       @property_hash[:targets].select{|x| !@property_flush[:targets].any?{|y| same_target_name(x, y)}}.each{|x| destroy_target(@property_hash[:region], x)} unless @property_flush[:targets].nil?
-
+      @property_flush[:targets].select{|x| !@property_hash[:targets].any?{|y| same_target_name(x, y)}}.each{|x| create_target(@property_hash[:region], x)} unless @property_flush[:targets].nil?
       @property_flush[:targets].select{|x| @property_hash[:targets].any?{|y| same_target_name(x, y) and x != y } }.each{|x| modify_target(@property_hash[:region], x)} if !@property_flush[:targets].nil?
 
       awscli([
