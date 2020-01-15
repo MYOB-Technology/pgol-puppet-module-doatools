@@ -61,7 +61,7 @@ module PuppetX
         end
 
         def self.generate_loadbalancer_target_name(name, role_name, protocol, listen_port, target_port)
-          transcode_loadbalancer_name("#{name}-#{role_name}-#{protocol}-#{listen_port}-to-#{target_port}")
+          transcode_loadbalancer_name("#{role_name}-#{protocol}-#{listen_port}-to-#{target_port}")
         end
 
         def self.transcode_loadbalancer_name(name)
