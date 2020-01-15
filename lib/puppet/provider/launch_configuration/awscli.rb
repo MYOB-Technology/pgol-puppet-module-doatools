@@ -69,8 +69,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   end
 
   def exists?
-    puts "called launch_configuration.exists?"
-    notice("called launch_configuration.exists?")
+    debug("running launchconfig.awscli.exists?")
 
     #
     #  If the puppet manifest is delcaring the existance of a subnet then we know its region.
@@ -81,14 +80,14 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     #  If we don't know the region, then we have to search each region in turn.
     #
     regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
-    notice("searching regions=#{regions} for launch_configuration=#{resource[:name]}\n")
+    debug("searching regions=#{regions} for launch_configuration=#{resource[:name]}\n")
 
     #  launch configurations cannot be modified in place. When we change properties we have to create a new one. to handle this
     #  we add a sequential 6 digit number on the end of the launch configuration.
 
 
     launch_config = PuppetX::IntechWIFI::AwsCmds.find_launch_configuration_by_name(regions,resource[:name]) {| *arg | awscli(*arg) }
-    notice("Found the LaunchConfiguration '#{launch_config["LaunchConfigurationName"]}'.")
+    debug("Found the LaunchConfiguration '#{launch_config["LaunchConfigurationName"]}'.")
 
     @property_hash[:ensure] = :present
     #!TODO: Region should really be extracted from the ARN value.
@@ -126,7 +125,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     #  Extra disks only contain disk info that is not part of the original ami
     @property_hash[:extra_disks] = lc_block_device_hash.select { |device, settings| !ami_block_device_hash.has_key? device }.map{ | key, value| value }
 
-    notice("Successfully exiting exitst?")
+    debug("Successfully exiting launchconfig.awscli.exists?")
 
     true
 
@@ -169,7 +168,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
   def flush
     if @property_flush and @property_flush.length > 0
-      notice("Flushing new property values to launch configuration")
+      debug("Flushing new property values to launch configuration")
       # We need to create a new launch configuration here every time there is a property change
       @property_flush[:index] = @property_hash[:index] + 1
       new_name = [@property_hash[:name], PuppetX::IntechWIFI::Autoscaling_Rules.encode_index(@property_flush[:index])].join
@@ -185,8 +184,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
           "--instance-type", value(:instance_type)
       ]
 
-      puts "EEEEEEEEEEEEEEEEEEE"
-
       #  Add in security groups
       if (value(:security_groups).nil? == false) and (value(:security_groups).length > 0)
         args << [
@@ -196,7 +193,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
             }
         ]
       end
-      puts "DDDDDDDDDDDDDDDDDDDD"
 
       if (value(:userdata).nil? == false) and (value(:userdata).length > 0)
         userdata_temp_file = Tempfile.new('userdata')
@@ -207,7 +203,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
             "--user-data", "file://#{userdata_temp_file.path}"
         ]
       end
-      puts "CCCCCCCCCCCCCCCCCCCC"
 
       if (value(:ssh_key_name).nil? == false) and (value(:ssh_key_name).length > 0)
         args << [
@@ -226,7 +221,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
       extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
       ami_disks_configured = value(:image_disks).nil? ? {} : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
-      puts "BBBBBBBBBBBBBBBBBBBBBBB"
 
       ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
 
@@ -240,7 +234,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
       #  Create the new launch_configuration
       awscli(args)
-      puts "AAAAAAAAABBBBBBBBBBBBB"
 
       userdata_temp_file.unlink if !userdata_temp_file.nil?
 
@@ -252,7 +245,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
           awscli("autoscaling", "delete-launch-configuration", '--region', value(:region), "--launch-configuration-name", lc)
         }
       end
-      puts "AAAAAAAAAAAAAAAAAAAA"
 
     end
   end
