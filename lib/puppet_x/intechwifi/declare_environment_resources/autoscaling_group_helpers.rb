@@ -35,11 +35,11 @@ module PuppetX
 
         def self.get_groups(name, status, role, role_data, region, network, zones, instance_label, scratch)
           {
-            'ensure' => status,
-            'region' => region,
-            'launch_configuration' => generate_launch_configuration_name(name, role, zones, role_data['zone'], scratch),
-            'subnets' => get_group_subnets(name, role_data, network, zones, scratch),
-            'tags' => { 'Role' => role, 'Name' => generate_name_tag(name, role, instance_label) }
+            :ensure => status,
+            :region => region,
+            :launch_configuration => generate_launch_configuration_name(name, role, zones, role_data['zone'], scratch),
+            :subnets => get_group_subnets(name, role_data, network, zones, scratch),
+            :tags => { 'Role' => role, 'Name' => generate_name_tag(name, role, instance_label) }
             #TODO: We need to set the internet gateway
             #'internet_gateway' => nil,
             #TODO: We need to set the nat gateway
@@ -61,7 +61,7 @@ module PuppetX
           load_balancer_role_service_hash = LoadBalancerHelper.generate_services_with_loadbalanced_ports_by_role(roles, services)
           targets = load_balancer_role_service_hash.key?(role_name) ? 
                     LoadBalancerHelper.generate_loadbalancer_targets(load_balancer_role_service_hash, role_name, name).map { |target| target['name'] } : []
-          { 'load_balancer' => targets }
+          { :load_balancer => targets }
         end 
 
         def self.generate_auto_scaler_name(env_name, role, zones, z, scratch)
@@ -124,9 +124,9 @@ module PuppetX
 
         def self.convert_to_autoscale_values(src)
           {
-            'minimum_instances' => src['min'],
-            'desired_instances' => src['desired'],
-            'maximum_instances' => src['max']
+            :minimum_instances => src['min'],
+            :desired_instances => src['desired'],
+            :maximum_instances => src['max']
           }
         end
       end

@@ -960,39 +960,39 @@ describe 'define_environment_resources' do
   }
 
   autoscaling_group2 = {
-      "resource_type" => "autoscaling_group",
-      "resources" => {
-          "demotestrole" => {
-              "ensure"=>"present",
-              "region"=>"us-east-1",
-              "launch_configuration"=>"demotestrole",
-              "subnets"=>[
-                  "demopublica",
-                  "demopublicb",
-                  "demopublicc",
-              ],
-              "tags" => { "Role" => "testrole", "Name" => "testrole_demo" },
-              "minimum_instances"=>0,
-              "maximum_instances"=>2,
-              "desired_instances"=>2,
-              "load_balancer" => []
-          }
+    'resource_type' => 'autoscaling_group',
+    'resources' => {
+      'demotestrole' => {
+        :ensure=>'present',
+        :region=>'us-east-1',
+        :launch_configuration=>'demotestrole',
+        :subnets=>[
+          'demopublica',
+          'demopublicb',
+          'demopublicc',
+        ],
+        :tags => { 'Role' => 'testrole', 'Name' => 'testrole_demo' },
+        :minimum_instances=>0,
+        :maximum_instances=>2,
+        :desired_instances=>2,
+        :load_balancer => []
       }
+    }
   }
 
   autoscaling_group3 = { 
-    "resource_type"=>"autoscaling_group", 
-    "resources"=>{
-      "demotestrole"=>{
-        "ensure"=>"present", 
-        "region"=>"us-east-1", 
-        "launch_configuration"=>"demotestrole", 
-        "subnets"=>["demopublica", "demopublicb", "demopublicc"], 
-        "tags"=>{"Role"=>"testrole", "Name"=>"testrole_demo"}, 
-        "minimum_instances"=>0, 
-        "desired_instances"=>2, 
-        "maximum_instances"=>2, 
-        "load_balancer"=>["testrole-https-443-to-443"] 
+    'resource_type'=>'autoscaling_group', 
+    'resources'=>{
+      'demotestrole'=>{
+        :ensure=>'present', 
+        :region=>'us-east-1', 
+        :launch_configuration=>'demotestrole', 
+        :subnets=>['demopublica', 'demopublicb', 'demopublicc'], 
+        :tags=>{'Role'=>'testrole', 'Name'=>'testrole_demo'}, 
+        :minimum_instances=>0, 
+        :desired_instances=>2, 
+        :maximum_instances=>2, 
+        :load_balancer=>['testrole-https-443-to-443'] 
       }
     }
   }
