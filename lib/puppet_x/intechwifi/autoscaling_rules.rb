@@ -67,19 +67,10 @@ module PuppetX
             '--auto-scaling-group-name', name
         ]
 
-
         result = JSON.parse(aws_command.call(args.flatten))["LoadBalancerTargetGroups"]
-
-        puts "RESULT #{result}"
-
-        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if result.length == 0
-
-        things = result.map{|data|
+        result.map{|data|
           /^arn:aws:elasticloadbalancing:[a-z\-0-9A-Z]+:[0-9]+:targetgroup\/([0-9a-zA-Z\-]+)\/[0-9a-f]+$/.match(data['LoadBalancerTargetGroupARN'])[1]
         }
-
-        puts "THINGS #{things}"
-        things
       rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
         nil
       end
