@@ -260,15 +260,15 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
 
   def list_elb_targets()
     JSON.parse(awscli('elbv2', 'describe-target-groups', '--region', @property_hash[:region], '--load-balancer-arn', @arn))["TargetGroups"].map do |x|
-      puts "TARGET GROUP #{x}"
       {
-          "name" => x["TargetGroupName"],
-          "port" => x["Port"],
-          "check_interval" => x["HealthCheckIntervalSeconds"],
-          "timeout" => x["HealthCheckTimeoutSeconds"],
-          "healthy" => x["HealthyThresholdCount"],
-          "failed" => x["UnhealthyThresholdCount"],
-          "vpc" => PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'vpc', x["VpcId"]){|*arg| awscli(*arg)}
+          'name' => x['TargetGroupName'],
+          'port' => x['Port'],
+          'protocol' => x['Protocol']
+          'check_interval' => x['HealthCheckIntervalSeconds'],
+          'timeout' => x['HealthCheckTimeoutSeconds'],
+          'healthy' => x['HealthyThresholdCount'],
+          'failed' => x['UnhealthyThresholdCount'],
+          'vpc' => PuppetX::IntechWIFI::AwsCmds.find_name_by_id(@property_hash[:region], 'vpc', x['VpcId']){|*arg| awscli(*arg)}
       }
     end
 

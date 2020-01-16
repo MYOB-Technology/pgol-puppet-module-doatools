@@ -103,13 +103,13 @@ Puppet::Type.newtype(:autoscaling_group) do
 
   newproperty(:load_balancer, :array_matching => :all) do
     def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+      is.all?{|v| @should.include? v} && @should.all?{|v| is.include? v}
     end
   end
 
   newproperty(:subnets, :array_matching => :all) do
     def insync?(is)
-      is.all?{|v| @should.include? v} and @should.all?{|v| is.include? v}
+      is.all?{|v| @should.include? v} && @should.all?{|v| is.include? v}
     end
   end
 
