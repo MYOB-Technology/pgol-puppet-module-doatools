@@ -95,8 +95,6 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     #
     regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
 
-    puts "IM IN EXISTS for #{resource[:name]}"
-
     debug("searching regions=#{regions} for autoscaling_group=#{resource[:name]}\n")
 
     search = PuppetX::IntechWIFI::AwsCmds.find_autoscaling_by_name(regions, resource[:name]) do | *arg |
@@ -159,15 +157,13 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
       awscli(args.flatten)
       create_update_tags(@property_flush[:tags], @property_hash[:name], @property_hash[:region]) if @property_flush.has_key?(:tags)
-      puts "IM IN flush property hash #{@property_hash[:load_balancer]}"
-      puts "IM IN flush property flush #{@property_flush[:load_balancer]}"
       update_loadbalancer(@property_hash[:region], @property_hash[:name], @property_hash[:load_balancer], @property_flush[:load_balancer]) if @property_flush.has_key?(:load_balancer)
     end
   end
 
   def update_loadbalancer(region, autoscaling_name, from, to)
-    remove_loadbalancer(region, autoscaling_name, from) unless from.nil?
-    add_loadbalancer(region, autoscaling_name, to) unless to.nil?
+    remove_loadbalancer(region, autoscaling_name, from)
+    add_loadbalancer(region, autoscaling_name, to)
   end
 
   def add_loadbalancer(region, autoscaling_name, target_groups)

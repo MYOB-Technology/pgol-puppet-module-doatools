@@ -103,7 +103,6 @@ Puppet::Type.newtype(:autoscaling_group) do
 
   newproperty(:load_balancer, :array_matching => :all) do
     def insync?(is)
-      puts "IS #{is}   SHOULD #{@should}"
       is.all?{|v| @should.include? v} && @should.all?{|v| is.include? v}
     end
   end
