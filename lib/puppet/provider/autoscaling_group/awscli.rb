@@ -95,6 +95,8 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     #
     regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
 
+    puts "IM IN EXISTS for #{resource[:name]}"
+
     debug("searching regions=#{regions} for autoscaling_group=#{resource[:name]}\n")
 
     search = PuppetX::IntechWIFI::AwsCmds.find_autoscaling_by_name(regions, resource[:name]) do | *arg |
@@ -157,7 +159,8 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
 
       awscli(args.flatten)
       create_update_tags(@property_flush[:tags], @property_hash[:name], @property_hash[:region]) if @property_flush.has_key?(:tags)
-
+      puts "IM IN flush property hash #{@property_hash[:load_balancer]}"
+      puts "IM IN flush property flush #{@property_flush[:load_balancer]}"
       update_loadbalancer(@property_hash[:region], @property_hash[:name], @property_hash[:load_balancer], @property_flush[:load_balancer]) if @property_flush.has_key?(:load_balancer)
     end
   end
@@ -167,28 +170,30 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
     add_loadbalancer(region, autoscaling_name, to) unless to.nil?
   end
 
-  def add_loadbalancer(region, autoscaling_name, target_group)
-    args = [
+  def add_loadbalancer(region, autoscaling_name, target_groups)
+    target_groups.each { |target_group|
+      args = [
         'autoscaling', 'attach-load-balancer-target-groups',
         '--region', region,
         '--auto-scaling-group-name', autoscaling_name,
         '--target-group-arns', PuppetX::IntechWIFI::AwsCmds.find_elb_target_by_name(target_group, region){|*arg| awscli(*arg)}
-    ]
+      ]
 
-    awscli(args.flatten)
-
+      awscli(args.flatten) 
+    }
   end
 
-  def remove_loadbalancer(region, autoscaling_name, target_group)
-    args = [
+  def remove_loadbalancer(region, autoscaling_name, target_groups)
+    target_groups.each { |target_group|
+      args = [
         'autoscaling', 'detach-load-balancer-target-groups',
         '--region', region,
         '--auto-scaling-group-name', autoscaling_name,
         '--target-group-arns', PuppetX::IntechWIFI::AwsCmds.find_elb_target_by_name(target_group, region){|*arg| awscli(*arg)}
-    ]
+      ]
 
-    awscli(args.flatten)
-
+      awscli(args.flatten)
+    }
   end
 
   def create_update_tags(tags, asg_name, region)
