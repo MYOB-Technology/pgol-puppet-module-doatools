@@ -263,7 +263,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
       {
           'name' => x['TargetGroupName'],
           'port' => x['Port'],
-          'protocol' => x['Protocol']
+          'protocol' => x['Protocol'],
           'check_interval' => x['HealthCheckIntervalSeconds'],
           'timeout' => x['HealthCheckTimeoutSeconds'],
           'healthy' => x['HealthyThresholdCount'],
