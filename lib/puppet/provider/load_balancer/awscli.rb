@@ -186,7 +186,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--region', region,
         '--name', source['name'],
         '--protocol', source['protocol'].upcase,
-        '--port', source['port'].to_s,
+        '--port', source['port'],
         '--vpc-id', PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'vpc', source["vpc"]){|*arg| awscli(*arg)},
         '--health-check-protocol', source['protocol'].upcase,
         '--health-check-port', source["port"],
@@ -263,7 +263,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
       {
           'name' => x['TargetGroupName'],
           'protocol' => x['Protocol'].downcase,
-          'port' => x['Port'],
+          'port' => x['Port'].to_s,
           'check_interval' => x['HealthCheckIntervalSeconds'],
           'timeout' => x['HealthCheckTimeoutSeconds'],
           'healthy' => x['HealthyThresholdCount'],
