@@ -186,7 +186,7 @@ Puppet::Type.type(:load_balancer).provide(:awscli) do
         '--region', region,
         '--name', source['name'],
         '--protocol', source['protocol'].upcase,
-        '--port', source['port'],
+        '--port', source['port'].to_s,
         '--vpc-id', PuppetX::IntechWIFI::AwsCmds.find_id_by_name(@property_hash[:region], 'vpc', source["vpc"]){|*arg| awscli(*arg)},
         '--health-check-protocol', source['protocol'].upcase,
         '--health-check-port', source["port"],
