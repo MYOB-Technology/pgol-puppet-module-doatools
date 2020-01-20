@@ -226,10 +226,13 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
       region = value(:region)
       puts("flush.region=#{region}")
+      puts("flush.image=#{image}")
       ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
+      puts("ami_block_devices=#{ami_block_devices}")
 
       #  Get the block devices in the  current launch config ami.
-      ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(@property_flush[:region], @property_flush[:image]) {| *arg | awscli(*arg) }
+      ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
+      puts("ami_block_devices=#{ami_block_devices}")
 
       merged_ami_disks = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, ami_disks_configured
 
