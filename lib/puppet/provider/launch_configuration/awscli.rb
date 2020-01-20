@@ -33,6 +33,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     #  when we flush the properties.
     @property_hash[:index] = 0
     @property_hash[:name] = resource[:name]
+    self.region = resource[:region]
     self.image = resource[:image]
     self.instance_type = resource[:instance_type]
     self.security_groups = resource[:security_groups]
