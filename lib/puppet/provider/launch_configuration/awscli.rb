@@ -33,7 +33,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     #  when we flush the properties.
     @property_hash[:index] = 0
     @property_hash[:name] = resource[:name]
-    self.region = resource[:region]
+    @property_hash[:region] = resource[:region]
     self.image = resource[:image]
     self.instance_type = resource[:instance_type]
     self.security_groups = resource[:security_groups]
@@ -92,6 +92,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     @property_hash[:ensure] = :present
     #!TODO: Region should really be extracted from the ARN value.
+    puts("exists?.region=#{resource[:region]}")
     @property_hash[:region] = resource[:region]
     @property_hash[:name] = resource[:name]
 
@@ -223,6 +224,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
       ami_disks_configured = value(:image_disks).nil? ? {} : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
 
+      region = value(:region)
+      puts("flush.region=#{region}")
       ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
 
       #  Get the block devices in the  current launch config ami.
