@@ -233,6 +233,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       puts("merged_ami_disks=#{merged_ami_disks}")
       puts("ami_block_device_hash=#{ami_block_device_hash}")
       device_mappings = PuppetX::IntechWIFI::EBS_Volumes.remove_snapshot_encrypted_flag merged_ami_disks.concat(extra_disks_configured)
+      puts("device_mappings=#{device_mappings}")
 
       args << ["--block-device-mappings", device_mappings.to_json]
 
