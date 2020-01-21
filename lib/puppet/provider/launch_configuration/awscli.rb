@@ -221,27 +221,30 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_true(value(:public_ip))
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
-      extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
-      ami_disks_configured = value(:image_disks).nil? ? {} : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
+      #extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
+      #ami_disks_configured = value(:image_disks).nil? ? {} : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
 
-      region = value(:region)
-      puts("flush.region=#{region}")
-      puts("flush.image=#{image}")
-      ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
-      puts("ami_block_devices=#{ami_block_devices}")
+      #region = value(:region)
+      #puts("flush.region=#{region}")
+      #puts("flush.image=#{image}")
+      #ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
+      #puts("ami_block_devices=#{ami_block_devices}")
 
       #  Get the block devices in the  current launch config ami.
       ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
-      puts("ami_block_devices=#{ami_block_devices}")
+      #puts("ami_block_devices=#{ami_block_devices}")
 
-      merged_ami_disks = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, ami_disks_configured
+      extra_disk_hash = PuppetX::IntechWIFI::AwsCmds.get_disks_block_device_hash(value(:extra_disks))
+      all_disk_hash = ami_block_device_hash.concat(extra_disk_hash)
 
-      puts("merged_ami_disks=#{merged_ami_disks}")
-      puts("ami_block_device_hash=#{ami_block_device_hash}")
-      device_mappings = PuppetX::IntechWIFI::EBS_Volumes.remove_snapshot_encrypted_flag merged_ami_disks.concat(extra_disks_configured)
-      puts("device_mappings=#{device_mappings}")
 
-      args << ["--block-device-mappings", device_mappings.to_json]
+
+      #merged_ami_disks = PuppetX::IntechWIFI::EBS_Volumes.merge_block_device_mapping ami_block_devices, ami_disks_configured
+
+
+      puts("all_disk_hash=#{all_disk_hash}")
+
+      args << ["--block-device-mappings", get_image_block_device_mapping_from_hash(all_disk_hash).to_json]
 
       #  Ensure we have a flat array...
       args.flatten

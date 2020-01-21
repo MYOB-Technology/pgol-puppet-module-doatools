@@ -30,7 +30,12 @@ module PuppetX
             disks.each_with_index.map { |disk, i| { DEVICE_NAME => "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}", 'Ebs' => disk } }
         end
 
-        def self.get_image_block_device_mapping(disks)
+        def self.get_disks_block_device_hash(disks)
+            disks.each_with_index.map { |disk, i| { "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}" => disk } }
+        end
+
+
+        def self.get_image_block_device_mapping_from_hash(disks)
             disks.keys.map { |device_name| { DEVICE_NAME => device_name, 'Ebs' => disks[device_name] } }
         end
 
