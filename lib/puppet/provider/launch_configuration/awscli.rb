@@ -246,7 +246,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
       puts("all_disk_hash=#{all_disk_hash}")
 
-      args << ["--block-device-mappings", get_image_block_device_mapping_from_hash(all_disk_hash).to_json]
+      args << ["--block-device-mappings", PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping_from_hash(all_disk_hash).to_json]
 
       #  Ensure we have a flat array...
       args.flatten
