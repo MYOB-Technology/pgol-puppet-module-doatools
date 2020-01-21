@@ -31,7 +31,11 @@ module PuppetX
         end
 
         def self.get_disks_block_device_hash(disks)
-            disks.each_with_index.map { |disk, i| { "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}" => disk } }
+            disks.each_with_index.map { |disk, i|
+              { "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}" => disk }
+            }.reduce({}){ | memo, value |
+              memo.merge(value)
+            }
         end
 
 

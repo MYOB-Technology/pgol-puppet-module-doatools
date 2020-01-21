@@ -235,6 +235,8 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       #puts("ami_block_devices=#{ami_block_devices}")
 
       extra_disk_hash = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_hash(value(:extra_disks))
+      puts("ami_block_device_hash=#{ami_block_device_hash}")
+      puts("extra_disk_hash=#{extra_disk_hash}")
       all_disk_hash = ami_block_device_hash.merge(extra_disk_hash)
 
 
