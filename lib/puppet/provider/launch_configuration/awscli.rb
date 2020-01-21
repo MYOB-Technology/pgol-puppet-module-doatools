@@ -234,7 +234,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
       #puts("ami_block_devices=#{ami_block_devices}")
 
-      extra_disk_hash = PuppetX::IntechWIFI::AwsCmds.get_disks_block_device_hash(value(:extra_disks))
+      extra_disk_hash = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_hash(value(:extra_disks))
       all_disk_hash = ami_block_device_hash.concat(extra_disk_hash)
 
 
