@@ -21,9 +21,8 @@ module PuppetX
   module IntechWIFI
     module DeclareEnvironmentResources
       module Route53RecordSetHelper
-        def self.generate(name, status, region, pg_sites, domains, scratch)
-          resources = generate_records(pg_sites, domains['database_domain'], 'site_database_server')
-                        .concat(generate_records(pg_sites, domains['filesystem_domain'], 'site_filesystem_server'))
+        def self.generate(name, status, region, route_53_records, scratch)
+          resources = generate_records(route_53_records)
                         .group_by { |record| record['hosted_zone'] }
                         .map { |hosted_zone, records| generate_record_set(name, status, region, hosted_zone, records, scratch) }
                         .reduce({}){|hash, kv| hash.merge(kv) }
@@ -47,13 +46,13 @@ module PuppetX
           }
         end
 
-        def self.generate_records(pg_sites, domain, server_key)
-          pg_sites.map { |site, props| {
-            'hosted_zone' => domain,
-            'record' => "#{site}.#{domain}.".downcase,
-            'type' => 'CNAME',
-            'ttl' => 60,
-            'value' => [props[server_key]]
+        def self.generate_records(route_53_records)
+          route_53_records.map { |record, props| {
+            'hosted_zone' => props['hosted_zone'],
+            'record' => record.downcase,
+            'type' => props['type'],
+            'ttl' => props['ttl'],
+            'value' => [props['value']]
           }}
         end
       end

@@ -98,11 +98,11 @@ define doatools::environment (
 
   }),
 
-  $pg_sites = {
+  $domains = {
 
   },
 
-  $domains = {
+  $route_53_records = {
 
   },
 
@@ -133,7 +133,7 @@ define doatools::environment (
     $tags_vpc,
     $policies,
     $label_formats,
-    $pg_sites,
+    $route_53_records,
     $domains,
     $options
   ).each |$r| {
