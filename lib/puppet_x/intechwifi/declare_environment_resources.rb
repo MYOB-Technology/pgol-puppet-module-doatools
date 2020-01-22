@@ -301,22 +301,25 @@ module PuppetX
 
         def self.GenerateDeploymentGroupResources(env_name, server_roles, status, region, zones, scratch)
           server_roles.select{| role_name, role_data | role_data.has_key?('deploy') }.map{ | role_name, role_data |
-            [
-              role_data['deploy']['group'], [ role_name ], role_data['deploy']['application']
-            ]
+            {
+              'deploy_group' => role_data['deploy']['group'],
+              'role_name' => role_name,
+              'deploy_application' => role_data['deploy']['application']
+            }
           }.reduce({}) {| m, v |
             # if the deploy key already exists, we add the role to the array, otherwise we create it.
-            m.has_key?(v[0]) ? m[v[0]][0] << v[1]  : m[v[0]] = [v[1], v[2]]
+            m[v['deploy_group']]['roles'] << v['role_name'] if m.key?(v['deploy_group'])
+            m[v['deploy_group']] = { 'roles' => [v['role_name']], 'deploy_application' => v['deploy_application'] } unless m.key?(v['deploy_group'])
             m
           }.map { |deploy , data|
             [
-                GenerateDeploymentGroupName(env_name, deploy, data[1], scratch),
+                GenerateDeploymentGroupName(env_name, deploy, data['deploy_application'], scratch),
                 {
                     "ensure" => status,
                     "region" => region,
-                    "application_name" => data[1],
+                    "application_name" => data['deploy_application'],
                     "service_role" => scratch[:code_deploy_service_role],
-                    "autoscaling_groups" => data[0].map{|r|  AutoscalingGroupHelpers.generate_auto_scaler_name(env_name, r, zones, server_roles[r]['zone'], scratch) }
+                    "autoscaling_groups" => data['roles'].map{|r|  AutoscalingGroupHelpers.generate_auto_scaler_name(env_name, r, zones, server_roles[r]['zone'], scratch) }
                 }
             ]
           }.reduce({}) {|m, v| m[v[0]] = v[1]; m }
