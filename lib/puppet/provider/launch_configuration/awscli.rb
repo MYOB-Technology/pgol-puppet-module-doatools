@@ -157,6 +157,13 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       .select { |mapping| mapping.key? 'Ebs' }
   end
 
+  def merge_ami_hash_and_imagedisks(ami_hash, image_disk_definition)
+    device = ami_hash.keys[0]
+    {
+        device => ami_hash[device].merge(image_disk_definition)
+    }
+  end
+
   def get_block_device_mapping_as_hash(bdm)
     bdm.select{ |ami|
       ami.key?('Ebs')
@@ -231,8 +238,12 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       #puts("ami_block_devices=#{ami_block_devices}")
 
       #  Get the block devices in the  current launch config ami.
-      ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
-      #puts("ami_block_devices=#{ami_block_devices}")
+      # ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
+      ami_block_device_hash = merge_ami_hash_and_imagedisks(
+          PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) },
+          value(:image_disks)
+      }
+      puts("ami_block_device_hash=#{ami_block_device_hash}")
 
       extra_disk_hash = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_hash(value(:extra_disks))
       puts("ami_block_device_hash=#{ami_block_device_hash}")
