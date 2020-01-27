@@ -158,9 +158,12 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   end
 
   def merge_ami_hash_and_imagedisks(ami_hash, image_disk_definition)
-    device = ami_hash.keys[0]
+    #  we may have different device names...
+    device_ami = ami_hash.keys[0]
+    device_def = image_disk_definition.keys[0]
+
     {
-        device => ami_hash[device].merge(image_disk_definition)
+        device_ami => ami_hash[device_ami].merge(image_disk_definition[defvice_def])
     }
   end
 
