@@ -160,7 +160,7 @@ define doatools::environment (
     if (($resourcetype_filter == all) or ($rt in $resourcetype_filter))
     {
       # need to change this back to info...
-      notice("declaring resources: ${rt} ${rts}")
+      info("declaring resources: ${rt} ${rts}")
       debug($r['resources'])
       create_resources($r['resource_type'], $r['resources'], {})
     }
