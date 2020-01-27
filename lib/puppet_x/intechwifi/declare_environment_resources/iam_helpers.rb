@@ -12,7 +12,6 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-require 'active_support/core_ext/string'
 require 'puppet_x/intechwifi/declare_environment_resources/sns_helpers'
 
 module PuppetX
@@ -120,7 +119,7 @@ module PuppetX
                     :role => role,
                     :ROLE => role.upcase,
                     :Role => role.capitalize,
-                }).truncate(64)
+                })
         end
 
         def self.generate_lambda_role_name(name, lambda_function, scratch)
@@ -131,7 +130,7 @@ module PuppetX
                     :lambda => lambda_function,
                     :LAMBDA => lambda_function.upcase,
                     :Lambda => lambda_function.capitalize,
-                }).truncate(64)
+                })
         end
 
         def self.generate_policy_name(name, policy, scratch)
