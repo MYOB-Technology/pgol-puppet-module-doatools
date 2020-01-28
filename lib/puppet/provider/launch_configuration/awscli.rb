@@ -92,7 +92,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     @property_hash[:ensure] = :present
     #!TODO: Region should really be extracted from the ARN value.
-    puts("exists?.region=#{resource[:region]}")
     @property_hash[:region] = resource[:region]
     @property_hash[:name] = resource[:name]
 
@@ -231,22 +230,13 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_true(value(:public_ip))
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
-      #extra_disks_configured = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_mapping(value(:extra_disks))
-      #ami_disks_configured = value(:image_disks).nil? ? {} : PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping(value(:image_disks))
-
-      #region = value(:region)
-      #puts("flush.region=#{region}")
-      #puts("flush.image=#{image}")
-      #ami_block_devices = get_ami_block_device_mapping(value(:region), value(:image))
-      #puts("ami_block_devices=#{ami_block_devices}")
-
       #  Get the block devices in the  current launch config ami.
       # ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
       ami_block_device_hash = merge_ami_hash_and_imagedisks(
           PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) },
           value(:image_disks)
       )
-      puts("ami_block_device_hash=#{ami_block_device_hash}")
+      debug("creating using ami_block_device_hash=#{ami_block_device_hash}")
 
       extra_disk_hash = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_hash(value(:extra_disks))
       puts("ami_block_device_hash=#{ami_block_device_hash}")
