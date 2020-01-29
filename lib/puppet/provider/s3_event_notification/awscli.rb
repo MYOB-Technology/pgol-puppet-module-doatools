@@ -38,7 +38,6 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
-    puts "IM IN CREATE S3 EVENT"
     config = update_config(resource[:name], resource[:endpoint], resource[:endpoint_type], resource[:events], resource[:key_prefixs], 
                            resource[:key_suffixs], resource[:bucket])
     apply_config(config)
@@ -68,7 +67,6 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     config = bucket_config["#{notification_type}Configurations"].select { |notification| notification['Id'] === resource[:name] }
                                                                 .first
 
-    puts "THIS IS S3 EVENT NOTIFI CONFIG IN EXISTS #{config}"
     return false if config.empty?
     
     grouped_rules = config['Filter']['Key']['FilterRules'].group_by { |rule| rule['Name'] }
@@ -117,7 +115,6 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
   end
 
   def add_lambda_permission(arn)
-    puts "ADDING LAMBD PEMISSION #{arn}"
     args = [
       'lambda', 'add-permission', 
       '--function-name', arn, 
