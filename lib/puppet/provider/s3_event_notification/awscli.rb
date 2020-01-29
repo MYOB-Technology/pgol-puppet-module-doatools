@@ -66,6 +66,8 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
 
     config = bucket_config["#{notification_type}Configurations"].select { |notification| notification['Id'] === resource[:name] }
                                                                 .first
+
+    puts "THIS IS S3 EVENT NOTIFI CONFIG IN EXISTS #{config}"
     return false if config.empty?
     
     grouped_rules = config['Filter']['Key']['FilterRules'].group_by { |rule| rule['Name'] }
