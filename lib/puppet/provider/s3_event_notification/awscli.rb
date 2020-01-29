@@ -121,8 +121,8 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     args = [
       'lambda', 'add-permission', 
       '--function-name', arn, 
-      '--principal', 's3.amazonaws.com'
-      '--statement-id', 's3invoke', 
+      '--principal', 's3.amazonaws.com',
+      '--statement-id', "S3Invoket#{arn}", 
       '--action', 'lambda:InvokeFunction',
       '--source-arn', "arn:aws:s3:::#{@property_hash[:bucket]}"
     ]
