@@ -38,6 +38,7 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
+    puts "IM IN CREATE S3 EVENT"
     config = update_config(resource[:name], resource[:endpoint], resource[:endpoint_type], resource[:events], resource[:key_prefixs], 
                            resource[:key_suffixs], resource[:bucket])
     apply_config(config)
