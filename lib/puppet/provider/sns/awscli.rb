@@ -29,12 +29,12 @@ Puppet::Type.type(:sns).provide(:awscli) do
         '--region', resource[:region]
     ]
     
-    # attributes = {}
+    attributes = {}
     
-    # attributes.merge!({ 'SQSSuccessFeedbackRoleArn' => find_iam_role_arn(resource[:sqs_success_feedback_role]) }) unless resource[:sqs_success_feedback_role].nil?
-    # attributes.merge!({ 'SQSFailureFeedbackRoleArn' => find_iam_role_arn(resource[:sqs_failure_feedback_role]) }) unless resource[:sqs_failure_feedback_role].nil?
+    attributes.merge!({ 'SQSSuccessFeedbackRoleArn' => find_iam_role_arn(resource[:sqs_success_feedback_role]) }) unless resource[:sqs_success_feedback_role].nil?
+    attributes.merge!({ 'SQSFailureFeedbackRoleArn' => find_iam_role_arn(resource[:sqs_failure_feedback_role]) }) unless resource[:sqs_failure_feedback_role].nil?
 
-    # args << ['--attributes', attributes.to_json]
+    args << ['--attributes', attributes.to_json]
 
     awscli(args.flatten)
 
