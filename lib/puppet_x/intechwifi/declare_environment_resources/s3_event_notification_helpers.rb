@@ -23,7 +23,6 @@ module PuppetX
         def self.generate_resources(s3_event_notifications, vpc, status, region, scratch, options)
           resources =  s3_event_notifications.map { |notification| generate_resource(vpc, region, status, notification, scratch)}
                         .reduce({}){ | hash, kv| hash.merge(kv) }
-          puts "THESE ARE RESOURCES #{resources}"
           { 'resource_type' => 's3_event_notification', 'resources' => resources }
         end
 

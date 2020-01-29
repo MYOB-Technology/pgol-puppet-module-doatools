@@ -268,9 +268,7 @@ module PuppetX
       end
 
       def AwsCmds.find_sns_by_name(region, name, &aws_command)
-        things = JSON.parse(aws_command.call('sns', 'list-topics', '--region', region))
-        puts "FINDING SNS BY NAME #{things}"
-        topics = things['Topics']
+        topics = JSON.parse(aws_command.call('sns', 'list-topics', '--region', region))['Topics']
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if topics.empty?
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if topics.select { |topic| topic['TopicArn'].end_with? name }.empty?
 
@@ -281,7 +279,6 @@ module PuppetX
 
       def AwsCmds.find_s3_bucket_notification_config(region, bucket, &aws_command)
         config = aws_command.call('s3api', 'get-bucket-notification-configuration', '--region', region, '--bucket', bucket)
-        puts "THIS IS THE S3 CONFIG #{config}"
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if (config.nil? || config.empty?)
 
         JSON.parse(config)
