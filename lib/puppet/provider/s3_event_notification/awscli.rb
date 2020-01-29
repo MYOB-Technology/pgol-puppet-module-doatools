@@ -116,12 +116,28 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
     awscli(args.flatten)
   end
 
+  def add_lambda_permission(arn)
+    puts "ADDING LAMBD PEMISSION #{arn}"
+    args = [
+      'lambda', 'add-permission', 
+      '--function-name', arn, 
+      '--principal', 's3.amazonaws.com'
+      '--statement-id', 's3invoke', 
+      '--action', 'lambda:InvokeFunction',
+      '--source-arn', "arn:aws:s3:::#{@property_hash[:bucket]}"
+    ]
+
+    awscli(args.flatten)
+  end
+
   def get_endpoint_arn(endpoint, endpoint_type)
     arn = case endpoint_type
     when 'sqs'
       # Need to implement
     when 'lambda'
-      PuppetX::IntechWIFI::AwsCmds.find_lambda_by_name(resource[:region], endpoint){ | *arg | awscli(*arg) }['Configuration']['FunctionArn']
+      function_arn = PuppetX::IntechWIFI::AwsCmds.find_lambda_by_name(resource[:region], endpoint){ | *arg | awscli(*arg) }['Configuration']['FunctionArn']
+      add_lambda_permission(function_arn)
+      function_arn
     when 'sns'
       # Need to implement
     end
