@@ -119,9 +119,9 @@ Puppet::Type.type(:s3_event_notification).provide(:awscli) do
       'lambda', 'add-permission', 
       '--function-name', arn, 
       '--principal', 's3.amazonaws.com',
-      '--statement-id', "S3Invoke#{arn.split(':').last}#{@property_hash[:name]}", 
+      '--statement-id', "S3Invoke#{arn.split(':').last}#{resource[:name]}", 
       '--action', 'lambda:InvokeFunction',
-      '--source-arn', "arn:aws:s3:::#{@property_hash[:bucket]}"
+      '--source-arn', "arn:aws:s3:::#{resource[:bucket]}"
     ]
 
     awscli(args.flatten)
