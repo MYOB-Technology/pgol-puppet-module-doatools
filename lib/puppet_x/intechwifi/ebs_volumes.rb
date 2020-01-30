@@ -30,7 +30,16 @@ module PuppetX
             disks.each_with_index.map { |disk, i| { DEVICE_NAME => "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}", 'Ebs' => disk } }
         end
 
-        def self.get_image_block_device_mapping(disks)
+        def self.get_disks_block_device_hash(disks)
+            disks.each_with_index.map { |disk, i|
+              { "#{BASE_DEVICE_NAME}#{EBS_DEVICE_NAME_LETTERS[i]}" => disk }
+            }.reduce({}){ | memo, value |
+              memo.merge(value)
+            }
+        end
+
+
+        def self.get_image_block_device_mapping_from_hash(disks)
             disks.keys.map { |device_name| { DEVICE_NAME => device_name, 'Ebs' => disks[device_name] } }
         end
 
@@ -49,6 +58,13 @@ module PuppetX
           block_device_mapping.reject { |mapping| get_ami_image_device_names(ami_image_mapping).include?(mapping[DEVICE_NAME]) }
                               .map { |mapping| mapping['Ebs'] }
         end
+
+        def self.get_extra_disks_from_block_device_hash(block_device_mapping, ami_image_hash)
+          block_device_mapping.select { | mapping|
+            !ami_image_hash.has_key?(mapping[DEVICE_NAME])
+          }.map { |mapping| mapping['Ebs'] }
+        end
+
 
         def self.get_ami_image_device_names(ami_image_mapping)
           ami_image_device_names = ami_image_mapping.map { |mapping| mapping[DEVICE_NAME] }

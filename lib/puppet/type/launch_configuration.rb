@@ -101,6 +101,23 @@ Puppet::Type.newtype(:launch_configuration) do
 
   newproperty(:image_disks) do
     defaultto {}
+    def insync?(is)
+      result = (@should.length == 0 && is.keys.length == 0) ||
+        @should.all?{|s|
+          # all top level keys are devices. These lists should contain the same keys if we are in sync
+          s.keys.all?{|device| is.has_key? device} && is.keys.all?{|device| s.has_key? device} && s.keys.all?{|device|
+            # then we need to check each device in turn and make sure that all should keys and value are identical in is.
+            s[device].keys.all?{|param|
+              is_has_key = is[device].has_key? param
+              is_key_present = is[device][param] == s[device][param] if is_has_key
+
+              is[device].has_key? param and is[device][param] == s[device][param]
+            }
+          }
+        }
+      result
+    end
+
   end
 
   newproperty(:extra_disks, :array_matching => :all) do

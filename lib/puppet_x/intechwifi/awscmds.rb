@@ -294,6 +294,25 @@ module PuppetX
 
         JSON.parse(aws_command.call('route53', 'get-hosted-zone', '--id', result[0]['Id'], '--region', region))['HostedZone']
       end
+
+      def AwsCmds.find_disks_by_ami(region, ami, &aws_command)
+        details = JSON.parse(aws_command.call(
+            'ec2', 'describe-images',
+            '--region', region,
+            '--image-ids', ami
+        ))
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if details['Images'].length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if details['Images'].length > 1  #  Multiple matches
+
+        details['Images'][0]['BlockDeviceMappings'].select{ |ami|
+            ami.key?('Ebs')
+        }.map{ |ami|
+            {
+                ami["DeviceName"] => ami["Ebs"]
+            }
+        }.reduce({}) { |memo, data| memo.merge(data) }
+      end
     end
   end
 end
