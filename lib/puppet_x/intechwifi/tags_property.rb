@@ -26,16 +26,22 @@ module PuppetX
       end
 
       def self.insync?(is, should)
-        is.class == should.class and
+        #puts("Is (#{is.class.name})=#{JSON.pretty_generate(is)}\r\nShould (#{should.class.name})=#{JSON.pretty_generate(should)}")
+        if (is.is_a? String and should.is_a? String) or (is.is_a? Numeric and should.is_a? Numeric)
+          return is == should
+        else
+          return (is.class == should.class and
             (!is.is_a?(Hash) or (
               is.keys.all?{|x| should.keys.include? x} and
                   should.keys.all?{|x| is.keys.include? x} and
                   is.keys.all?{|x| insync?(is[x], should[x])})
             ) and
-            (!is.is_a?(Array) or (is.all?{|x| should.include? x} and should.all?{|x| is.include? x}))
+            (!is.is_a?(Array) or (is.all?{|x| should.include? x} and should.all?{|x| is.include? x})))
+          end
       end
 
       def self.parse_tags(tags)
+
         tags.select{|x| x["Key"].downcase != 'name'}.reduce({}) do |h, x|
           value = x["Value"]
 
@@ -44,8 +50,15 @@ module PuppetX
           rescue StandardError
           end
 
-          h[x["Key"]] = value
+          if value.is_a? TrueClass
+            value = "true"
+          elsif value.is_a? FalseClass
+            value = "false"
+          elsif value.is_a? Numeric
+            value = value.to_s()
+          end
 
+          h[x["Key"]] = value
           h
         end
       end
