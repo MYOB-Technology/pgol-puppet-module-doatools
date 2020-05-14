@@ -70,16 +70,18 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def exists?
     result = false
-    #
-    #  If the puppet manifest is delcaring the existance of a VPC then we know its region.
-    #
-    regions = [ resource[:region] ] if resource[:region]
-
-    #
-    #  If we don't know the region, then we have to search each region in turn.
-    #
-    regions = PuppetX::IntechWIFI::Constants.Regions if !resource[:region]
-
+    
+    if @property_hash[:region]
+      #  If the vpc has already been fetched, the region has already been defined in the property hash 
+      regions = [ @property_hash[:region] ]
+    elsif resource[:region]
+      #  If the puppet manifest is delcaring the existance of a VPC then we know its region.
+      regions = [ resource[:region] ] 
+    else 
+      #  If we don't know the region, then we have to search each region in turn.
+      regions = PuppetX::IntechWIFI::Constants.Regions
+    end
+      
     debug("searching regions=#{regions} for vpc=#{resource[:name]}\n")
 
     search_result = PuppetX::IntechWIFI::AwsCmds.find_vpc_tag(regions, resource[:name]) do | *arg |
@@ -102,6 +104,44 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   rescue PuppetX::IntechWIFI::Exceptions::MultipleMatchesError => e
     fail(e)
     false
+  end
+
+  def self.instances
+    regions = PuppetX::IntechWIFI::Constants.Regions 
+
+    if regions.length > 1
+      notice("No REGION environmental variable set - retrieving vpc instances across all available regions")
+      # Running queries for each region in its own thread as an optimization
+      threads = []
+      vpcs = []
+
+      regions.each do |r|
+        threads << Thread.new { Thread.current[:output] = self.fetch_vpcs([r]) }
+      end
+
+      threads.each do |t|
+        t.join
+        vpcs.concat t[:output]
+      end
+
+    else
+      vpcs = fetch_vpcs(regions)
+    end
+    
+    return vpcs
+  end
+
+  def self.fetch_vpcs(regions)
+    debug("searching regions=#{regions} for vpcs\n")
+    vpc_tags_list = PuppetX::IntechWIFI::AwsCmds.find_all_vpc_properties(regions){| *arg | awscli(*arg)}
+
+    vpcs = []
+    vpc_tags_list.each{ |l|
+      vpc = new(l)
+      vpcs << vpc
+    }
+    
+    return vpcs
   end
 
   def extract_values(region, vpc)

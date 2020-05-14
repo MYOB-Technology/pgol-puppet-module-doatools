@@ -31,15 +31,67 @@ module PuppetX
         @vpc_tag_cache = { :key => nil, :value => nil} if @vpc_tag_cache[:key] == name
       end
 
+      def AwsCmds.parse_tags(tags)
+        tags_hash = {}
+        tags.each{|t|
+          tags_hash[t["Key"]] = t["Value"]
+        }
+        return tags_hash
+      end
+
+      def AwsCmds.find_all_vpc_properties(regions, &aws_command)
+        tags = []
+        vpc_properties_list = []
+        region = nil
+        regions.each{ |r|
+            begin
+            #output = aws_command.call('ec2', 'describe-tags', '--filters', "Name=resource-type,Values=vpc", "--region", r)
+            output = aws_command.call('ec2', 'describe-vpcs', '--region', r)
+            JSON.parse(output)["Vpcs"].each{|v| 
+              vpc_name = nil
+              if v.key? "Tags"
+                v["Tags"].each{|t| 
+                  if t["Key"] == "Name"
+                    vpc_name = t["Value"]
+                  end
+                }
+              end
+
+              if vpc_name.nil?
+                vpc_name = v["VpcId"] 
+              end
+
+              if v.key? "Tags"
+                tags = AwsCmds.parse_tags(v["Tags"])
+              else
+                tags = {}
+              end
+              
+              vpc_properties = {
+                :name => vpc_name, 
+                :region => r,
+                :ensure => :present,
+                :tags => tags
+              }
+              puts(vpc_properties)
+              vpc_properties_list << vpc_properties
+              
+            }
+            rescue Puppet::ExecutionFailure => ex
+            end
+        }
+
+        return vpc_properties_list
+      end
+
       def AwsCmds.find_vpc_tag(regions, name, &aws_command)
         #  Typically, a puppet run will only be dealing with the one VPC, but many components
         #  will need to obtain the vpcid from vpc name.  As an optimisation, we cache the last answer.
         #
-
         result = nil
-
         result = @vpc_tag_cache[:value] unless @vpc_tag_cache[:key] != name
-
+        puts("Finding vpc tag")
+        puts(@vpc_tag_cache)
         if result == nil
           result = AwsCmds.find_tag(regions, "vpc", "Name", "value", name, &aws_command)
           @vpc_tag_cache = { :key => name, :value => result}

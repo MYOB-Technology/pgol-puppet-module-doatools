@@ -18,6 +18,9 @@ module PuppetX
     module Constants
 
       #  possible later feature to override this list from an environment variable as an optimisation
+      #  or declare it as a single region (not a list)
+      #  put info in if env var not defined
+      #  use multiethreading if not defined
       @@regions = [
         "us-east-1",
         "us-east-2",
@@ -50,6 +53,9 @@ module PuppetX
       ]
 
       def self.Regions
+        if ENV["REGION"] != nil
+          return [ENV["REGION"]]
+        end
         @@regions
       end
 
