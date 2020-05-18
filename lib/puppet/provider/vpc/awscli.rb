@@ -70,6 +70,10 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def exists?
     result = false
+
+    if %i[name region tags cidr dns_resolution dns_hostnames].all? {|s| @property_hash.key? s}
+      return true
+    end
     
     if @property_hash[:region]
       #  If the vpc has already been fetched, the region has already been defined in the property hash 
@@ -127,8 +131,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     else
       vpcs = fetch_vpcs(regions)
     end
-    
-    return vpcs
+    return vpcs.flatten
   end
 
   def self.fetch_vpcs(regions)
@@ -136,11 +139,10 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     vpc_tags_list = PuppetX::IntechWIFI::AwsCmds.find_all_vpc_properties(regions){| *arg | awscli(*arg)}
 
     vpcs = []
-    vpc_tags_list.each{ |l|
-      vpc = new(l)
-      vpcs << vpc
-    }
-    
+    for tags in vpc_tags_list
+      vpcs << new(tags)
+    end
+
     return vpcs
   end
 
@@ -156,7 +158,11 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def get_dns_resolution(region, vpcid)
-    PuppetX::IntechWIFI::Logical.logical(JSON.parse(awscli("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsSupport"))["EnableDnsSupport"]["Value"])
+    if @property_hash[:dns_resolution].nil?
+      return PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_resolution(region, vpcid, awscli){| *arg | awscli(*arg)}
+    else
+      return @property_hash[:dns_resolution]
+    end
   end
 
   def set_dns_resolution(region, vpcid, value)
@@ -165,7 +171,11 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
 
   def get_dns_hostnames(region, vpcid)
-    PuppetX::IntechWIFI::Logical.logical(JSON.parse(awscli("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsHostnames"))["EnableDnsHostnames"]["Value"])
+    if @property_hash[:dns_hostnames].nil?
+      return PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_hostname(region, vpcid, awscli){| *arg | awscli(*arg)}
+    else
+      return @property_hash[:dns_hostnames]
+    end
   end
 
   def set_dns_hostnames(region, vpcid, value)

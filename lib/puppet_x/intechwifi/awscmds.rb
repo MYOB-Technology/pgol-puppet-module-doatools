@@ -46,42 +46,67 @@ module PuppetX
         regions.each{ |r|
             begin
             #output = aws_command.call('ec2', 'describe-tags', '--filters', "Name=resource-type,Values=vpc", "--region", r)
+            threads = []
+
             output = aws_command.call('ec2', 'describe-vpcs', '--region', r)
-            JSON.parse(output)["Vpcs"].each{|v| 
-              vpc_name = nil
-              if v.key? "Tags"
-                v["Tags"].each{|t| 
-                  if t["Key"] == "Name"
-                    vpc_name = t["Value"]
-                  end
-                }
-              end
+            JSON.parse(output)["Vpcs"].each do |v|
+              threads << Thread.new {Thread.current[:output] = self.get_vpc_properties(v,r, &aws_command)}
+            end
 
-              if vpc_name.nil?
-                vpc_name = v["VpcId"] 
-              end
+            threads.each do |t|
+              t.join
+              result = t[:output]
+              vpc_properties_list << result
+            end
 
-              if v.key? "Tags"
-                tags = AwsCmds.parse_tags(v["Tags"])
-              else
-                tags = {}
-              end
-              
-              vpc_properties = {
-                :name => vpc_name, 
-                :region => r,
-                :ensure => :present,
-                :tags => tags
-              }
-              puts(vpc_properties)
-              vpc_properties_list << vpc_properties
-              
-            }
             rescue Puppet::ExecutionFailure => ex
+              # How to differentiate myob auth errors and region auth errors? They have the same message
+              warn(ex.message)
             end
         }
 
         return vpc_properties_list
+      end
+
+      def self.get_vpc_properties(v, r, &aws_command)
+        
+        vpc_name = nil
+        if v.key? "Tags"
+          v["Tags"].each{|t| 
+            if t["Key"] == "Name"
+              vpc_name = t["Value"]
+            end
+          }
+        end
+        
+        if vpc_name.nil?
+          vpc_name = v["VpcId"] 
+        end
+
+        if v.key? "Tags"
+          tags = AwsCmds.parse_tags(v["Tags"])
+        else
+          tags = {}
+        end
+        
+        vpc_properties = {
+          :name => vpc_name, 
+          :region => r,
+          :ensure => :present,
+          :tags => tags,
+          :cidr => v["CidrBlock"],
+        }
+
+        if dns_hostnames = PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_hostname(r, v["VpcId"], &aws_command)
+          vpc_properties[:dns_hostnames] = dns_hostnames
+        end
+
+        if dns_resolution = PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_resolution(r, v["VpcId"], &aws_command)
+          vpc_properties[:dns_resolution] = dns_resolution
+        end
+
+        return vpc_properties
+          
       end
 
       def AwsCmds.find_vpc_tag(regions, name, &aws_command)
@@ -90,13 +115,22 @@ module PuppetX
         #
         result = nil
         result = @vpc_tag_cache[:value] unless @vpc_tag_cache[:key] != name
-        puts("Finding vpc tag")
-        puts(@vpc_tag_cache)
+
         if result == nil
           result = AwsCmds.find_tag(regions, "vpc", "Name", "value", name, &aws_command)
           @vpc_tag_cache = { :key => name, :value => result}
         end
         result
+      end
+
+      def AwsCmds.get_vpc_dns_resolution(region, vpcid, &aws_command)
+        output = aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsSupport")
+        PuppetX::IntechWIFI::Logical.logical(JSON.parse(aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsSupport"))["EnableDnsSupport"]["Value"])
+      end
+
+      def AwsCmds.get_vpc_dns_hostname(region, vpcid, &aws_command)
+        output = aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsHostnames")
+        PuppetX::IntechWIFI::Logical.logical(JSON.parse(aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsHostnames"))["EnableDnsHostnames"]["Value"])
       end
 
       def AwsCmds.find_name_or_id_by_id(region, resource_type, id, &aws_command)

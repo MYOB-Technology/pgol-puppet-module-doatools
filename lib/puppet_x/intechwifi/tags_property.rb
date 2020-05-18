@@ -26,7 +26,6 @@ module PuppetX
       end
 
       def self.insync?(is, should)
-        #puts("Is (#{is.class.name})=#{JSON.pretty_generate(is)}\r\nShould (#{should.class.name})=#{JSON.pretty_generate(should)}")
         if (is.is_a? String and should.is_a? String) or (is.is_a? Numeric and should.is_a? Numeric)
           return is == should
         else
