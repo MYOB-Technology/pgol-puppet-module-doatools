@@ -69,6 +69,8 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def exists?
+    puts("in exists")
+
     result = false
 
     if %i[name region tags cidr dns_resolution dns_hostnames].all? {|s| @property_hash.key? s}
@@ -104,7 +106,6 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
     debug(e)
     false
-
   rescue PuppetX::IntechWIFI::Exceptions::MultipleMatchesError => e
     fail(e)
     false
@@ -112,15 +113,16 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def self.instances
     regions = PuppetX::IntechWIFI::Constants.Regions 
-
+    puts("in instances")
     if regions.length > 1
       notice("No REGION environmental variable set - retrieving vpc instances across all available regions")
       # Running queries for each region in its own thread as an optimization
       threads = []
       vpcs = []
 
+      debug("searching regions=#{regions} for vpcs\n")
       regions.each do |r|
-        threads << Thread.new { Thread.current[:output] = self.fetch_vpcs([r]) }
+        threads << Thread.new { Thread.current[:output] = self.fetch_vpcs(r) }
       end
 
       threads.each do |t|
@@ -131,17 +133,17 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     else
       vpcs = fetch_vpcs(regions)
     end
-    return vpcs.flatten
+    return vpcs
   end
 
-  def self.fetch_vpcs(regions)
-    debug("searching regions=#{regions} for vpcs\n")
-    vpc_tags_list = PuppetX::IntechWIFI::AwsCmds.find_all_vpc_properties(regions){| *arg | awscli(*arg)}
+  def self.fetch_vpcs(region)
+    vpc_properties_list = PuppetX::IntechWIFI::AwsCmds.find_all_vpc_properties(region){| *arg | awscli(*arg)}
 
     vpcs = []
-    for tags in vpc_tags_list
-      vpcs << new(tags)
-    end
+    vpc_properties_list.each{ |vpc_properties|
+      vpc = new(vpc_properties)
+      vpcs << vpc
+    }
 
     return vpcs
   end
@@ -159,7 +161,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def get_dns_resolution(region, vpcid)
     if @property_hash[:dns_resolution].nil?
-      return PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_resolution(region, vpcid, awscli){| *arg | awscli(*arg)}
+      return PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_resolution(region, vpcid){| *arg | awscli(*arg)}
     else
       return @property_hash[:dns_resolution]
     end
@@ -172,7 +174,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def get_dns_hostnames(region, vpcid)
     if @property_hash[:dns_hostnames].nil?
-      return PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_hostname(region, vpcid, awscli){| *arg | awscli(*arg)}
+      return PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_hostname(region, vpcid){| *arg | awscli(*arg)}
     else
       return @property_hash[:dns_hostnames]
     end

@@ -39,36 +39,32 @@ module PuppetX
         return tags_hash
       end
 
-      def AwsCmds.find_all_vpc_properties(regions, &aws_command)
+      def AwsCmds.find_all_vpc_properties(region, &aws_command)
         tags = []
         vpc_properties_list = []
-        region = nil
-        regions.each{ |r|
-            begin
-            #output = aws_command.call('ec2', 'describe-tags', '--filters', "Name=resource-type,Values=vpc", "--region", r)
-            threads = []
 
-            output = aws_command.call('ec2', 'describe-vpcs', '--region', r)
-            JSON.parse(output)["Vpcs"].each do |v|
-              threads << Thread.new {Thread.current[:output] = self.get_vpc_properties(v,r, &aws_command)}
-            end
+        begin
+          vpc_response = aws_command.call('ec2', 'describe-vpcs', '--region', region)
+        rescue Puppet::ExecutionFailure => ex
+          # How to differentiate myob auth errors and region auth errors? They have the same message
+          #debug(ex.message)
+          return vpc_properties_list
+        end
 
-            threads.each do |t|
-              t.join
-              result = t[:output]
-              vpc_properties_list << result
-            end
+        threads = []
+        JSON.parse(vpc_response)["Vpcs"].each do |v|
+          threads << Thread.new {Thread.current[:output] = self.populate_vpc_properties(v,region, &aws_command)}
+        end
 
-            rescue Puppet::ExecutionFailure => ex
-              # How to differentiate myob auth errors and region auth errors? They have the same message
-              warn(ex.message)
-            end
-        }
+        threads.each do |t|
+          t.join
+          vpc_properties_list << t[:output]
+        end
 
         return vpc_properties_list
       end
 
-      def self.get_vpc_properties(v, r, &aws_command)
+      def self.populate_vpc_properties(v, region, &aws_command)
         
         vpc_name = nil
         if v.key? "Tags"
@@ -77,31 +73,28 @@ module PuppetX
               vpc_name = t["Value"]
             end
           }
+          tags = AwsCmds.parse_tags(v["Tags"])
+        else 
+          tags = {}
         end
         
         if vpc_name.nil?
           vpc_name = v["VpcId"] 
         end
-
-        if v.key? "Tags"
-          tags = AwsCmds.parse_tags(v["Tags"])
-        else
-          tags = {}
-        end
         
         vpc_properties = {
           :name => vpc_name, 
-          :region => r,
+          :region => region,
           :ensure => :present,
           :tags => tags,
           :cidr => v["CidrBlock"],
         }
 
-        if dns_hostnames = PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_hostname(r, v["VpcId"], &aws_command)
+        if dns_hostnames = PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_hostname(region, v["VpcId"], &aws_command)
           vpc_properties[:dns_hostnames] = dns_hostnames
         end
 
-        if dns_resolution = PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_resolution(r, v["VpcId"], &aws_command)
+        if dns_resolution = PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_resolution(region, v["VpcId"], &aws_command)
           vpc_properties[:dns_resolution] = dns_resolution
         end
 
@@ -152,15 +145,27 @@ module PuppetX
       def AwsCmds.find_tag(regions, resource_type, key, filter, value, &aws_command)
         tags = []
         region = nil
+
+        threads = []
         regions.each{ |r|
-          output = aws_command.call('ec2', 'describe-tags', '--filters', "Name=resource-type,Values=#{resource_type}", "Name=key,Values=#{key}", "Name=#{filter},Values=#{value}", '--region', r)
-          JSON.parse(output)["Tags"].each{|t| tags << t; region = r }
+          threads << Thread.new { Thread.current[:output] = self.find_tag_by_region(resource_type, key, value, filter, r, &aws_command)}    
         }
+
+        threads.each do |t|
+          t.join
+          returned_tags, returned_region = t[:output]
+          region = returned_region
+          JSON.parse(returned_tags)["Tags"].each{|tag| tags << tag }
+        end
 
         raise PuppetX::IntechWIFI::Exceptions::NotFoundError, value if tags.length == 0
         raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, value if tags.length > 1
 
         {:tag => tags[0], :region => region }
+      end
+
+      def AwsCmds.find_tag_by_region(resource_type, key, value, filter, r, &aws_command)
+       return aws_command.call('ec2', 'describe-tags', '--filters', "Name=resource-type,Values=#{resource_type}", "Name=key,Values=#{key}", "Name=#{filter},Values=#{value}", '--region', r), r
       end
 
       def AwsCmds.find_launch_configuration_by_name( regions, name, &aws_command)
