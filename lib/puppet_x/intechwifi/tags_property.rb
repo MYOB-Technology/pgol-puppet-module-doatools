@@ -25,20 +25,7 @@ module PuppetX
         fail('Puppet already uses the tag "Name", it cannot be used inside the tags property') if value.keys.map{|x| x.downcase }.include? 'name'
       end
 
-      def self.insync?(is_in, should_in)
-
-        # Hack to fix Name tag always causing update
-        if(should_in.is_a? Hash and should_in.key? "Name")
-          should = should_in.delete "Name"
-        else
-          should = should_in
-        end
-
-        if(is_in.is_a? Hash and is_in.key? "Name")
-          is = is_in.delete "Name"
-        else
-          is = is_in
-        end
+      def self.insync?(is, should)
 
         if (is.is_a? String and should.is_a? String) or (is.is_a? Numeric and should.is_a? Numeric)
           return is == should
