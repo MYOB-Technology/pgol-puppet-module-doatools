@@ -69,7 +69,6 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def exists?
-    puts("in exists")
 
     result = false
 
@@ -90,16 +89,46 @@ Puppet::Type.type(:vpc).provide(:awscli) do
       
     debug("searching regions=#{regions} for vpc=#{resource[:name]}\n")
 
-    search_result = PuppetX::IntechWIFI::AwsCmds.find_vpc_tag(regions, resource[:name]) do | *arg |
-      awscli(*arg)
+    begin
+      vpcs_properties_list = []
+      if regions.length > 1
+        notice("No REGION environmental variable set - searching vpc instances across all available regions")
+        # Running queries for each region in its own thread as an optimization
+        threads = []
+        debug("searching regions=#{regions} for vpc with \n")
+        regions.each do |r|
+          threads << Thread.new { Thread.current[:output] = PuppetX::IntechWIFI::AwsCmds.find_vpc_properties_by_name(r, resource[:name]){| *arg | awscli(*arg)}}
+        end
+
+        threads.each do |t|
+          t.join
+          vpcs_properties_list << t[:output]
+        end
+
+      else
+        vpcs_properties_list << PuppetX::IntechWIFI::AwsCmds.find_vpc_properties_by_name(regions[0], resource[:name ]){| *arg | awscli(*arg)}
+      end
+
+      if vpcs_properties_list.length == 0
+        return false
+      end
+
+    rescue PuppetX::IntechWIFI::Exceptions::NotFoundError => e
+      debug(e)
+      return false
     end
 
-    @property_hash[:ensure] = :present
-    @property_hash[:vpcid] = search_result[:tag]["ResourceId"]
-    @property_hash[:region] = search_result[:region]
-    @property_hash[:name] = resource[:name]
+    vpc_properties = vpcs_properties_list[0]
 
-    JSON.parse(awscli('ec2', 'describe-vpcs', '--region', @property_hash[:region], '--vpc-id', @property_hash[:vpcid]))["Vpcs"].map{|v| extract_values(@property_hash[:region], v) }
+    @property_hash[:name] = resource[:name]
+    @property_hash[:ensure] = :present
+    @property_hash[:vpcid] = vpc_properties[:vpcid]
+    @property_hash[:region] = vpc_properties[:region]
+    @property_hash[:tags] = vpc_properties[:tags]
+    @property_hash[:cidr] = vpc_properties[:cidr]
+    @property_hash[:dns_hostnames] = vpc_properties[:dns_hostnames]
+    @property_hash[:dns_resolution] = vpc_properties[:dns_resolution]
+    @property_hash[:state] = vpc_properties[:state]
 
     true
 
@@ -113,7 +142,6 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def self.instances
     regions = PuppetX::IntechWIFI::Constants.Regions 
-    puts("in instances")
     if regions.length > 1
       notice("No REGION environmental variable set - retrieving vpc instances across all available regions")
       # Running queries for each region in its own thread as an optimization
@@ -148,17 +176,6 @@ Puppet::Type.type(:vpc).provide(:awscli) do
     return vpcs
   end
 
-  def extract_values(region, vpc)
-    @property_hash[:tags] = PuppetX::IntechWIFI::Tags_Property.parse_tags(vpc["Tags"])
-
-    @property_hash[:region] = region
-    @property_hash[:cidr] = vpc["CidrBlock"]
-    @property_hash[:dns_resolution] = get_dns_resolution(region, @property_hash[:vpcid])
-    @property_hash[:dns_hostnames] = get_dns_hostnames(region, @property_hash[:vpcid])
-    @property_hash[:state] = vpc["State"]
-
-  end
-
   def get_dns_resolution(region, vpcid)
     if @property_hash[:dns_resolution].nil?
       return PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_resolution(region, vpcid){| *arg | awscli(*arg)}
@@ -186,8 +203,15 @@ Puppet::Type.type(:vpc).provide(:awscli) do
 
   def flush
     if @property_flush
+
       if @property_flush[:dns_hostnames] then set_dns_hostnames(@property_hash[:region], @property_hash[:vpcid], @property_flush[:dns_hostnames]) end
       if @property_flush[:dns_resolution] then set_dns_resolution(@property_hash[:region], @property_hash[:vpcid], @property_flush[:dns_resolution]) end
+      
+      # Hack to fix Name tag always causing update and being overwritten
+      if !@property_flush[:tags].nil? and ! (@property_flush[:tags].key? "Name" or @property_flush[:tags].key? "name" )
+        @property_flush[:tags]["Name"] = @property_hash[:name]
+      end
+
       PuppetX::IntechWIFI::Tags_Property.update_tags(@property_hash[:region], @property_hash[:vpcid], @property_hash[:tags], @property_flush[:tags]){| *arg | awscli(*arg)} if !@property_flush[:tags].nil?
     end
   end
@@ -214,6 +238,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
   end
 
   def tags=(value)
+
     @property_flush[:tags] = value
   end
 

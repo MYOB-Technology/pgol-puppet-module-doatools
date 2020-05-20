@@ -31,16 +31,20 @@ module PuppetX
         @vpc_tag_cache = { :key => nil, :value => nil} if @vpc_tag_cache[:key] == name
       end
 
-      def AwsCmds.parse_tags(tags)
-        tags_hash = {}
-        tags.each{|t|
-          tags_hash[t["Key"]] = t["Value"]
-        }
-        return tags_hash
+      def AwsCmds.find_vpc_properties_by_name(region, name, &aws_command)
+
+        vpc_response = JSON.parse(aws_command.call('ec2', 'describe-vpcs', '--region', region, "--filter", "Name=tag:Name,Values=#{name}"))
+
+        vpcs = vpc_response["Vpcs"]
+
+        raise PuppetX::IntechWIFI::Exceptions::NotFoundError, name if vpcs.length == 0
+        raise PuppetX::IntechWIFI::Exceptions::MultipleMatchesError, name if vpcs.length > 1
+
+        return self.populate_vpc_properties(vpcs[0], region, &aws_command)
+
       end
 
       def AwsCmds.find_all_vpc_properties(region, &aws_command)
-        tags = []
         vpc_properties_list = []
 
         begin
@@ -73,7 +77,7 @@ module PuppetX
               vpc_name = t["Value"]
             end
           }
-          tags = AwsCmds.parse_tags(v["Tags"])
+          tags = PuppetX::IntechWIFI::Tags_Property.parse_tags(v["Tags"])
         else 
           tags = {}
         end
@@ -84,10 +88,12 @@ module PuppetX
         
         vpc_properties = {
           :name => vpc_name, 
+          :vpcid => v["VpcId"],
           :region => region,
           :ensure => :present,
           :tags => tags,
           :cidr => v["CidrBlock"],
+          :state => v["State"]
         }
 
         if dns_hostnames = PuppetX::IntechWIFI::AwsCmds.get_vpc_dns_hostname(region, v["VpcId"], &aws_command)
@@ -117,12 +123,10 @@ module PuppetX
       end
 
       def AwsCmds.get_vpc_dns_resolution(region, vpcid, &aws_command)
-        output = aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsSupport")
         PuppetX::IntechWIFI::Logical.logical(JSON.parse(aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsSupport"))["EnableDnsSupport"]["Value"])
       end
 
       def AwsCmds.get_vpc_dns_hostname(region, vpcid, &aws_command)
-        output = aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsHostnames")
         PuppetX::IntechWIFI::Logical.logical(JSON.parse(aws_command.call("ec2", "describe-vpc-attribute", "--vpc-id", "#{vpcid}", "--region", "#{region}", "--attribute", "enableDnsHostnames"))["EnableDnsHostnames"]["Value"])
       end
 
