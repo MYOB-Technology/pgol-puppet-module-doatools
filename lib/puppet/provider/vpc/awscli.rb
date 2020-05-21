@@ -159,7 +159,7 @@ Puppet::Type.type(:vpc).provide(:awscli) do
       end
 
     else
-      vpcs = fetch_vpcs(regions)
+      vpcs = fetch_vpcs(regions[0])
     end
     return vpcs
   end
