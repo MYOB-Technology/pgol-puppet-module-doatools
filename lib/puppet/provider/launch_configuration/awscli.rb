@@ -26,7 +26,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   commands :awscli => "aws"
 
   def create
-    puts "called launch_configuration.create"
     notice("called launch_configuration.create")
 
     #  Since we cannot update properties after creating a launch configuration, we actually create the new launch configuration
@@ -42,11 +41,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
     self.iam_instance_profile = resource[:iam_instance_profile]
     self.public_ip = resource[:public_ip]
     #  Use the aws details as the default, and the image disks data as the overrides.
-
-    puts "XXXXXXXXXXXXXXXXX"
-    puts "resource[:image]=#{resource[:image]}"
-    puts "resource[:region]=#{resource[:region]}"
-    puts "XXXXXXXXXXXXXXXXX"
 
     begin
       self.image_disks = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(resource[:region], resource[:image]) {| *arg | awscli(*arg) }
@@ -237,12 +231,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
       disks_for_ami = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
-
-      puts("*************************** Merging disks:")
-      puts("value:")
-      puts(JSON.pretty_generate(value(:image_disks)))
-      puts("for ami:")
-      puts(JSON.pretty_generate(disks_for_ami))
 
       #  Get the block devices in the  current launch config ami.
       ami_block_device_hash = merge_ami_hash_and_imagedisks(
