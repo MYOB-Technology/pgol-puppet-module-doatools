@@ -158,12 +158,18 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
   def merge_ami_hash_and_imagedisks(ami_hash, image_disk_definition)
     #  we may have different device names...
+
     device_ami = ami_hash.keys[0]
     device_def = image_disk_definition.keys[0]
 
-    {
-        device_ami => ami_hash[device_ami].merge(image_disk_definition[device_def])
+    merged_hash = {
+      device_ami => ami_hash[device_ami].merge(image_disk_definition[device_def])
     }
+
+    # Ensuring we use the snapshotId of the AMI being used (and not the snapshot of the old AMI)
+    merged_hash[device_ami]["SnapshotId"] = ami_hash[device_ami]["SnapshotId"]
+
+    return merged_hash
   end
 
   def get_block_device_mapping_as_hash(bdm)
@@ -230,9 +236,17 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       args << [ '--associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_true(value(:public_ip))
       args << [ '--no-associate-public-ip-address'] if PuppetX::IntechWIFI::Logical.logical_false(value(:public_ip))
 
+      disks_for_ami = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) }
+
+      puts("*************************** Merging disks:")
+      puts("value:")
+      puts(JSON.pretty_generate(value(:image_disks)))
+      puts("for ami:")
+      puts(JSON.pretty_generate(disks_for_ami))
+
       #  Get the block devices in the  current launch config ami.
       ami_block_device_hash = merge_ami_hash_and_imagedisks(
-          PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(value(:region), value(:image)) {| *arg | awscli(*arg) },
+          disks_for_ami,
           value(:image_disks)
       )
       debug("creating using ami_block_device_hash=#{ami_block_device_hash}")
