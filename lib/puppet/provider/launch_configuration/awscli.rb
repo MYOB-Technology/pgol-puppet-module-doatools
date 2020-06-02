@@ -105,6 +105,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     #  Get the block devices in the current launch config.
     lc_block_device_hash = get_block_device_mapping_as_hash(launch_config['BlockDeviceMappings'])
+
     #  Get the block devices in the  current launch config ami.
     ami_block_device_hash = PuppetX::IntechWIFI::AwsCmds.find_disks_by_ami(@property_hash[:region], @property_hash[:image]) {| *arg | awscli(*arg) }
 
@@ -119,7 +120,7 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     #  Extra disks only contain disk info that is not part of the original ami
     @property_hash[:extra_disks] = lc_block_device_hash.select { |device, settings| !ami_block_device_hash.has_key? device }.map{ | key, value| value }
-
+    
     debug("Successfully exiting launchconfig.awscli.exists?")
 
     true
@@ -239,7 +240,14 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       )
       debug("creating using ami_block_device_hash=#{ami_block_device_hash}")
 
-      extra_disk_hash = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_hash(value(:extra_disks))
+      if( resource[:extra_disks].nil? )
+        extra_disks = []
+      else
+        extra_disks = resource[:extra_disks]
+      end
+
+      extra_disk_hash = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_hash(extra_disks)
+      
       all_disk_hash = ami_block_device_hash.merge(extra_disk_hash)
 
       args << ["--block-device-mappings", PuppetX::IntechWIFI::EBS_Volumes.get_image_block_device_mapping_from_hash(all_disk_hash).to_json]

@@ -28,11 +28,11 @@ Facter.add('windows_ami_2012R2') do
 
     def describe_windows_image_for_region(region)
       begin
-        response = Facter::Core::Execution.execute("aws ec2 describe-images --owners amazon --region #{region} --filters 'Name=name,Values=Windows_Server-2012-R2_RTM-English-64Bit-Core*' --query 'sort_by(Images, &CreationDate)[]'")
+        response = Facter::Core::Execution.execute("aws ec2 describe-images --owners amazon --region #{region} --filters 'Name=name,Values=Windows_Server-2012-R2_RTM-English-64Bit-Base*' --query 'sort_by(Images, &CreationDate)[]'")
         latest_image = JSON.parse(response)[-1]["ImageId"]
         return {region => latest_image}           
       rescue StandardError => e
-        return {region => nil}
+        return {}
       end
     end
   end
