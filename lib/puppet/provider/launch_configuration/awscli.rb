@@ -64,6 +64,10 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   end
 
   def exists?
+    ##############################################################################################################################
+    #  This aws resource does not allow modification in place so if there are any property changed, we must create a new one
+    #  Consequently, any properties set outside of puppet will not be copied across if changes occur
+    ##############################################################################################################################
     debug("running launchconfig.awscli.exists?")
 
     #
@@ -79,7 +83,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     #  launch configurations cannot be modified in place. When we change properties we have to create a new one. to handle this
     #  we add a sequential 6 digit number on the end of the launch configuration.
-
 
     launch_config = PuppetX::IntechWIFI::AwsCmds.find_launch_configuration_by_name(regions,resource[:name]) {| *arg | awscli(*arg) }
     debug("Found the LaunchConfiguration '#{launch_config["LaunchConfigurationName"]}'.")
@@ -111,7 +114,6 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
     lc_block_device_hash.select { |device, settings| ami_block_device_hash.has_key? device }
 
-
     ami_block_device_mapping = get_ami_block_device_mapping(@property_hash[:region], @property_hash[:image])
     block_device_mapping = launch_config['BlockDeviceMappings']
 
@@ -135,16 +137,12 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
 
   end
 
-  def extract_values(region, data)
-
-  end
-
   def get_ami_block_device_mapping(region, image)
     images = JSON.parse(awscli([
       'ec2',
       'describe-images',
-      '--region', value(:region),
-      '--image-ids', value(:image)
+      '--region', region,
+      '--image-ids', image
     ]))['Images']
     raise "AWS AMI #{image} is not available. This AMI has likely been deleted by Amazon and replaced with an upgraded AMI. Update hiera to use the upgraded AMI" if images.first.nil?
     images.first['BlockDeviceMappings']
@@ -240,10 +238,10 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
       )
       debug("creating using ami_block_device_hash=#{ami_block_device_hash}")
 
-      if( resource[:extra_disks].nil? )
+      if( value(:extra_disks).nil? )
         extra_disks = []
       else
-        extra_disks = resource[:extra_disks]
+        extra_disks = value(:extra_disks)
       end
 
       extra_disk_hash = PuppetX::IntechWIFI::EBS_Volumes.get_disks_block_device_hash(extra_disks)
@@ -273,11 +271,9 @@ Puppet::Type.type(:launch_configuration).provide(:awscli) do
   end
 
   def value key
-    if @property_flush[key].nil?
-      @property_hash[key]
-    else
-      @property_flush[key]
-    end
+    
+    return resource[key] 
+
   end
 
   def initialize(value={})
