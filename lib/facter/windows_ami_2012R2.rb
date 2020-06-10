@@ -6,7 +6,6 @@ Facter.add('windows_ami_2012R2') do
       if region = ENV['REGION']
         regions = [region]
       else
-        puts("Region environmental variable not set, searching all regions")
         regions = PuppetX::IntechWIFI::Constants.Regions
       end
 
@@ -21,7 +20,7 @@ Facter.add('windows_ami_2012R2') do
         t.join
         ami_by_region = ami_by_region.merge(t[:output])
       end
-
+      puts("windows_ami_2012R2 =#{ami_by_region}")
       ami_by_region
       
     end
