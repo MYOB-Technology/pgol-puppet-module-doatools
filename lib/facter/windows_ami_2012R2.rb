@@ -20,7 +20,6 @@ Facter.add('windows_ami_2012R2') do
         t.join
         ami_by_region = ami_by_region.merge(t[:output])
       end
-      puts("windows_ami_2012R2 =#{ami_by_region}")
       ami_by_region
       
     end
