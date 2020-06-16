@@ -1,6 +1,6 @@
 require 'puppet_x/intechwifi/constants'
 
-Facter.add('windows_ami_2012R2') do
+Facter.add('windows_ami_2012r2') do
     setcode do
 
       if region = ENV['REGION']
