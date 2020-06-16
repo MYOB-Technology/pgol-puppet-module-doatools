@@ -944,7 +944,7 @@ describe 'define_environment_resources' do
               "tags" => { "Role" => "testrole", "Name" => "testrole_demo" },
               "minimum_instances"=>0,
               "maximum_instances"=>2,
-              "desired_instances"=>2,
+              "desired_instances"=>nil,
           }
       }
   }
