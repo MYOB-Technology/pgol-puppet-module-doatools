@@ -44,7 +44,7 @@ Puppet::Type.type(:autoscaling_group).provide(:awscli) do
         "--auto-scaling-group-name", resource[:name]
     ]
 
-    args << ["--desired-capacity", resource[:desired_instances]]
+    args << ["--desired-capacity", resource[:desired_instances]] unless resource[:desired_instances].nil?
     args << ["--min-size", resource[:minimum_instances]]
     args << ["--max-size", resource[:maximum_instances]]
     args << ["--launch-configuration-name",
