@@ -8,8 +8,8 @@ describe 'PuppetX::IntechWIFI::DeclareEnvironmentResources::AutoscalingGroupHelp
     it 'returns a min size of 0' do
       expect(helpers.get_default_scaling()['min']).to eq(0)
     end
-    it 'returns a desired size of 2' do
-      expect(helpers.get_default_scaling()['desired']).to eq(2)
+    it 'returns a desired size of nil' do
+      expect(helpers.get_default_scaling()['desired']).to eq(nil)
     end
     it 'returns a max size of 2' do
       expect(helpers.get_default_scaling()['max']).to eq(2)

@@ -111,7 +111,7 @@ module PuppetX
             # Defaults
             'min' => 0,
             'max' => 2,
-            'desired' => 2,
+            'desired' => nil,
           }
         end
 
