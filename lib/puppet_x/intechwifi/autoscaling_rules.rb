@@ -48,15 +48,15 @@ module PuppetX
 
       def self.extract_code_value letter
         ord = letter.ord - 48
-        ord = ord -7 if ord > 9
-        ord = ord - 9 if ord > 35
+        ord = ord - 7 if ord > 9
+        ord = ord - 6 if ord > 35
         ord
       end
 
       def self.encode_code_value value
-        output = (value + 48).chr.to_s if value < 10
-        output = (value + 55).chr.to_s if value > 9 and value < 37
-        output =(value + 61).chr.to_s if value >35 and value < 62
+        output = (value + 48).chr.to_s if value <= 9
+        output = (value + 55).chr.to_s if value >  9 and value <= 35
+        output = (value + 61).chr.to_s if value > 35 and value <= 61
         output
       end
 
