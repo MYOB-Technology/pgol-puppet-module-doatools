@@ -123,6 +123,7 @@ define doatools::environment (
   }),
 
   $resourcetype_filter = all,
+  $resourcetype_exceptions = [],
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
 #  $network=lookup('environment::network', Data, 'first', { }),
@@ -157,7 +158,7 @@ define doatools::environment (
     info("declaring resources: ${rt} ${rts}")
     debug($r['resources'])
 
-    if (($resourcetype_filter == all) or ($rt in $resourcetype_filter))
+    if (($resourcetype_filter == all) or (($rt in $resourcetype_filter) and ($rt not in $resourcetype_exceptions)))
     {
       # need to change this back to info...
       info("declaring resources: ${rt} ${rts}")
