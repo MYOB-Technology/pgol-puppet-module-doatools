@@ -122,8 +122,7 @@ define doatools::environment (
     'coalesce_sg_per_role' => false
   }),
 
-  $resourcetype_filter = all,
-  $resourcetype_exceptions = [],
+  $resourcetype_filter = {'include' => all },
 
 #  $region=lookup('environment::region', Data, 'first', 'us-east-1'),
 #  $network=lookup('environment::network', Data, 'first', { }),
@@ -158,12 +157,16 @@ define doatools::environment (
     info("declaring resources: ${rt} ${rts}")
     debug($r['resources'])
 
-    if ((($resourcetype_filter == all) or ($rt in $resourcetype_filter)) and ($rt not in $resourcetype_exceptions))
+    if ( (!has_key($resourcetype_filter, 'include')) or ($resourcetype_filter['include'] == all) or ($rt in $resourcetype_filter['include']))
     {
-      # need to change this back to info...
-      info("declaring resources: ${rt} ${rts}")
-      debug($r['resources'])
-      create_resources($r['resource_type'], $r['resources'], {})
+
+      if (!(has_key($resourcetype_filter, 'exclude') and ($rt in $resourcetype_filter['exclude'])))
+      {
+        # need to change this back to info...
+        info("declaring resources: ${rt} ${rts}")
+        debug($r['resources'])
+        create_resources($r['resource_type'], $r['resources'], {})
+      }
     }
   }
 }
