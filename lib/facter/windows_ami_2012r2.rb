@@ -3,7 +3,7 @@ require 'puppet_x/intechwifi/constants'
 Facter.add('windows_ami_2012r2') do
     setcode do
 
-      if region = ENV['REGION']
+      if region = ENV['AWS_DEFAULT_REGION']
         regions = [region]
       else
         regions = PuppetX::IntechWIFI::Constants.Regions
