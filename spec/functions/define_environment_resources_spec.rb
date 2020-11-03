@@ -1253,7 +1253,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -1313,7 +1315,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -1378,7 +1382,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -1445,7 +1451,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},        
         {},
@@ -1514,7 +1522,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -1594,7 +1604,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -1696,7 +1708,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -1801,7 +1815,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -1902,7 +1918,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {},
         {},
         {},
@@ -2189,7 +2207,9 @@ describe 'define_environment_resources' do
         {
             'Environment' => 'demo'
         },
-        {},
+        {
+            'vpc' => {}
+        },
         {
           'admin_policy' => {
             'Effect' => 'Allow',

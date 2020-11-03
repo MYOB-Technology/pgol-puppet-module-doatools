@@ -44,7 +44,7 @@ module PuppetX
           db_servers,
           s3,
           tags,
-          tags_vpc,
+          resource_type_tags,
           policies,
           label_formats,
           pg_sites,
@@ -97,7 +97,7 @@ module PuppetX
                 :ensure => status,
                 :region => region,
                 :cidr   => network['cidr'],
-                :tags => tags_vpc.merge(scratch[:tags_with_environment]),
+                :tags => resource_type_tags['vpc'].merge(scratch[:tags_with_environment]),
                 :dns_hostnames => network.has_key?('dns_hostnames') ? network['dns_hostnames'] : false,
                 :dns_resolution => network.has_key?('dns_resolution') ? network['dns_resolution'] : true,
             }

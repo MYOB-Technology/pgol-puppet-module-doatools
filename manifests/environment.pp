@@ -86,8 +86,10 @@ define doatools::environment (
 
   },
 
-  $tags_vpc = {
+  $resouce_type_tags = {
+    'vpc' => {
 
+    },
   },
 
   $policies = lookup('doatools::environment::policies', Data, 'deep', {
@@ -142,7 +144,7 @@ define doatools::environment (
     $db_servers,
     $s3,
     $tags,
-    $tags_vpc,
+    $resouce_type_tags,
     $policies,
     $label_formats,
     $pg_sites,
