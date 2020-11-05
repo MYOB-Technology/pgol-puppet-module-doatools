@@ -117,7 +117,7 @@ module PuppetX
           )
         })
 
-        subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
+        subnet_resources_hash = SubnetHelpers.GenerateSubnetResources(name, status, region, network, zones, scratch, resource_type_tags['subnet'].merge(scratch[:tags_with_environment])
 
         security_group_generator = SecurityGroupGenerator.new(options['coalesce_sg_per_role'])
         security_group_rules_generator = NetworkRulesGenerator.new(options['coalesce_sg_per_role'])
