@@ -90,6 +90,9 @@ define doatools::environment (
     'vpc' => {
 
     },
+    'subnet' => {
+
+    },
   },
 
   $policies = lookup('doatools::environment::policies', Data, 'deep', {
