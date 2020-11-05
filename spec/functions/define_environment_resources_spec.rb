@@ -1254,7 +1254,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -1316,7 +1317,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -1383,7 +1385,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -1452,7 +1455,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},        
@@ -1523,7 +1527,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -1605,7 +1610,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -1709,7 +1715,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -1816,7 +1823,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -1919,7 +1927,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {},
         {},
@@ -2208,7 +2217,8 @@ describe 'define_environment_resources' do
             'Environment' => 'demo'
         },
         {
-            'vpc' => {}
+            'vpc' => {},
+            'subnet' => {},
         },
         {
           'admin_policy' => {
