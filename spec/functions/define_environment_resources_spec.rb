@@ -145,7 +145,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo",
                   "role"=>"demo_subnet",
-                  "status"=>"A-Public-Demo",
+                  "status"=>"0-A-Public-demo",
               },
               :route_table=>"demopublicall",
               :public_ip=>true
@@ -159,7 +159,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo",
                   "role"=>"demo_subnet",
-                  "status"=>"B-Public-Demo",
+                  "status"=>"1-B-Public-demo",
               },
               :route_table=>"demopublicall",
               :public_ip=>true
@@ -172,7 +172,7 @@ describe 'define_environment_resources' do
               :tags=>{
                   "Environment"=>"demo",
                   "role"=>"demo_subnet",
-                  "status"=>"C-Public-Demo",
+                  "status"=>"2-C-Public-demo",
               },
               :route_table=>"demopublicall",
               :public_ip=>true
@@ -1305,7 +1305,7 @@ describe 'define_environment_resources' do
             'vpc' => {},
             'subnet' => {
                 'role' => 'demo_subnet',
-                'status' => '%{Az}-%{Zone}-%{Vpc}',
+                'status' => '%{index}-%{Az}-%{Zone}-%{vpc}',
             },
         },
         {},
