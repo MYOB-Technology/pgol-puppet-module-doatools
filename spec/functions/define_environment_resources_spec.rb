@@ -133,6 +133,54 @@ describe 'define_environment_resources' do
       }
   }
 
+  subnets1_withtags = {
+      "resource_type"=>"subnet",
+      "resources"=>{
+          "demopublica"=>{
+              :ensure=>"present",
+              :region=>"us-east-1",
+              :vpc=>"demo",
+              :availability_zone=>"a",
+              :cidr=>"192.168.0.0/26",
+              :tags=>{
+                  "Environment"=>"demo",
+                  "role"=>"demo_subnet",
+                  "status"=>"A-Public-Demo",
+              },
+              :route_table=>"demopublicall",
+              :public_ip=>true
+          },
+          "demopublicb"=>{
+              :ensure=>"present",
+              :region=>"us-east-1",
+              :vpc=>"demo",
+              :availability_zone=>"b",
+              :cidr=>"192.168.0.64/26",
+              :tags=>{
+                  "Environment"=>"demo",
+                  "role"=>"demo_subnet",
+                  "status"=>"B-Public-Demo",
+              },
+              :route_table=>"demopublicall",
+              :public_ip=>true
+          }, "demopublicc" => {
+              :ensure=>"present",
+              :region=>"us-east-1",
+              :vpc=>"demo",
+              :availability_zone=>"c",
+              :cidr=>"192.168.0.128/26",
+              :tags=>{
+                  "Environment"=>"demo",
+                  "role"=>"demo_subnet",
+                  "status"=>"C-Public-Demo",
+              },
+              :route_table=>"demopublicall",
+              :public_ip=>true
+          }
+      }
+  }
+
+
   subnets2 = {
       "resource_type"=>"subnet",
       "resources"=>{
@@ -1255,7 +1303,10 @@ describe 'define_environment_resources' do
         },
         {
             'vpc' => {},
-            'subnet' => {},
+            'subnet' => {
+                'role' => 'demo_subnet',
+                'status' => '%{Az}-%{Zone}-%{Vpc}',
+            },
         },
         {},
         {},
@@ -1271,7 +1322,7 @@ describe 'define_environment_resources' do
         [
             vpc1,
             routetable1,
-            subnets1,
+            subnets1_withtags,
             security_group1,
             security_group_rules1,
             internet_gateway1,
