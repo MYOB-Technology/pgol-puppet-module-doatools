@@ -511,6 +511,26 @@ module PuppetX
           })
         end
 
+        def self.DeTokeniseTagValues(tags, zones, zone, az, index, scratch)
+          zone_literal = SubnetHelpers.ZoneLiteral(zone, scratch)
+          tags.map { |k, v|
+            [k, sprintf(v,{
+              :vpc => name,
+              :az  => az,
+              :index => index,
+              :zone => zone_literal,
+              :VPC => name.upcase,
+              :AZ  => az.upcase,
+              :ZONE => zone_literal.upcase,
+              :Vpc => name.capitalize,
+              :Az  => az.capitalize,
+              :Zone => zone_literal.capitalize,
+            })]
+          }.reduce({}) { |m, v|
+            m.merge({v[0] => v[1]})
+          }
+        end
+
         def self.GenerateSubnetResources(name, status, region, network, zones, scratch, tags)
           {
               'resource_type' => "subnet",
@@ -526,7 +546,7 @@ module PuppetX
                             :vpc => name,
                             :availability_zone => sn_data[:az],
                             :cidr => sn_data[:cidr],
-                            :tags => tags,
+                            :tags => DeTokeniseTagValues(tags, zones, sn_data[:zone], sn_data[:az], sn_data[:index], scratch),
                             :route_table => scratch[:route_table_data].select{|rt_data|
                               # Is this route table for this subnet?
                               rt_data[:zone] == sn_data[:zone]
