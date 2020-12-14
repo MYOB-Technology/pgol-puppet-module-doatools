@@ -56,7 +56,8 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
     hosted_zone_id = PuppetX::IntechWIFI::AwsCmds.find_hosted_zone_id_by_name(region, hosted_zone, hosted_zone_comment) { |*arg| awscli(*arg) }['Id']
 
     record_change_set_file = Tempfile.new('record_change_set_file')
-    record_change_set_file.write(generate_change_set(record_set, hosted_zone_id, action).to_json)
+    json_data = generate_change_set(record_set, hosted_zone_id, action).to_json
+    record_change_set_file.write(json_data)
     record_change_set_file.close 
 
     args = [
@@ -65,6 +66,9 @@ Puppet::Type.type(:route53_record_set).provide(:awscli) do
         '--change-batch', "file://#{record_change_set_file.path}"
     ]
 
+    puts("*********** Route 53 Data ****************")
+    puts(json_data)
+    puts("*********** [END] Route 53 Data ****************")
     awscli(args.flatten)
   end
 
