@@ -44,5 +44,8 @@
     "subnet",
     "route_table",
     "security_group"
-  ]
+  ],
+  "pdk-version": "1.18.1",
+  "template-url": "https://github.com/puppetlabs/pdk-templates#1.18.1",
+  "template-ref": "tags/1.18.1-0-g3d2e75c"
 }

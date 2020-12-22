@@ -160,14 +160,15 @@ define doatools::environment (
     $rt = $r['resource_type']
     $rts = $r['resources'].keys
     info("declaring resources: ${rt} ${rts}")
-    debug($r['resources'])
 
-    if ( (!has_key($resourcetype_filter, 'include')) or ($resourcetype_filter['include'] == all) or ($rt in $resourcetype_filter['include']))
+    $include_all = ('include' in $resourcetype_filter) and ($resourcetype_filter['include'] == 'all')
+    $include_resource = ('include' in $resourcetype_filter) and ($rt in $resourcetype_filter['include'])
+    $exclude_resource = ('exclude' in $resourcetype_filter) and ($rt in $resourcetype_filter['exclude'])
+
+    if !($exclude_resource)
     {
-
-      if (!(has_key($resourcetype_filter, 'exclude') and ($rt in $resourcetype_filter['exclude'])))
+      if ($include_all or $include_resource)
       {
-        # need to change this back to info...
         info("declaring resources: ${rt} ${rts}")
         debug($r['resources'])
         create_resources($r['resource_type'], $r['resources'], {})
@@ -175,4 +176,3 @@ define doatools::environment (
     }
   }
 }
-
