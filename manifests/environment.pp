@@ -159,7 +159,7 @@ define doatools::environment (
   ).each |$r| {
     $rt = $r['resource_type']
     $rts = $r['resources'].keys
-    notice("considering resources for type: ${rt}")
+    notice("considering resources for type: ${rt} with the filter: ${resourcetype_filter}")
 
     $include_all = ('include' in $resourcetype_filter) and ($resourcetype_filter['include'] == 'all')
     $include_resource = ('include' in $resourcetype_filter) and ($rt in $resourcetype_filter['include'])
