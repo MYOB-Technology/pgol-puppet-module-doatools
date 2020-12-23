@@ -169,7 +169,7 @@ define doatools::environment (
     {
       if ($include_all or $include_resource)
       {
-        info("declaring resources: ${rt} ${rts}")
+        notice("declaring resources: ${rt} ${rts}")
         debug($r['resources'])
         create_resources($r['resource_type'], $r['resources'], {})
       }
