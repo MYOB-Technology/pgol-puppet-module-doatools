@@ -1831,7 +1831,7 @@ describe 'define_environment_resources' do
                 ],
                 "deploy" => {
                   "group" => "deploy",
-                  "application" => "appname",
+                  "deploy_application" => "appname",
                 },
             }
         },
