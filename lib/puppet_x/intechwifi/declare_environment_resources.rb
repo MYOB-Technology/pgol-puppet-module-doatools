@@ -304,7 +304,7 @@ module PuppetX
             {
               'deploy_group' => role_data['deploy']['group'],
               'role_name' => role_name,
-              'deploy_application' => role_data['deploy']['application']
+              'deploy_application' => role_data['deploy']['deploy_application']
             }
           }.reduce({}) {| m, v |
             # if the deploy key already exists, we add the role to the array, otherwise we create it.
