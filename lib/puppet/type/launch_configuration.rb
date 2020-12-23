@@ -86,6 +86,15 @@ Puppet::Type.newtype(:launch_configuration) do
   end
 
   newproperty(:userdata) do
+    def insync?(is)
+       sho = @should
+       puts(" *************  Comparing USERDATA  *****************")
+       puts("is:")
+       puts("#{is}")
+       puts("@should:")
+       puts("#{sho}")
+       is == @should
+    end
   end
 
   newproperty(:ssh_key_name) do
